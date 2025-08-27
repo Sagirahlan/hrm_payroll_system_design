@@ -1,0 +1,13 @@
+    public function getLgasByState(Request $request)
+    {
+        $stateId = $request->input('state_id');
+        $lgas = Lga::where('state_id', $stateId)->get();
+        return response()->json($lgas);
+    }
+
+    public function getWardsByLga(Request $request)
+    {
+        $lgaId = $request->input('lga_id');
+        $wards = Ward::where('lga_id', $lgaId)->get();
+        return response()->json($wards);
+    }

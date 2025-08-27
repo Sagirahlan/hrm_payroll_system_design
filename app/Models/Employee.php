@@ -1,0 +1,87 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+
+class Employee extends Model
+{
+    protected $primaryKey = 'employee_id';
+    protected $fillable = [
+        'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_of_origin', 'lga', 'ward',
+        'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
+        'scale_id', 'department_id', 'expected_next_promotion',
+        'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type',
+        'photo_path', 'years_of_service',
+    ];
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function cadre()
+    {
+        return $this->belongsTo(Cadre::class, 'cadre_id');
+    }
+
+    // App.Models.Employee.php
+    public function salaryScale()
+    {
+        return $this->belongsTo(SalaryScale::class, 'scale_id', 'scale_id');
+    }
+
+
+    public function biometricData()
+    {
+        return $this->hasOne(BiometricData::class, 'employee_id', 'employee_id');
+    }
+
+    public function payrollRecords()
+    {
+        return $this->hasMany(\App\Models\PayrollRecord::class, 'employee_id', 'employee_id');
+    }
+
+        public function nextOfKin()
+    {
+        return $this->hasOne(NextOfKin::class, 'employee_id');
+    }
+
+    public function bank()
+    
+    {
+        return $this->hasOne(Bank::class, 'employee_id', 'employee_id');
+    }
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'employee_id', 'employee_id');
+    }
+    public function disciplinaryRecords()
+{
+    return $this->hasMany(DisciplinaryAction::class, 'employee_id', 'employee_id');
+}
+
+public function deductions()
+{
+    return $this->hasMany(Deduction::class, 'employee_id', 'employee_id');
+}
+
+public function additions()
+{
+    return $this->hasMany(Addition::class, 'employee_id', 'employee_id');
+}
+
+public function getYearsOfServiceAttribute(): ?int
+{
+    if (!$this->date_of_first_appointment) {
+        return null;
+    }
+
+    return Carbon::parse($this->date_of_first_appointment)->diffInYears(now());
+}
+
+
+
+
+
+}

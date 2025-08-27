@@ -1,0 +1,46 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class PayrollRecord extends Model
+{
+    protected $table = 'payroll_records';
+    protected $primaryKey = 'payroll_id';
+    protected $fillable = [
+        'employee_id',
+        'salary_scale_id',
+        'basic_salary',
+        'status',
+        'total_additions',
+        'total_deductions',
+        'net_salary',
+        'payment_date',
+        'payroll_month', // Added payroll_month
+        'remarks',
+    ];
+
+    protected $casts = [
+        'payroll_month' => 'date', // Cast as date
+        'payment_date' => 'date', // Cast as date (already a date field)
+    ];
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
+    }
+
+    public function salaryScale()
+{
+    return $this->belongsTo(SalaryScale::class, 'scale_id', 'scale_id');
+}
+
+    public function deductions()
+    {
+        return $this->hasMany(Deduction::class, 'payroll_id', 'payroll_id');
+    }
+    public function transaction()
+    {
+    return $this->hasOne(PaymentTransaction::class, 'payroll_id', 'payroll_id');
+    }
+}

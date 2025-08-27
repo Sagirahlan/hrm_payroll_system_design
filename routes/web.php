@@ -1,0 +1,182 @@
+<?php
+
+// Updated routes for your web.php file - replace the existing payroll routes section
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\DisciplinaryController;
+use App\Http\Controllers\SmsController;
+use App\Http\Controllers\RetirementController;
+use App\Http\Controllers\AuditTrailController;
+use App\Http\Controllers\BiometricController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PensionerController;
+use App\Http\Controllers\SalaryScaleController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ReportController;
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Auth::routes();
+
+Route::middleware(['auth'])->group(function () {
+    // Dashboard - accessible to all authenticated users
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('reports', ReportController::class);
+    Route::post('/reports/generate', [ReportController::class, 'generateEmployeeReport'])->name('reports.generate');
+    Route::post('/reports/bulk-generate', [ReportController::class, 'bulkGenerate'])->name('reports.bulk_generate');
+    Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
+    Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
+    
+
+    // Profile - accessible to all authenticated users
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+
+    // Employee Management - HR and Admin only
+    Route::middleware('permission:manage_employees')->group(function () {
+        Route::resource('employees', EmployeeController::class);
+        Route::get('/employees/export/pdf', [EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
+        Route::get('/employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
+        Route::get('/employees/{employeeId}/export', [EmployeeController::class, 'exportSingle'])->name('employee.export');
+        Route::post('/employees/import', [EmployeeController::class, 'importEmployees'])->name('employees.import');   
+        Route::get('/employees/export/filtered', [EmployeeController::class, 'exportFiltered'])->name('employees.export.filtered');   
+        Route::resource('roles', RoleController::class);
+    });
+    
+    // AJAX routes for location dropdowns (outside permission middleware so they can be accessed by anyone creating employees)
+    Route::get('/employees/lgas-by-state', [EmployeeController::class, 'getLgasByState'])->name('employees.lgas-by-state');
+    Route::get('/employees/wards-by-lga', [EmployeeController::class, 'getWardsByLga'])->name('employees.wards-by-lga');
+
+    // Employee Viewing - HR, Admin, and Bursary
+    Route::middleware('permission:view_employees')->group(function () {
+        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+    });
+
+    // Department Management - HR and Admin only
+    Route::middleware('permission:manage_departments')->group(function () {
+        Route::resource('departments', DepartmentController::class);
+    });
+
+    // Biometric Management - HR and Admin only
+    Route::middleware('permission:manage_biometrics')->group(function () {
+        Route::resource('biometrics', BiometricController::class);
+    });
+
+    // Disciplinary Management - HR and Admin only
+    Route::middleware('permission:manage_disciplinary')->group(function () {
+        Route::resource('disciplinary', DisciplinaryController::class);
+    });
+
+    // SMS Management - HR and Admin only
+    Route::middleware('permission:manage_sms')->group(function () {
+        Route::resource('sms', SmsController::class);
+    });
+
+    // FIXED: User Management - Admin only (Enhanced with bulk creation)
+    Route::middleware('permission:manage_employees')->group(function () {
+        // Main user resource routes
+       
+        
+        // FIXED: Additional user management routes with correct HTTP methods
+        Route::resource('users', UserController::class);
+        Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+        Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+       Route::post('/users/bulk-create', [UserController::class, 'bulkCreateUsers'])->name('users.bulk-create');
+       Route::get('/users/employees-without-users', [UserController::class, 'showEmployeesWithoutUsers'])->name('users.employees-without-users');
+    
+    });
+
+    // Retirement Management - HR and Admin only
+    Route::middleware('permission:manage_retirement')->group(function () {
+        Route::resource('retirements', RetirementController::class);
+        Route::post('/employees/{employee}/retire', [RetirementController::class, 'retire'])->name('retirement.retire');
+        Route::get('/retirements', [RetirementController::class, 'index'])->name('retirements.index'); 
+        Route::get('/retirements/{retirement}', [RetirementController::class, 'show'])->name('retirements.show');
+    });
+
+    // Retirement Viewing - HR, Admin, and Bursary
+    Route::middleware('permission:view_retirement')->group(function () {
+       
+    });
+
+    // Pensioner Management - HR and Admin only
+    Route::middleware('permission:manage_employees')->group(function () {
+        Route::resource('pensioners', PensionerController::class);
+        Route::post('pensioners/{pensioner_id}/status', [PensionerController::class, 'updateStatus'])->name('pensioners.updateStatus');
+    });
+
+    // Payroll Management - Bursary and Admin only (ENHANCED WITH SEARCH & FILTERS)
+    Route::middleware('permission:manage_payroll')->group(function () {
+        
+        // IMPORTANT: Place specific routes BEFORE dynamic routes to avoid conflicts
+        
+        // Payroll generation and export (with filters) - MUST BE FIRST
+        Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
+        Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
+        
+        // AJAX and Search routes - MUST BE BEFORE DYNAMIC ROUTES
+        Route::get('/payroll/api/search', [PayrollController::class, 'search'])->name('payroll.search');
+        Route::get('/payroll/api/statistics', [PayrollController::class, 'getStatistics'])->name('payroll.statistics');
+        
+        // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
+        Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
+        Route::get('/payroll/bulk/adjustments', [PayrollController::class, 'showBulkAdjustmentForm'])->name('payroll.adjustments.bulk');
+        Route::post('/payroll/bulk/adjustments', [PayrollController::class, 'submitAdjustments'])->name('payroll.adjustments.submit');
+        
+        // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
+        Route::get('/payroll/employee/{employeeId}/deductions-additions', [PayrollController::class, 'manageDeductionsAdditions'])->name('payroll.deductions_additions');
+        Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
+        Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
+        
+        // Main payroll resource routes - DYNAMIC ROUTES COME LAST
+        Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+        Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+        Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
+        Route::get('/payroll/{payrollId}', [PayrollController::class, 'show'])->name('payroll.show');
+        Route::get('/payroll/{payrollId}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
+        Route::put('/payroll/{payrollId}', [PayrollController::class, 'update'])->name('payroll.update');
+        Route::delete('/payroll/{payrollId}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+        
+        
+        // Individual payroll actions - AFTER MAIN ROUTES
+        Route::get('/payroll/{payrollId}/payslip', [PayrollController::class, 'generatePaySlip'])->name('payroll.payslip');
+        Route::post('/payroll/{payrollId}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
+        Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
+        Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
+        
+        // Payment integration routes
+        Route::post('/payments/nabroll/batch', [PaymentController::class, 'initiateBatchNabroll'])->name('payments.nabroll.batch');
+        Route::post('/payments/nabroll/initiate/{transactionId}', [PaymentController::class, 'initiateSingleNabroll'])->name('payments.nabroll.initiate');
+        Route::post('/nabroll-response', [PaymentController::class, 'handleNabrollResponse'])->name('nabroll.response');
+        
+        // Salary Scales
+        Route::resource('salary-scales', SalaryScaleController::class);
+    });
+
+    // Audit Trails - Admin only
+    Route::middleware('permission:view_audit_logs')->group(function () {
+        Route::resource('audit-trails', AuditTrailController::class);
+        Route::get('/audit-logs', [AuditTrailController::class, 'index'])->name('audit.index');
+    });
+
+    // Reports - accessible to Admin, HR, and Bursary
+  
+});
+
+Route::get('/clear-cache', function() {
+    Artisan::call('view:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('config:clear');
+    return "Cache cleared!";
+});
