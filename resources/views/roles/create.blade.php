@@ -8,8 +8,8 @@
         @csrf
 
         <div class="mb-3">
-            <label for="role_name" class="form-label">Role Name</label>
-            <input type="text" name="role_name" class="form-control" required>
+            <label for="name" class="form-label">Role Name</label>
+            <input type="text" name="name" class="form-control" required>
         </div>
 
         <div class="mb-3">
@@ -20,26 +20,8 @@
         <div class="mb-3">
             <label for="permissions" class="form-label">Permissions</label>
             <select name="permissions[]" class="form-control select2" multiple="multiple">
-                @php
-                    $allPermissions = [
-                        'view_employees',
-                        'manage_employees',
-                        'manage_payroll',
-                        'manage_sms',
-                        'view_audit_logs',
-                        'manage_disciplinary',
-                        'manage_retirement',
-                        'manage_biometrics',
-                        'manage_departments',
-                        'manage_users',
-                        'manage_reports'
-                    ];
-                @endphp
-
-                @foreach ($allPermissions as $permission)
-                    <option value="{{ $permission }}">
-                        {{ ucwords(str_replace('_', ' ', $permission)) }}
-                    </option>
+                @foreach ($permissions as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
                 @endforeach
             </select>
         </div>

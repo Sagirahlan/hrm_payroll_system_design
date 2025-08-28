@@ -151,7 +151,7 @@ class UserController extends Controller
             // Get employees without user accounts
             $employeesWithoutUsers = Employee::whereNotIn('employee_id', 
                 User::whereNotNull('employee_id')->pluck('employee_id')
-            )->whereNotNull('email')->get();
+            )->whereNotNull('email')->take(30)->get();
 
             if ($employeesWithoutUsers->isEmpty()) {
                 return back()->with('info', 'No employees found without user accounts or missing email addresses.');
@@ -207,7 +207,15 @@ class UserController extends Controller
 
             DB::commit();
 
+            $remaining = Employee::whereNotIn('employee_id', 
+                User::whereNotNull('employee_id')->pluck('employee_id')
+            )->whereNotNull('email')->count();
+
             $message = "Successfully created {$createdCount} user accounts with default password '12345678'.";
+            if($remaining > 0) {
+                $message .= " There are {$remaining} more employees without user accounts. You can run this process again.";
+            }
+
             if (!empty($errors)) {
                 $message .= " Errors: " . implode(', ', array_slice($errors, 0, 3));
                 if (count($errors) > 3) {
@@ -224,7 +232,7 @@ class UserController extends Controller
         }
     }
 
-    public function show(Request $request)
+    public function showEmployeesWithoutUsers(Request $request)
     {
         $query = Employee::whereNotIn('employee_id', 
             User::whereNotNull('employee_id')->pluck('employee_id')

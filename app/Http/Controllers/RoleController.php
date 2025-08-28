@@ -28,6 +28,7 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Role creation request:', $request->all());
         $request->validate([
             'name' => 'required|unique:roles,name',
             'description' => 'nullable|string',
@@ -43,8 +44,13 @@ class RoleController extends Controller
                 // 'description' => $request->description,
             ]);
 
-            if ($request->permissions) {
-                $role->syncPermissions($request->permissions);
+            if ($request->has('permissions')) {
+                // Get permission names by their IDs
+                $permissionIds = $request->permissions;
+                $permissions = Permission::whereIn('id', $permissionIds)->pluck('name')->toArray();
+                \Illuminate\Support\Facades\Log::info('Permissions to sync:', $permissions);
+                $role->syncPermissions($permissions);
+                \Illuminate\Support\Facades\Log::info('Permissions synced for role:', ['role_id' => $role->id]);
             }
 
             return redirect()->route('roles.index')->with('success', 'Role created successfully.');
@@ -64,7 +70,7 @@ class RoleController extends Controller
 
     public function update(Request $request, $id)
     {
-        \Illuminate\Support\Facades\Log::info($request->all());
+        \Illuminate\Support\Facades\Log::info('Role update request:', $request->all());
         $role = Role::findOrFail($id);
 
         $request->validate([
@@ -81,8 +87,18 @@ class RoleController extends Controller
                 // 'description' => $request->description,
             ]);
 
-            $permissions = $request->permissions ? \Spatie\Permission\Models\Permission::whereIn('id', $request->permissions)->pluck('name')->toArray() : [];
-        $role->syncPermissions($permissions);
+            if ($request->has('permissions')) {
+                // Get permission names by their IDs
+                $permissionIds = $request->permissions;
+                $permissions = Permission::whereIn('id', $permissionIds)->pluck('name')->toArray();
+                \Illuminate\Support\Facades\Log::info('Permissions to sync:', $permissions);
+                $role->syncPermissions($permissions);
+                \Illuminate\Support\Facades\Log::info('Permissions synced for role:', ['role_id' => $role->id]);
+            } else {
+                $role->syncPermissions([]);
+                \Illuminate\Support\Facades\Log::info('No permissions to sync, cleared all permissions for role:', ['role_id' => $role->id]);
+            }
+
 
             return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {

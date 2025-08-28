@@ -57,52 +57,23 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label font-weight-bold">State of Origin</label>
-                                    <select name="state_of_origin" class="form-select" required>
+                                    <select name="state_id" id="state_id" class="form-select" required>
                                         <option value="">Select State</option>
-                                        <option value="Abia" {{ $employee->state_of_origin == 'Abia' ? 'selected' : '' }}>Abia</option>
-                                        <option value="Adamawa" {{ $employee->state_of_origin == 'Adamawa' ? 'selected' : '' }}>Adamawa</option>
-                                        <option value="Akwa Ibom" {{ $employee->state_of_origin == 'Akwa Ibom' ? 'selected' : '' }}>Akwa Ibom</option>
-                                        <option value="Anambra" {{ $employee->state_of_origin == 'Anambra' ? 'selected' : '' }}>Anambra</option>
-                                        <option value="Bauchi" {{ $employee->state_of_origin == 'Bauchi' ? 'selected' : '' }}>Bauchi</option>
-                                        <option value="Bayelsa" {{ $employee->state_of_origin == 'Bayelsa' ? 'selected' : '' }}>Bayelsa</option>
-                                        <option value="Benue" {{ $employee->state_of_origin == 'Benue' ? 'selected' : '' }}>Benue</option>
-                                        <option value="Borno" {{ $employee->state_of_origin == 'Borno' ? 'selected' : '' }}>Borno</option>
-                                        <option value="Cross River" {{ $employee->state_of_origin == 'Cross River' ? 'selected' : '' }}>Cross River</option>
-                                        <option value="Delta" {{ $employee->state_of_origin == 'Delta' ? 'selected' : '' }}>Delta</option>
-                                        <option value="Ebonyi" {{ $employee->state_of_origin == 'Ebonyi' ? 'selected' : '' }}>Ebonyi</option>
-                                        <option value="Edo" {{ $employee->state_of_origin == 'Edo' ? 'selected' : '' }}>Edo</option>
-                                        <option value="Ekiti" {{ $employee->state_of_origin == 'Ekiti' ? 'selected' : '' }}>Ekiti</option>
-                                        <option value="Enugu" {{ $employee->state_of_origin == 'Enugu' ? 'selected' : '' }}>Enugu</option>
-                                        <option value="FCT" {{ $employee->state_of_origin == 'FCT' ? 'selected' : '' }}>FCT</option>
-                                        <option value="Gombe" {{ $employee->state_of_origin == 'Gombe' ? 'selected' : '' }}>Gombe</option>
-                                        <option value="Imo" {{ $employee->state_of_origin == 'Imo' ? 'selected' : '' }}>Imo</option>
-                                        <option value="Jigawa" {{ $employee->state_of_origin == 'Jigawa' ? 'selected' : '' }}>Jigawa</option>
-                                        <option value="Kaduna" {{ $employee->state_of_origin == 'Kaduna' ? 'selected' : '' }}>Kaduna</option>
-                                        <option value="Kano" {{ $employee->state_of_origin == 'Kano' ? 'selected' : '' }}>Kano</option>
-                                        <option value="Katsina" {{ $employee->state_of_origin == 'Katsina' ? 'selected' : '' }}>Katsina</option>
-                                        <option value="Kebbi" {{ $employee->state_of_origin == 'Kebbi' ? 'selected' : '' }}>Kebbi</option>
-                                        <option value="Kogi" {{ $employee->state_of_origin == 'Kogi' ? 'selected' : '' }}>Kogi</option>
-                                        <option value="Kwara" {{ $employee->state_of_origin == 'Kwara' ? 'selected' : '' }}>Kwara</option>
-                                        <option value="Lagos" {{ $employee->state_of_origin == 'Lagos' ? 'selected' : '' }}>Lagos</option>
-                                        <option value="Nasarawa" {{ $employee->state_of_origin == 'Nasarawa' ? 'selected' : '' }}>Nasarawa</option>
-                                        <option value="Niger" {{ $employee->state_of_origin == 'Niger' ? 'selected' : '' }}>Niger</option>
-                                        <option value="Ogun" {{ $employee->state_of_origin == 'Ogun' ? 'selected' : '' }}>Ogun</option>
-                                        <option value="Ondo" {{ $employee->state_of_origin == 'Ondo' ? 'selected' : '' }}>Ondo</option>
-                                        <option value="Osun" {{ $employee->state_of_origin == 'Osun' ? 'selected' : '' }}>Osun</option>
-                                        <option value="Oyo" {{ $employee->state_of_origin == 'Oyo' ? 'selected' : '' }}>Oyo</option>
-                                        <option value="Plateau" {{ $employee->state_of_origin == 'Plateau' ? 'selected' : '' }}>Plateau</option>
-                                        <option value="Rivers" {{ $employee->state_of_origin == 'Rivers' ? 'selected' : '' }}>Rivers</option>
-                                        <option value="Sokoto" {{ $employee->state_of_origin == 'Sokoto' ? 'selected' : '' }}>Sokoto</option>
-                                        <option value="Taraba" {{ $employee->state_of_origin == 'Taraba' ? 'selected' : '' }}>Taraba</option>
-                                        <option value="Yobe" {{ $employee->state_of_origin == 'Yobe' ? 'selected' : '' }}>Yobe</option>
-                                        <option value="Zamfara" {{ $employee->state_of_origin == 'Zamfara' ? 'selected' : '' }}>Zamfara</option>
+                                        @foreach($states as $state)
+                                            <option value="{{ $state->state_id }}" {{ $employee->state_id == $state->state_id ? 'selected' : '' }}>{{ $state->name }}</option>
+                                        @endforeach
                                     </select>
-                                    @error('state_of_origin') <small class="text-danger">{{ $message }}</small> @enderror
+                                    @error('state_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label font-weight-bold">LGA</label>
-                                    <input type="text" name="lga" class="form-control" value="{{ $employee->lga }}" required>
-                                    @error('lga') <small class="text-danger">{{ $message }}</small> @enderror
+                                    <select name="lga_id" id="lga_id" class="form-select" required>
+                                        <option value="">Select LGA</option>
+                                        @foreach($lgas as $lga)
+                                            <option value="{{ $lga->id }}" {{ $employee->lga_id == $lga->id ? 'selected' : '' }}>{{ $lga->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('lga_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label font-weight-bold">Staff ID</label>
@@ -378,6 +349,27 @@
     }
     document.addEventListener('DOMContentLoaded', function() {
         showStep(1);
+
+        const stateSelect = document.getElementById('state_id');
+        const lgaSelect = document.getElementById('lga_id');
+
+        stateSelect.addEventListener('change', function() {
+            const stateId = this.value;
+            lgaSelect.innerHTML = '<option value="">Select LGA</option>';
+
+            if (stateId) {
+                fetch(`/get-lgas-by-state?state_id=${stateId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(lga => {
+                            const option = document.createElement('option');
+                            option.value = lga.id;
+                            option.textContent = lga.name;
+                            lgaSelect.appendChild(option);
+                        });
+                    });
+            }
+        });
     });
 </script>
 @endsection

@@ -27,8 +27,8 @@
                         <li class="list-group-item"><strong>NIN:</strong> {{ $employee->nin ?? 'N/A' }}</li>
                         <li class="list-group-item"><strong>Staff ID:</strong> {{ $employee->reg_no ?? 'N/A' }}</li>
                         <li class="list-group-item"><strong>Nationality:</strong> {{ $employee->nationality }}</li>
-                        <li class="list-group-item"><strong>State of Origin:</strong> {{ $employee->state_of_origin }}</li>
-                        <li class="list-group-item"><strong>LGA:</strong> {{ $employee->lga }}</li>
+                        <li class="list-group-item"><strong>State of Origin:</strong> {{ $employee->state->name ?? 'N/A' }}</li>
+                        <li class="list-group-item"><strong>LGA:</strong> {{ $employee->lga->name ?? 'N/A' }}</li>
                     </ul>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -70,7 +70,7 @@
     </li>
     <li class="list-group-item"><strong>Grade Level Limit:</strong> {{ $employee->grade_level_limit ?? 'N/A' }}</li>
     <li class="list-group-item"><strong>Highest Certificate:</strong> {{ $employee->highest_certificate ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Salary Scale:</strong> {{ $employee->salaryScale->scale_name }}</li>
+    <li class="list-group-item"><strong>Salary Scale:</strong> @if($employee->salaryScale) {{ $employee->salaryScale->scale_name }} @else N/A @endif</li>
     <li class="list-group-item"><strong>Status:</strong> {{ $employee->status }}</li>
 </ul>
                     {{-- New Individual Export Button --}}

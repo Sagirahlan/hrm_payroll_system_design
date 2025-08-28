@@ -89,7 +89,9 @@ Route::middleware(['auth'])->group(function () {
        
         
         // FIXED: Additional user management routes with correct HTTP methods
-        Route::resource('users', UserController::class);
+        Route::resource('users', UserController::class)->except([
+            'show'
+        ]);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
        Route::post('/users/bulk-create', [UserController::class, 'bulkCreateUsers'])->name('users.bulk-create');

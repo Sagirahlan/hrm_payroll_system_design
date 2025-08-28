@@ -11,7 +11,7 @@ class DisciplinaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_employees']);
+        $this->middleware(['auth', 'permission:manage_disciplinary']);
     }
 
     public function index(Request $request)

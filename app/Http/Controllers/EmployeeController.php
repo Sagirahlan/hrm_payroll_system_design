@@ -76,7 +76,10 @@ class EmployeeController extends Controller
 
         // State of origin filter
         if ($request->filled('state_of_origin')) {
-            $query->where('state_of_origin', $request->state_of_origin);
+            $state = State::where('name', $request->state_of_origin)->first();
+            if ($state) {
+                $query->where('state_id', $state->state_id);
+            }
         }
 
         // Age range filter
@@ -248,7 +251,10 @@ class EmployeeController extends Controller
 
     // State of origin filter
     if ($request->filled('state_of_origin')) {
-        $query->where('state_of_origin', $request->state_of_origin);
+        $state = State::where('name', $request->state_of_origin)->first();
+        if ($state) {
+            $query->where('state_id', $state->state_id);
+        }
     }
 
     // Age range filter
@@ -409,6 +415,7 @@ public function store(Request $request)
         // Map salary_scale_id to scale_id
         $employeeData['scale_id'] = $validated['salary_scale_id'];
 
+        
         $employee = Employee::create($employeeData);
 
         NextOfKin::create([
@@ -443,7 +450,7 @@ public function store(Request $request)
 
     public function show(Employee $employee)
     {
-        $employee->load(['department', 'cadre', 'salaryScale', 'nextOfKin', 'biometricData', 'bank']);
+        $employee->load(['department', 'cadre', 'salaryScale', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga']);
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -462,6 +469,8 @@ public function store(Request $request)
         $departments = Department::all();
         $cadres = Cadre::all();
         $salaryScales = SalaryScale::all();
+        $states = State::all();
+        $lgas = Lga::where('state_id', $employee->state_id)->get();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -472,7 +481,7 @@ public function store(Request $request)
             'entity_id' => $employee->employee_id,
         ]);
 
-        return view('employees.edit', compact('employee', 'departments', 'cadres', 'salaryScales'));
+        return view('employees.edit', compact('employee', 'departments', 'cadres', 'salaryScales', 'states', 'lgas'));
     }
 
     public function update(Request $request, Employee $employee)

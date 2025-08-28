@@ -179,9 +179,9 @@
                                             <select name="state_of_origin" class="form-select">
                                                 <option value="">All States</option>
                                                 @foreach($states as $state)
-                                                    <option value="{{ $state->state_name }}" 
-                                                            {{ request('state_of_origin') == $state->state_name ? 'selected' : '' }}>
-                                                        {{ $state->state_name }}
+                                                    <option value="{{ $state->name }}" 
+                                                            {{ request('state_of_origin') == $state->name ? 'selected' : '' }}>
+                                                        {{ $state->name }}
                                                     </option>
                                                 @endforeach
                                             </select>

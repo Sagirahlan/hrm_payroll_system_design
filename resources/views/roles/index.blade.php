@@ -2,29 +2,34 @@
 
 @section('content')
 <div class="container">
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
     <div class="row">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header" style="color: black;">
                     Roles
                     <a href="{{ route('roles.create') }}" class="btn btn-primary btn-sm float-right">Add Role</a>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="color: black;">
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Permissions</th>
-                                <th>Actions</th>
+                                <th style="color: black;">Name</th>
+                                <th style="color: black;">Permissions</th>
+                                <th style="color: black;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($roles as $role)
                             <tr>
-                                <td>{{ $role->name }}</td>
+                                <td style="color: black;">{{ $role->name }}</td>
                                 <td>
                                     @foreach ($role->permissions as $permission)
-                                    <span class="badge badge-danger">{{ $permission->name }}</span>
+                                    <span class="badge badge-success" style="color: black;">{{ $permission->name }}</span>
                                     @endforeach
                                 </td>
                                 <td>

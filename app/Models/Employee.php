@@ -8,12 +8,27 @@ class Employee extends Model
 {
     protected $primaryKey = 'employee_id';
     protected $fillable = [
-        'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_of_origin', 'lga', 'ward',
+        'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'ward_id',
         'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
         'scale_id', 'department_id', 'expected_next_promotion',
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type',
         'photo_path', 'years_of_service',
     ];
+
+    public function state()
+    {
+        return $this->belongsTo(State::class, 'state_id', 'state_id');
+    }
+
+    public function lga()
+    {
+        return $this->belongsTo(Lga::class, 'lga_id');
+    }
+
+    public function ward()
+    {
+        return $this->belongsTo(Ward::class, 'ward_id');
+    }
 
     public function department()
     {
