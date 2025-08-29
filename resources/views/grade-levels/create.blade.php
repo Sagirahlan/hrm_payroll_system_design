@@ -4,14 +4,14 @@
 <div class="container-fluid py-4">
     <div class="card border-primary shadow" style="max-width: 500px; margin: 0 auto;">
         <div class="card-header" style="background-color: skyblue; color: white; padding: 0.5rem 1rem;">
-            <h6 class="mb-0">Add Salary Scale</h6>
+            <h6 class="mb-0">Add Grade Level</h6>
         </div>
         <div class="card-body p-3">
-            <form action="{{ route('salary-scales.store') }}" method="POST">
+            <form action="{{ route('grade-levels.store') }}" method="POST">
                 @csrf
                 <div class="mb-2">
-                    <label for="scale_name" class="form-label small">Scale Name</label>
-                    <input type="text" name="scale_name" id="scale_name" class="form-control form-control-sm" required>
+                    <label for="name" class="form-label small">Grade Level Name</label>
+                    <input type="text" name="name" id="name" class="form-control form-control-sm" required>
                 </div>
                 <div class="mb-2">
                     <label for="basic_salary" class="form-label small">Basic Salary</label>
@@ -33,12 +33,9 @@
                     <button type="submit" class="btn btn-primary btn-sm">
                         Add
                     </button>
-                    <a href="{{ route('salary-scales.index') }}" class="btn btn-secondary btn-sm">
+                    <a href="{{ route('grade-levels.index') }}" class="btn btn-secondary btn-sm">
                         Cancel
                     </a>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
 @endsection

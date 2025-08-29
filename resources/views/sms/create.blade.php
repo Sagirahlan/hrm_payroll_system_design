@@ -28,9 +28,9 @@
         <div class="mb-3" id="grade_level_select" style="display:none;">
             <label for="grade_level_id" class="form-label">Grade Level & Step</label>
             <select name="grade_level_id" class="form-control">
-                @foreach ($salaryScales as $scale)
-                    <option value="{{ $scale->scale_id }}">
-                        Grade {{ $scale->grade_level }}, Step {{ $scale->step_level }} ({{ $scale->scale_name }})
+                @foreach ($gradeLevels as $level)
+                    <option value="{{ $level->id }}">
+                        Grade {{ $level->grade_level }}, Step {{ $level->step_level }} ({{ $level->name }})
                     </option>
                 @endforeach
             </select>

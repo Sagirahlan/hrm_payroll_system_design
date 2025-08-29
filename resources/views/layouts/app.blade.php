@@ -244,10 +244,17 @@
                             <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
                         </a>
                     </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}" style="padding: 6px 12px;">
+                            <i class="fas fa-hourglass-half me-2 text-primary" style="font-size: 0.9em;"></i> Pending Changes
+                        </a>
+                    </li>
                     @endif
                 </ul>
             </div>
             @endif
+            
 
             @if(auth()->user() && auth()->user()->hasPermissionTo('manage_users'))
             <div class="nav-item dropdown">
@@ -366,7 +373,7 @@
                     <i class="fas fa-money-check-alt me-2"></i> Payroll
                 </a>
                 @if(auth()->user()->hasPermissionTo('manage_payroll'))
-                    <a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">
+                    <a class="nav-link {{ request()->routeIs('grade-levels.*') ? 'active' : '' }}" href="{{ route('grade-levels.index') }}">
                         <i class="fas fa-coins me-2"></i> Salary Scales
                     </a>
                     <a class="nav-link {{ request()->routeIs('payroll.adjustments.bulk') ? 'active' : '' }}" href="{{ route('payroll.adjustments.bulk') }}">

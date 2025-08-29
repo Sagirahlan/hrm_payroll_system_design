@@ -132,3 +132,4 @@ class PaymentController extends Controller
             return back()->with('error', 'Failed to initiate payment. Please check logs for details.');
         }
     }
+}

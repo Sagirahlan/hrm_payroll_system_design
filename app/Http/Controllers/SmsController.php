@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\SmsNotification;
 use App\Models\Employee;
 use App\Models\Department;
-use App\Models\SalaryScale;
+use App\Models\GradeLevel;
 use App\Events\AuditTrailLogged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,8 +26,8 @@ class SmsController extends Controller
     public function create()
     {
         $departments = Department::all();
-        $salaryScales = SalaryScale::all();
-        return view('sms.create', compact('departments', 'salaryScales'));
+        $gradeLevels = GradeLevel::all();
+        return view('sms.create', compact('departments', 'gradeLevels'));
     }
 
     public function store(Request $request)
@@ -35,7 +35,7 @@ class SmsController extends Controller
         $validated = $request->validate([
             'recipient_type' => 'required|in:All,Group,Department,GradeLevel',
             'recipient_id' => 'nullable|exists:departments,department_id',
-            'grade_level_id' => 'nullable|exists:salary_scales,scale_id',
+            'grade_level_id' => 'nullable|exists:grade_levels,id',
             'message' => 'required|string|max:160',
         ]);
 
@@ -61,8 +61,8 @@ class SmsController extends Controller
         if ($validated['recipient_type'] === 'Department') {
             $recipients = Employee::where('department_id', $validated['recipient_id'])->pluck('mobile_no');
         } elseif ($validated['recipient_type'] === 'GradeLevel') {
-            // Assuming Employee model has a 'salary_scale_id' relationship
-            $recipients = Employee::where('salary_scale_id', $validated['grade_level_id'])->pluck('mobile_no');
+            // Assuming Employee model has a 'grade_level_id' relationship
+            $recipients = Employee::where('grade_level_id', $validated['grade_level_id'])->pluck('mobile_no');
         } else { // 'All'
             $recipients = Employee::pluck('mobile_no');
         }

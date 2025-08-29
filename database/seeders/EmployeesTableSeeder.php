@@ -22,7 +22,7 @@ class EmployeesTableSeeder extends Seeder
         // Get existing departments, cadres, and salary scales
         $departments = DB::table('departments')->pluck('department_id');
         $cadres = DB::table('cadres')->pluck('cadre_id');
-        $salaryScales = DB::table('salary_scales')->pluck('scale_id');
+        $gradeLevels = DB::table('grade_levels')->pluck('id');
         $states = DB::table('states')->pluck('state_id');
         $lgas = DB::table('lgas')->pluck('id');
         $wards = DB::table('wards')->pluck('ward_id');
@@ -36,8 +36,8 @@ class EmployeesTableSeeder extends Seeder
             $cadres = collect([1, 2, 3, 4, 5]);
         }
         
-        if ($salaryScales->isEmpty()) {
-            $salaryScales = collect([1, 2, 3, 4, 5]);
+        if ($gradeLevels->isEmpty()) {
+            $gradeLevels = collect([1, 2, 3, 4, 5]);
         }
         
         // Get the next available employee ID
@@ -74,14 +74,14 @@ class EmployeesTableSeeder extends Seeder
                 'address' => rand(1, 1000) . ' ' . $this->getRandomStreet() . ', ' . $this->getRandomCity(),
                 'date_of_first_appointment' => date('Y-m-d', strtotime('-' . rand(1, 20) . ' years')),
                 'cadre_id' => $cadres->random(),
-                'scale_id' => $salaryScales->random(),
+                'grade_level_id' => $gradeLevels->random(),
                 'department_id' => $departments->random(),
                 'expected_next_promotion' => date('Y-m-d', strtotime('+' . rand(1, 3) . ' years')),
                 'expected_retirement_date' => date('Y-m-d', strtotime('+' . rand(5, 35) . ' years')),
                 'status' => collect(['Active', 'Suspended', 'Retired', 'Deceased'])->random(),
                 'highest_certificate' => collect(['B.Sc', 'M.Sc', 'Ph.D', 'HND', 'OND', 'SSCE'])->random(),
                 'grade_level_limit' => rand(1, 17),
-                'appointment_type' => collect(['Permanent', 'Contract', 'Temporary'])->random(),
+                'appointment_type_id' => rand(1, 3),
                 'photo_path' => null,
                 'created_at' => now(),
                 'updated_at' => now(),

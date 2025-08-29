@@ -35,7 +35,7 @@ class PayrollRecordsExport implements FromCollection, WithHeadings, WithMapping,
             return $this->payrolls;
         }
 
-        return PayrollRecord::with(['employee', 'salaryScale', 'transaction'])
+        return PayrollRecord::with(['employee', 'gradeLevel', 'transaction'])
                            ->orderBy('created_at', 'desc')
                            ->get();
     }

@@ -33,7 +33,7 @@
                 </div>
                 <div class="col-md-6 mb-3">
                 <ul class="list-group list-group-flush">
-    <li class="list-group-item"><strong>Appointment Type:</strong> {{ $employee->appointment_type }}</li>
+    <li class="list-group-item"><strong>Appointment Type:</strong> {{ $employee->appointmentType->name ?? 'N/A' }}</li>
     <li class="list-group-item"><strong>Cadre:</strong> {{ $employee->cadre->cadre_name }}</li>
 
     {{-- date hired --}}
@@ -70,7 +70,7 @@
     </li>
     <li class="list-group-item"><strong>Grade Level Limit:</strong> {{ $employee->grade_level_limit ?? 'N/A' }}</li>
     <li class="list-group-item"><strong>Highest Certificate:</strong> {{ $employee->highest_certificate ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Salary Scale:</strong> @if($employee->salaryScale) {{ $employee->salaryScale->scale_name }} @else N/A @endif</li>
+    <li class="list-group-item"><strong>Grade Level:</strong> @if($employee->gradeLevel) {{ $employee->gradeLevel->name }} @else N/A @endif</li>
     <li class="list-group-item"><strong>Status:</strong> {{ $employee->status }}</li>
 </ul>
                     {{-- New Individual Export Button --}}

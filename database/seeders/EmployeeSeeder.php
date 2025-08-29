@@ -34,7 +34,7 @@ class EmployeeSeeder extends Seeder
             'status' => 'Active',
             'highest_certificate' => 'B.Sc. Computer Science',
             'grade_level_limit' => 14,
-            'appointment_type' => 'Permanent',
+            'appointment_type_id' => 1,
             'photo_path' => 'photos/employees/john_doe.jpg',
         ]);
     }

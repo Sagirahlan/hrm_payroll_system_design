@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Models\GradeLevel;
 
 class Employee extends Model
 {
@@ -10,8 +11,8 @@ class Employee extends Model
     protected $fillable = [
         'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'ward_id',
         'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
-        'scale_id', 'department_id', 'expected_next_promotion',
-        'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type',
+        'grade_level_id', 'department_id', 'expected_next_promotion',
+        'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
         'photo_path', 'years_of_service',
     ];
 
@@ -41,9 +42,9 @@ class Employee extends Model
     }
 
     // App.Models.Employee.php
-    public function salaryScale()
+    public function gradeLevel()
     {
-        return $this->belongsTo(SalaryScale::class, 'scale_id', 'scale_id');
+        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
     }
 
 
@@ -94,6 +95,13 @@ public function getYearsOfServiceAttribute(): ?int
 
     return Carbon::parse($this->date_of_first_appointment)->diffInYears(now());
 }
+
+public function appointmentType()
+{
+    return $this->belongsTo(AppointmentType::class, 'appointment_type_id');
+}
+
+
 
 
 

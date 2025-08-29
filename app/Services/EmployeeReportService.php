@@ -69,14 +69,14 @@ class EmployeeReportService
             'date_of_first_appointment' => $employee->date_of_first_appointment,
             'cadre' => optional($employee->cadre)->name,
             'reg_no' => $employee->reg_no,
-            'salary_scale' => optional($employee->salaryScale)->name,
+            'grade_level' => optional($employee->gradeLevel)->name,
             'department' => optional($employee->department)->department_name,
             'expected_next_promotion' => $employee->expected_next_promotion,
             'expected_retirement_date' => $employee->expected_retirement_date,
             'status' => $employee->status,
             'highest_certificate' => $employee->highest_certificate,
             'grade_level_limit' => $employee->grade_level_limit,
-            'appointment_type' => $employee->appointment_type,
+            'appointment_type' => $employee->appointmentType->name ?? null,
             'service_years' => $employee->years_of_service,
         ];
     

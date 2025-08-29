@@ -9,7 +9,7 @@ class EmployeesExport implements FromCollection, WithHeadings
 {
     public function collection()
     {
-        return Employee::with(['department', 'cadre', 'salaryScale'])
+        return Employee::with(['department', 'cadre', 'gradeLevel'])
             ->get()
             ->map(function ($employee) {
                 return [
@@ -22,7 +22,7 @@ class EmployeesExport implements FromCollection, WithHeadings
                     'Email' => $employee->email,
                     'Department' => $employee->department->department_name ?? 'N/A',
                     'Cadre' => $employee->cadre->cadre_name ?? 'N/A',
-                    'Salary Scale' => $employee->salaryScale->scale_name ?? 'N/A',
+                    'Grade Level' => $employee->gradeLevel->name ?? 'N/A',
                     'Date of First Appointment' => $employee->date_of_first_appointment,
                     'Expected Retirement Date' => $employee->expected_retirement_date,
                 ];
@@ -41,7 +41,7 @@ class EmployeesExport implements FromCollection, WithHeadings
             'Email',
             'Department',
             'Cadre',
-            'Salary Scale',
+            'Grade Level',
             'Date of First Appointment',
             'Expected Retirement Date',
         ];

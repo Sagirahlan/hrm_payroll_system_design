@@ -16,7 +16,7 @@
                         <th>Employee ID</th>
                         <th>Name</th>
                         <th>Expected Retirement Date</th>
-                        <th>Salary scale</th>
+                        <th>Grade Level</th>
                         <th>Gratuity (Estimate)</th>
                     </tr>
                 </thead>
@@ -33,7 +33,7 @@
                             <td>{{ $employee->employee_id }}</td>
                             <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                             <td>{{ \Carbon\Carbon::parse($employee->expected_retirement_date)->format('Y-m-d') }}</td>
-                            {{ $employee->salaryScale->scale_name ?? 'N/A' }}</td>
+                            {{ $employee->gradeLevel->name ?? 'N/A' }}</td>
                             <td>₦{{ number_format($gratuity, 2) }}</td>
                         </tr>
                     @endforeach

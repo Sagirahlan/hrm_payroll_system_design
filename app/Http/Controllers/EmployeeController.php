@@ -6,7 +6,7 @@ use App\Models\Employee;
 use App\Models\Department;
 use App\Models\BiometricData;
 use App\Models\Cadre;
-use App\Models\SalaryScale;
+use App\Models\GradeLevel;
 use App\Models\UserRole;
 use App\Models\AuditTrail;
 use App\Models\NextOfKin;
@@ -21,6 +21,7 @@ use App\Imports\EmployeesMultiSheetImport;
 use App\Models\State;
 use App\Models\Lga;
 use App\Models\Ward;
+use App\Models\AppointmentType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +34,7 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
-        $query = Employee::with(['department', 'cadre', 'salaryScale']);
+        $query = Employee::with(['department', 'cadre', 'gradeLevel']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -70,8 +71,8 @@ class EmployeeController extends Controller
         }
 
         // Appointment type filter
-        if ($request->filled('appointment_type')) {
-            $query->where('appointment_type', $request->appointment_type);
+        if ($request->filled('appointment_type_id')) {
+            $query->where('appointment_type_id', $request->appointment_type_id);
         }
 
         // State of origin filter
@@ -116,8 +117,8 @@ class EmployeeController extends Controller
         }
 
         // Salary scale filter
-        if ($request->filled('salary_scale')) {
-            $query->where('scale_id', $request->salary_scale);
+        if ($request->filled('grade_level_id')) {
+            $query->where('grade_level_id', $request->grade_level_id);
         }
 
         // Sorting
@@ -138,18 +139,18 @@ class EmployeeController extends Controller
         // Get filter options
         $departments = Department::orderBy('department_name')->get();
         $cadres = Cadre::orderBy('cadre_name')->get();
-        $salaryScales = SalaryScale::orderBy('scale_name')->get();
+        $gradeLevels = GradeLevel::orderBy('name')->get();
         $states = State::orderBy('name')->get();
 
         // Get unique values for filters
         $statuses = Employee::distinct()->pluck('status')->filter()->sort();
         $genders = Employee::distinct()->pluck('gender')->filter()->sort();
-        $appointmentTypes = Employee::distinct()->pluck('appointment_type')->filter()->sort();
+        $appointmentTypes = AppointmentType::orderBy('name')->get();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
             'action' => 'viewed',
-            'description' => 'Viewed employee list with filters: ' . json_encode($request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type'])),
+            'description' => 'Viewed employee list with filters: ' . json_encode($request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type_id'])),
             'action_timestamp' => now(),
             'entity_type' => 'Employee',
             'entity_id' => auth()->id(),
@@ -159,7 +160,7 @@ class EmployeeController extends Controller
             'employees', 
             'departments', 
             'cadres', 
-            'salaryScales', 
+            'gradeLevels', 
             'states',
             'statuses',
             'genders',
@@ -170,7 +171,7 @@ class EmployeeController extends Controller
     // Add a method to get filtered results via AJAX for better UX
     public function ajaxFilter(Request $request)
     {
-        $query = Employee::with(['department', 'cadre', 'salaryScale']);
+        $query = Employee::with(['department', 'cadre', 'gradeLevel']);
 
         // Apply all the same filters as in index method
         if ($request->filled('search')) {
@@ -208,7 +209,7 @@ class EmployeeController extends Controller
     public function exportFiltered(Request $request)
 {
     // Apply same filters as index method for export
-    $query = Employee::with(['department', 'cadre', 'salaryScale']);
+    $query = Employee::with(['department', 'cadre', 'gradeLevel']);
 
     // Search functionality
     if ($request->filled('search')) {
@@ -245,8 +246,8 @@ class EmployeeController extends Controller
     }
 
     // Appointment type filter
-    if ($request->filled('appointment_type')) {
-        $query->where('appointment_type', $request->appointment_type);
+    if ($request->filled('appointment_type_id')) {
+        $query->where('appointment_type_id', $request->appointment_type_id);
     }
 
     // State of origin filter
@@ -291,8 +292,8 @@ class EmployeeController extends Controller
     }
 
     // Salary scale filter
-    if ($request->filled('salary_scale')) {
-        $query->where('scale_id', $request->salary_scale);
+    if ($request->filled('grade_level_id')) {
+        $query->where('grade_level_id', $request->grade_level_id);
     }
 
     // Sorting
@@ -341,10 +342,11 @@ class EmployeeController extends Controller
     {
         $departments = Department::all();
         $cadres = Cadre::all();
-        $salaryScales = SalaryScale::all();
+        $gradeLevels = GradeLevel::all();
         $states = State::all();
         $lgas = Lga::all();
         $wards = Ward::all();
+        $appointmentTypes = AppointmentType::all();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -355,7 +357,7 @@ class EmployeeController extends Controller
             'entity_id' => auth()->id(),
         ]);
 
-        return view('employees.create', compact('departments', 'cadres', 'salaryScales', 'states', 'lgas', 'wards'));
+        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'states', 'lgas', 'wards', 'appointmentTypes'));
     }
 
     
@@ -378,14 +380,14 @@ public function store(Request $request)
             'address' => 'required|string',
             'date_of_first_appointment' => 'required|date',
             'cadre_id' => 'required|exists:cadres,cadre_id',
-            'salary_scale_id' => 'required|exists:salary_scales,scale_id', // from form input
+            'grade_level_id' => 'required|exists:grade_levels,id', // from form input
             'department_id' => 'required|exists:departments,department_id',
             'expected_next_promotion' => 'nullable|date',
             'expected_retirement_date' => 'required|date',
             'status' => 'required|in:Active,Suspended,Retired,Deceased',
             'highest_certificate' => 'nullable|string|max:100',
             'grade_level_limit' => 'nullable|integer',
-            'appointment_type' => 'required|in:Permanent,Contract,Temporary',
+            'appointment_type_id' => 'required|exists:appointment_types,id',
             'photo' => 'nullable|image|max:2048',
 
             // NOK
@@ -405,52 +407,47 @@ public function store(Request $request)
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
+        } elseif ($request->filled('captured_image')) {
+            // Handle captured image from camera
+            $imageData = $request->input('captured_image');
+            $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageBinary = base64_decode($imageData);
+            
+            // Generate a unique filename
+            $filename = 'captured_' . time() . '_' . uniqid() . '.jpg';
+            $path = 'photos/' . $filename;
+            
+            // Store the image
+            \Storage::disk('public')->put($path, $imageBinary);
+            $validated['photo_path'] = $path;
         }
-        $employeeData = collect($validated)->except([
-            'kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address', 'kin_occupation', 'kin_place_of_work',
-            'bank_name', 'bank_code', 'account_name', 'account_no',
-            'salary_scale_id'
-        ])->toArray();
-
-        // Map salary_scale_id to scale_id
-        $employeeData['scale_id'] = $validated['salary_scale_id'];
-
         
-        $employee = Employee::create($employeeData);
-
-        NextOfKin::create([
-            'employee_id' => $employee->employee_id,
-            'name' => $validated['kin_name'],
-            'relationship' => $validated['kin_relationship'],
-            'mobile_no' => $validated['kin_mobile_no'],
-            'address' => $validated['kin_address'],
-            'occupation' => $validated['kin_occupation'],
-            'place_of_work' => $validated['kin_place_of_work'],
-        ]);
-
-        Bank::create([
-            'employee_id' => $employee->employee_id,
-            'bank_name' => $validated['bank_name'],
-            'bank_code' => $validated['bank_code'],
-            'account_name' => $validated['account_name'],
-            'account_no' => $validated['account_no'],
+        // Instead of creating employee directly, save as pending
+        $pendingChange = \App\Models\PendingEmployeeChange::create([
+            'employee_id' => 0, // Placeholder for new employees
+            'requested_by' => auth()->id(),
+            'change_type' => 'create',
+            'data' => $validated,
+            'previous_data' => [], // No previous data for new employees
+            'reason' => $request->input('change_reason', 'New employee creation')
         ]);
 
         AuditTrail::create([
             'user_id' => auth()->id(),
-            'action' => 'created',
-            'description' => "Created employee: {$employee->first_name} {$employee->surname}",
+            'action' => 'requested_create',
+            'description' => "Requested creation of new employee: {$validated['first_name']} {$validated['surname']}. Changes: " . $pendingChange->change_description,
             'action_timestamp' => now(),
             'entity_type' => 'Employee',
-            'entity_id' => $employee->employee_id,
+            'entity_id' => 0, // Placeholder
         ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+        return redirect()->route('employees.index')->with('success', 'Employee creation requested. Changes are pending approval.');
     }
 
     public function show(Employee $employee)
     {
-        $employee->load(['department', 'cadre', 'salaryScale', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga']);
+        $employee->load(['department', 'cadre', 'gradeLevel', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga']);
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -468,9 +465,10 @@ public function store(Request $request)
     {
         $departments = Department::all();
         $cadres = Cadre::all();
-        $salaryScales = SalaryScale::all();
+        $gradeLevels = GradeLevel::all();
         $states = State::all();
         $lgas = Lga::where('state_id', $employee->state_id)->get();
+        $appointmentTypes = AppointmentType::all();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -481,7 +479,7 @@ public function store(Request $request)
             'entity_id' => $employee->employee_id,
         ]);
 
-        return view('employees.edit', compact('employee', 'departments', 'cadres', 'salaryScales', 'states', 'lgas'));
+        return view('employees.edit', compact('employee', 'departments', 'cadres', 'gradeLevels', 'states', 'lgas', 'appointmentTypes'));
     }
 
     public function update(Request $request, Employee $employee)
@@ -502,14 +500,14 @@ public function store(Request $request)
             'address' => 'required|string',
             'date_of_first_appointment' => 'required|date',
             'cadre_id' => 'required|exists:cadres,cadre_id',
-            'salary_scale_id' => 'required|exists:salary_scales,scale_id',
+            'grade_level_id' => 'required|exists:grade_levels,id',
             'department_id' => 'required|exists:departments,department_id',
             'expected_next_promotion' => 'nullable|date',
             'expected_retirement_date' => 'required|date',
             'status' => 'required|in:Active,Suspended,Retired,Deceased',
             'highest_certificate' => 'nullable|string|max:100',
             'grade_level_limit' => 'nullable|integer',
-            'appointment_type' => 'required|in:Permanent,Contract,Temporary',
+            'appointment_type_id' => 'required|exists:appointment_types,id',
             'photo' => 'nullable|image|max:2048',
 
             'kin_name' => 'required|string|max:100',
@@ -527,72 +525,80 @@ public function store(Request $request)
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
+        } elseif ($request->filled('captured_image')) {
+            // Handle captured image from camera
+            $imageData = $request->input('captured_image');
+            $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
+            $imageData = str_replace(' ', '+', $imageData);
+            $imageBinary = base64_decode($imageData);
+            
+            // Generate a unique filename
+            $filename = 'captured_' . time() . '_' . uniqid() . '.jpg';
+            $path = 'photos/' . $filename;
+            
+            // Store the image
+            \Storage::disk('public')->put($path, $imageBinary);
+            $validated['photo_path'] = $path;
         }
 
-        $employeeData = collect($validated)->except([
-            'kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address', 'kin_place_of_work',
-            'kin_occupation',
-            'bank_name', 'bank_code', 'account_name', 'account_no',
-            'salary_scale_id'
-        ])->toArray();
-
-        $employeeData['scale_id'] = $validated['salary_scale_id'];
-
-        $employee->update($employeeData);
-
-        NextOfKin::updateOrCreate(
-            ['employee_id' => $employee->employee_id],
-            [
-                'name' => $validated['kin_name'],
-                'relationship' => $validated['kin_relationship'],
-                'mobile_no' => $validated['kin_mobile_no'],
-                'address' => $validated['kin_address'],
-                'occupation' => $validated['kin_occupation'],
-                'place_of_work' => $validated['kin_place_of_work']
-            ]
-        );
-
-        Bank::updateOrCreate(
-            ['employee_id' => $employee->employee_id],
-            [
-                'bank_name' => $validated['bank_name'],
-                'bank_code' => $validated['bank_code'],
-                'account_name' => $validated['account_name'],
-                'account_no' => $validated['account_no'],
-            ]
-        );
+        // Get current employee data for comparison
+        $currentData = $employee->toArray();
+        
+        // Get current related data
+        $currentKin = $employee->nextOfKin ? $employee->nextOfKin->toArray() : [];
+        $currentBank = $employee->bank ? $employee->bank->toArray() : [];
+        
+        // Merge all current data
+        $previousData = array_merge($currentData, $currentKin, $currentBank);
+        
+        // Instead of applying changes directly, save them as pending
+        $pendingChange = \App\Models\PendingEmployeeChange::create([
+            'employee_id' => $employee->employee_id,
+            'requested_by' => auth()->id(),
+            'change_type' => 'update',
+            'data' => $validated,
+            'previous_data' => $previousData,
+            'reason' => $request->input('change_reason', 'Employee update')
+        ]);
 
         AuditTrail::create([
             'user_id' => auth()->id(),
-            'action' => 'updated',
-            'description' => "Updated employee: {$employee->first_name} {$employee->surname}",
+            'action' => 'requested_update',
+            'description' => "Requested update for employee: {$employee->first_name} {$employee->surname}. Changes: " . $pendingChange->change_description,
             'action_timestamp' => now(),
             'entity_type' => 'Employee',
             'entity_id' => $employee->employee_id,
         ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
+        return redirect()->route('employees.index')->with('success', 'Employee update requested. Changes are pending approval.');
     }
 
     public function destroy(Employee $employee)
     {
-        $employee->delete();
+        // Instead of deleting directly, save as pending
+        $pendingChange = \App\Models\PendingEmployeeChange::create([
+            'employee_id' => $employee->employee_id,
+            'requested_by' => auth()->id(),
+            'change_type' => 'delete',
+            'data' => [], // No data needed for deletion
+            'reason' => request()->input('delete_reason', 'Employee deletion')
+        ]);
 
         AuditTrail::create([
             'user_id' => auth()->id(),
-            'action' => 'deleted',
-            'description' => "Deleted employee: {$employee->first_name} {$employee->surname}",
+            'action' => 'requested_delete',
+            'description' => "Requested deletion of employee: {$employee->first_name} {$employee->surname}. Changes: " . $pendingChange->change_description,
             'action_timestamp' => now(),
             'entity_type' => 'Employee',
             'entity_id' => $employee->employee_id,
         ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employee deleted successfully.');
+        return redirect()->route('employees.index')->with('success', 'Employee deletion requested. Changes are pending approval.');
     }
 
     public function exportPdf()
     {
-        $employees = Employee::with(['department', 'cadre', 'salaryScale'])->get();
+        $employees = Employee::with(['department', 'cadre', 'gradeLevel'])->get();
         $pdf = Pdf::loadView('employees.pdf', compact('employees'));
 
         AuditTrail::create([

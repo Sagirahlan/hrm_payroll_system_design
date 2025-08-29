@@ -21,28 +21,29 @@
                     </div>
                     <form id="employeeForm" action="{{ route('employees.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="change_reason" value="New employee creation">
 
                         <!-- Step 1: Personal Information -->
                         <div class="step-card" id="step1">
                             <h5 class="mb-3 text-info text-center font-weight-bold">Personal Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">First Name</label>
+                                    <label class="form-label font-weight-bold">First Name <span class="text-danger">*</span></label>
                                     <input type="text" name="first_name" class="form-control" required>
                                     @error('first_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Surname</label>
+                                    <label class="form-label font-weight-bold">Surname <span class="text-danger">*</span></label>
                                     <input type="text" name="surname" class="form-control" required>
                                     @error('surname') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Middle Name</label>
+                                    <label class="form-label font-weight-bold">Middle Name (optional)</label>
                                     <input type="text" name="middle_name" class="form-control">
                                     @error('middle_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Gender</label>
+                                    <label class="form-label font-weight-bold">Gender <span class="text-danger">*</span></label>
                                     <select name="gender" class="form-select" required>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
@@ -50,43 +51,12 @@
                                     @error('gender') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Date of Birth</label>
+                                    <label class="form-label font-weight-bold">Date of Birth <span class="text-danger">*</span></label>
                                     <input type="date" name="date_of_birth" class="form-control" required>
                                     @error('date_of_birth') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">State</label>
-                                    <select id="state" name="state_id" class="form-select" required>
-                                        <option value="">-- Select State --</option>
-                                        @foreach($states as $state)
-                                            <option value="{{ $state->state_id }}">{{ $state->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('state_of_origin') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Local Government Area (LGA)</label>
-                                    <select id="lga" name="lga_id" class="form-select" required>
-                                        <option value="">-- Select LGA --</option>
-                                    </select>
-                                    @error('lga_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Ward</label>
-                                    <select id="ward" name="ward_id" class="form-select">
-                                        <option value="">-- Select Ward --</option>
-                                    </select>
-                                    @error('ward_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                              
-                               
-                                <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Staff ID</label>
-                                    <input type="text" name="reg_no" class="form-control" required>
-                                    @error('reg_no') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Nationality</label>
+                                 <div class="col-md-4">
+                                    <label class="form-label font-weight-bold">Nationality <span class="text-danger">*</span></label>
                                     <select name="nationality" class="form-select" required>
                                         <option value="">-- Select Nationality --</option>
                                         <option value="Nigeria">Nigeria</option>
@@ -103,12 +73,44 @@
                                     @error('nationality') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">NIN</label>
+                                    <label class="form-label font-weight-bold">State of origin <span class="text-danger">*</span></label>
+                                    <select id="state" name="state_id" class="form-select" required>
+                                        <option value="">-- Select State --</option>
+                                        @foreach($states as $state)
+                                            <option value="{{ $state->state_id }}">{{ $state->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('state_of_origin') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label font-weight-bold">Local Government Area (LGA) <span class="text-danger">*</span></label>
+                                    <select id="lga" name="lga_id" class="form-select" required>
+                                        <option value="">-- Select LGA --</option>
+                                    </select>
+                                    @error('lga_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label font-weight-bold">Ward (optional)</label>
+                                    <select id="ward" name="ward_id" class="form-select">
+                                        <option value="">-- Select Ward --</option>
+                                    </select>
+                                    @error('ward_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                              
+                               
+                                <div class="col-md-4">
+                                    <label class="form-label font-weight-bold">Staff ID <span class="text-danger">*</span></label>
+                                    <input type="text" name="reg_no" class="form-control" required>
+                                    @error('reg_no') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                               
+                                <div class="col-md-4">
+                                    <label class="form-label font-weight-bold">NIN (optional)</label>
                                     <input type="text" name="nin" class="form-control">
                                     @error('nin') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Mobile No</label>
+                                    <label class="form-label font-weight-bold">Mobile No <span class="text-danger">*</span></label>
                                     <input type="text" name="mobile_no" class="form-control" required>
                                     @error('mobile_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -123,12 +125,12 @@
                             <h5 class="mb-3 text-info text-center font-weight-bold">Contact & Address</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Email</label>
+                                    <label class="form-label font-weight-bold">Email (optional)</label>
                                     <input type="email" name="email" class="form-control">
                                     @error('email') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Address</label>
+                                    <label class="form-label font-weight-bold">Address <span class="text-danger">*</span></label>
                                     <textarea name="address" class="form-control" required></textarea>
                                     @error('address') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -144,7 +146,7 @@
                             <h5 class="mb-3 text-info text-center font-weight-bold">Appointment & Work Details</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Date of First Appointment</label>
+                                    <label class="form-label font-weight-bold">Date of First Appointment <span class="text-danger">*</span></label>
                                     <input type="date" name="date_of_first_appointment" class="form-control" required>
                                     @error('date_of_first_appointment') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -155,7 +157,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Cadre</label>
+                                    <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
                                     <select name="cadre_id" class="form-select" required>
                                         @foreach ($cadres as $cadre)
                                             <option value="{{ $cadre->cadre_id }}">{{ $cadre->cadre_name }}</option>
@@ -164,21 +166,21 @@
                                     @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Salary Scale</label>
-                                    <select name="salary_scale_id" class="form-select" required>
-                                        @foreach ($salaryScales as $scale)
-                                            <option value="{{ $scale->scale_id }}">
-                                                {{ $scale->scale_name }} 
-                                                @if(isset($scale->step_level))
-                                                    (Step {{ $scale->step_level }})
+                                    <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
+                                    <select name="grade_level_id" class="form-select" required>
+                                        @foreach ($gradeLevels as $level)
+                                            <option value="{{ $level->id }}">
+                                                {{ $level->name }} 
+                                                @if(isset($level->step_level))
+                                                    (Step {{ $level->step_level }})
                                                 @endif
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    @error('grade_level_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Department</label>
+                                    <label class="form-label font-weight-bold">Department <span class="text-danger">*</span></label>
                                     <select name="department_id" class="form-select" required>
                                         @foreach ($departments as $department)
                                             <option value="{{ $department->department_id }}">{{ $department->department_name }}</option>
@@ -187,12 +189,12 @@
                                     @error('department_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Expected Next Promotion</label>
+                                    <label class="form-label font-weight-bold">Expected Next Promotion (optional)</label>
                                     <input type="date" name="expected_next_promotion" class="form-control">
                                     @error('expected_next_promotion') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Expected Retirement Date</label>
+                                    <label class="form-label font-weight-bold">Expected Retirement Date <span class="text-danger">*</span></label>
                                     <input type="date" name="expected_retirement_date" class="form-control" required>
                                     @error('expected_retirement_date') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -208,7 +210,7 @@
                             <h5 class="mb-3 text-info text-center font-weight-bold">Other Details</h5>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Status</label>
+                                    <label class="form-label font-weight-bold">Status <span class="text-danger">*</span></label>
                                     <select name="status" class="form-select" required>
                                         <option value="Active">Active</option>
                                         <option value="Suspended">Suspended</option>
@@ -218,7 +220,7 @@
                                     @error('status') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4">
-                                <label class="form-label font-weight-bold">Highest Certificate</label>
+                                <label class="form-label font-weight-bold">Highest Certificate (optional)</label>
                                 <select name="highest_certificate" class="form-control">
                                     <option value="">-- Select --</option>
                                     <option value="No formal education">No formal education</option>
@@ -235,18 +237,31 @@
                             </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label font-weight-bold">Appointment Type</label>
-                                    <select name="appointment_type" class="form-select" required>
-                                        <option value="Permanent">Permanent</option>
-                                        <option value="Contract">Contract</option>
-                                        <option value="Temporary">Temporary</option>
+                                    <label class="form-label font-weight-bold">Appointment Type <span class="text-danger">*</span></label>
+                                    <select name="appointment_type_id" class="form-select" required>
+                                        @foreach($appointmentTypes as $type)
+                                            <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                        @endforeach
                                     </select>
-                                    @error('appointment_type') <small class="text-danger">{{ $message }}</small> @enderror
+                                    @error('appointment_type_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label font-weight-bold">Photo</label>
-                                    <input type="file" name="photo" class="form-control">
+                                    <label class="form-label font-weight-bold">Photo (optional)</label>
+                                    <div class="input-group">
+                                        <input type="file" name="photo" class="form-control" accept="image/*" capture="environment">
+                                        <button class="btn btn-outline-secondary" type="button" id="cameraButton">📷 Camera</button>
+                                    </div>
+                                    <small class="form-text text-muted">Upload from gallery or take a photo with your camera</small>
                                     @error('photo') <small class="text-danger">{{ $message }}</small> @enderror
+                                    <div id="cameraContainer" class="mt-2 d-none">
+                                        <video id="video" width="100%" height="200" class="border rounded"></video>
+                                        <canvas id="canvas" class="d-none"></canvas>
+                                        <div class="mt-2">
+                                            <button id="snapButton" class="btn btn-primary btn-sm">Take Photo</button>
+                                            <button id="cancelButton" class="btn btn-secondary btn-sm">Cancel</button>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="capturedImage" name="captured_image">
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between mt-4">
@@ -260,32 +275,32 @@
                             <h5 class="mb-3 text-info text-center font-weight-bold">Next of Kin Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Full Name</label>
+                                    <label class="form-label font-weight-bold">Full Name <span class="text-danger">*</span></label>
                                     <input type="text" name="kin_name" class="form-control" required>
                                     @error('kin_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Relationship</label>
+                                    <label class="form-label font-weight-bold">Relationship <span class="text-danger">*</span></label>
                                     <input type="text" name="kin_relationship" class="form-control" required>
                                     @error('kin_relationship') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Mobile No</label>
+                                    <label class="form-label font-weight-bold">Mobile No <span class="text-danger">*</span></label>
                                     <input type="text" name="kin_mobile_no" class="form-control" required>
                                     @error('kin_mobile_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Address</label>
+                                    <label class="form-label font-weight-bold">Address <span class="text-danger">*</span></label>
                                     <input type="text" name="kin_address" class="form-control" required>
                                     @error('kin_address') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Occupation</label>
+                                    <label class="form-label font-weight-bold">Occupation (optional)</label>
                                     <input type="text" name="kin_occupation" class="form-control">
                                     @error('kin_occupation') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Place of Work</label>
+                                    <label class="form-label font-weight-bold">Place of Work (optional)</label>
                                     <input type="text" name="kin_place_of_work" class="form-control">
                                     @error('kin_place_of_work') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -301,7 +316,7 @@
                             <h5 class="mb-3 text-info text-center font-weight-bold">Bank Information</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Bank Name</label>
+                                    <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
                                     <select name="bank_name" class="form-select" required>
                                         <option value="">Select Bank</option>
                                         <option value="Access Bank">Access Bank</option>
@@ -329,17 +344,17 @@
                                     @error('bank_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Bank Code</label>
+                                    <label class="form-label font-weight-bold">Bank Code <span class="text-danger">*</span></label>
                                     <input type="text" name="bank_code" class="form-control" required>
                                     @error('bank_code') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Account Name</label>
+                                    <label class="form-label font-weight-bold">Account Name <span class="text-danger">*</span></label>
                                     <input type="text" name="account_name" class="form-control" required readonly>
                                     @error('account_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Account Number</label>
+                                    <label class="form-label font-weight-bold">Account Number <span class="text-danger">*</span></label>
                                     <input type="text" name="account_no" class="form-control" required>
                                     @error('account_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -435,9 +450,107 @@
             if (idx === step - 1) nav.classList.add('active');
         });
     }
-    // Show first step on load
+    
+    // Camera functionality
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Employee create form loaded');
         showStep(1);
+        
+        const cameraButton = document.getElementById('cameraButton');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const snapButton = document.getElementById('snapButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const capturedImage = document.getElementById('capturedImage');
+        const fileInput = document.querySelector('input[name="photo"]');
+        
+        let stream = null;
+        
+        cameraButton.addEventListener('click', async function() {
+            cameraContainer.classList.remove('d-none');
+            
+            try {
+                // Check if MediaDevices API is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Your browser does not support camera access. Please try a modern browser or upload a photo instead.');
+                }
+                
+                // Check if we're on a secure context (HTTPS or localhost)
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    throw new Error('Camera access requires a secure connection (HTTPS). Please upload a photo instead.');
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        facingMode: 'environment' // Prefer back camera on mobile devices
+                    } 
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                cameraContainer.classList.add('d-none');
+                
+                // Show specific error messages
+                let errorMessage = "Could not access the camera. ";
+                switch (err.name) {
+                    case 'NotAllowedError':
+                        errorMessage += "Please grant camera permission and try again.";
+                        break;
+                    case 'NotFoundError':
+                        errorMessage += "No camera was found on your device.";
+                        break;
+                    case 'NotReadableError':
+                        errorMessage += "Camera is being used by another application.";
+                        break;
+                    case 'OverconstrainedError':
+                        errorMessage += "Your camera does not support the required constraints.";
+                        break;
+                    default:
+                        errorMessage += "Please ensure you've granted permission and that your camera is working. Alternatively, upload a photo from your device.";
+                }
+                
+                alert(errorMessage);
+            }
+        });
+        
+        snapButton.addEventListener('click', function() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to blob and set as file input value
+            canvas.toBlob(function(blob) {
+                const file = new File([blob], "captured_photo.jpg", { type: "image/jpeg" });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                // Also store as base64 in hidden input for server-side processing
+                capturedImage.value = canvas.toDataURL('image/jpeg');
+            }, 'image/jpeg', 0.95);
+            
+            // Stop camera and hide container
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            cameraContainer.classList.add('d-none');
+        });
+        
+        cancelButton.addEventListener('click', function() {
+            // Stop camera and hide container
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            cameraContainer.classList.add('d-none');
+        });
+    });
+    
+    // Handle form submission
+    document.getElementById('employeeForm').addEventListener('submit', function(e) {
+        // Form will submit normally, no need to prevent default
+        console.log('Form is being submitted');
     });
 </script>
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Employee;
+use App\Models\AppointmentType;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\ToModel;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -42,7 +43,7 @@ class EmployeeImport implements ToModel
             'status' => $row[19],
             'highest_certificate' => $row[20],
             'grade_level_limit' => $row[21],
-            'appointment_type' => $row[22],
+            'appointment_type_id' => AppointmentType::where('name', $row[22])->first()->id ?? null,
         ]);
     }
 

@@ -25,7 +25,7 @@ class StoreEmployeeRequest extends FormRequest
             'state_of_origin' => 'required|string|max:255',
             'lga' => 'required|string|max:255',
             'nationality' => 'required|string|max:255',
-            'appointment_type' => 'required|string|max:255',
+            'appointment_type_id' => 'required|exists:appointment_types,id',
             'first_appointment_date' => 'required|date',
             'psn_no' => 'required|string|max:255|unique:employees',
             'department_id' => 'required|exists:departments,id',

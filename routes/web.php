@@ -17,9 +17,10 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PensionerController;
-use App\Http\Controllers\SalaryScaleController;
+use App\Http\Controllers\GradeLevelController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PendingEmployeeChangeController;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
@@ -163,7 +164,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/nabroll-response', [PaymentController::class, 'handleNabrollResponse'])->name('nabroll.response');
         
         // Salary Scales
-        Route::resource('salary-scales', SalaryScaleController::class);
+        Route::resource('grade-levels', GradeLevelController::class);
+    });
+
+    // Pending Employee Changes - Admin only
+    Route::middleware('permission:approve_employee_changes')->group(function () {
+        Route::resource('pending-changes', PendingEmployeeChangeController::class);
+        Route::post('/pending-changes/{pendingChange}/approve', [PendingEmployeeChangeController::class, 'approve'])->name('pending-changes.approve');
+        Route::post('/pending-changes/{pendingChange}/reject', [PendingEmployeeChangeController::class, 'reject'])->name('pending-changes.reject');
     });
 
     // Audit Trails - Admin only
@@ -172,7 +180,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/audit-logs', [AuditTrailController::class, 'index'])->name('audit.index');
     });
 
-    // Reports - accessible to Admin, HR, and Bursary
+   
   
 });
 

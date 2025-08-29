@@ -52,7 +52,7 @@ class RetirementController extends Controller
 
     public function retiredList()
     {
-        $retiredEmployees = Employee::with(['salaryScale', 'payrollRecords'])
+        $retiredEmployees = Employee::with(['gradeLevel', 'payrollRecords'])
             ->where('status', 'Retired')
             ->orderBy('expected_retirement_date', 'desc')
             ->paginate(10);
@@ -62,7 +62,7 @@ class RetirementController extends Controller
 
     public function create(Request $request)
     {
-        $query = Employee::with(['salaryScale', 'payrollRecords'])
+        $query = Employee::with(['gradeLevel', 'payrollRecords'])
             ->where('status', 'Retired');
 
         if ($request->filled('search')) {

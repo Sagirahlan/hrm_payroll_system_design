@@ -29,13 +29,14 @@ class PermissionSeeder extends Seeder
             'view_payroll',
             'view_audit_logs',
             'manage_reports',
+            'approve_employee_changes'
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        $adminRole = Role::findByName('admin');
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
     }
 }

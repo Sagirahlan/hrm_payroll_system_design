@@ -17,13 +17,14 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             DepartmentSeeder::class,
             CadreSeeder::class,
-            SalaryScaleSeeder::class,
+            GradeLevelSeeder::class,
             StateSeeder::class,
             LgaSeeder::class,
             WardSeeder::class,
             UserSeeder::class,
             EmployeesTableSeeder::class,
             DeductionTypesSeeder::class,
+            AppointmentTypeSeeder::class,
         ]);
     }
 }

@@ -107,7 +107,7 @@
                                 </div>
 
                                 <!-- Advanced Filters (Collapsible) -->
-                                <div class="collapse {{ request()->hasAny(['department', 'cadre', 'status', 'gender', 'appointment_type', 'state_of_origin', 'age_from', 'age_to']) ? 'show' : '' }}" id="advancedFilters">
+                                <div class="collapse {{ request()->hasAny(['department', 'cadre', 'status', 'gender', 'appointment_type_id', 'state_of_origin', 'age_from', 'age_to']) ? 'show' : '' }}" id="advancedFilters">
                                     <div class="row g-3">
                                         <!-- Row 1 -->
                                         <div class="col-md-3">
@@ -164,12 +164,12 @@
                                         <!-- Row 2 -->
                                         <div class="col-md-3">
                                             <label class="form-label fw-bold">Appointment Type</label>
-                                            <select name="appointment_type" class="form-select">
+                                            <select name="appointment_type_id" class="form-select">
                                                 <option value="">All Types</option>
                                                 @foreach($appointmentTypes as $type)
-                                                    <option value="{{ $type }}" 
-                                                            {{ request('appointment_type') == $type ? 'selected' : '' }}>
-                                                        {{ $type }}
+                                                    <option value="{{ $type->id }}" 
+                                                            {{ request('appointment_type_id') == $type->id ? 'selected' : '' }}>
+                                                        {{ $type->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -187,13 +187,13 @@
                                             </select>
                                         </div>
                                         <div class="col-md-3">
-                                            <label class="form-label fw-bold">Salary Scale</label>
-                                            <select name="salary_scale" class="form-select">
-                                                <option value="">All Scales</option>
-                                                @foreach($salaryScales as $scale)
-                                                    <option value="{{ $scale->scale_id }}" 
-                                                            {{ request('salary_scale') == $scale->scale_id ? 'selected' : '' }}>
-                                                        {{ $scale->scale_name }} / {{ $scale->step_level }}
+                                            <label class="form-label fw-bold">Grade Level</label>
+                                            <select name="grade_level_id" class="form-select">
+                                                <option value="">All Grade Levels</option>
+                                                @foreach($gradeLevels as $level)
+                                                    <option value="{{ $level->id }}" 
+                                                            {{ request('grade_level_id') == $level->id ? 'selected' : '' }}>
+                                                        {{ $level->name }} / {{ $level->step_level }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -341,7 +341,7 @@
                                 </td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $employee->cadre->cadre_name ?? 'N/A' }}</td>
-                                <td>{{ $employee->appointment_type ?? 'N/A' }}</td>
+                                <td>{{ $employee->appointmentType->name ?? 'N/A' }}</td>
                                 <td>
                                     <span class="badge {{ 
                                         $employee->status == 'Active' ? 'bg-success' : 
@@ -379,15 +379,9 @@
                                                 </li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                    <form action="{{ route('employees.destroy', $employee) }}" method="POST" 
-                                                          onsubmit="return confirm('Are you sure you want to delete this employee?')" 
-                                                          style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash me-2"></i>Delete
-                                                        </button>
-                                                    </form>
+                                                    <a href="#" class="dropdown-item text-danger" onclick="deleteEmployee({{ $employee->employee_id }}, '{{ $employee->first_name }} {{ $employee->surname }}')">
+                                                        <i class="fas fa-trash me-2"></i>Delete
+                                                    </a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -463,6 +457,7 @@ function exportFiltered(format) {
 
 // Auto-submit form when filters change (optional)
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Employee index page loaded');
     const filterInputs = document.querySelectorAll('#filterForm select:not([name="per_page"]), #filterForm input[type="date"], #filterForm input[type="number"]');
     
     filterInputs.forEach(input => {
@@ -482,23 +477,44 @@ function clearFilter(filterName) {
     }
 }
 
-// Show active filters as badges
-document.addEventListener('DOMContentLoaded', function() {
-    const activeFilters = [];
-    const form = document.getElementById('filterForm');
-    const formData = new FormData(form);
-    
-    for (let [key, value] of formData.entries()) {
-        if (value && key !== 'search' && key !== 'per_page' && key !== 'sort_by' && key !== 'sort_order') {
-            activeFilters.push({name: key, value: value});
+// Delete employee function
+function deleteEmployee(employeeId, employeeName) {
+    if (confirm(`Are you sure you want to delete employee ${employeeName}?`)) {
+        const reason = prompt('Please provide a reason for deleting this employee:');
+        if (reason !== null && reason.trim() !== '') {
+            // Create form dynamically
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/employees/${employeeId}`;
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            // Add method field
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            form.appendChild(methodInput);
+            
+            // Add delete reason
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'delete_reason';
+            reasonInput.value = reason.trim();
+            form.appendChild(reasonInput);
+            
+            // Submit form
+            document.body.appendChild(form);
+            form.submit();
         }
     }
-    
-    if (activeFilters.length > 0) {
-        // You can add logic here to display active filters as badges
-        console.log('Active filters:', activeFilters);
-    }
-});
+}
 </script>
 
 @endsection

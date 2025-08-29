@@ -13,7 +13,7 @@ class DeductionTypesSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('deduction_types')->insert([
+        $deductionTypes = [
             [
                 'name' => 'Special Loan',
                 'code' => 'SPL',
@@ -126,6 +126,10 @@ class DeductionTypesSeeder extends Seeder
                 'calculation_type' => 'fixed_amount',
                 'rate_or_amount' => null,
             ],
-        ]);
+        ];
+
+        foreach ($deductionTypes as $type) {
+            DB::table('deduction_types')->updateOrInsert(['code' => $type['code']], $type);
+        }
     }
 }

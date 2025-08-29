@@ -17,7 +17,7 @@ class SingleEmployeeExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $employee = Employee::with(['department', 'cadre', 'salaryScale', 'payrollRecords'])
+        $employee = Employee::with(['department', 'cadre', 'gradeLevel', 'payrollRecords'])
             ->where('employee_id', $this->employeeId)
             ->firstOrFail();
 
@@ -34,7 +34,7 @@ class SingleEmployeeExport implements FromCollection, WithHeadings
                 'Gender' => $employee->gender,
                 'Department' => $employee->department->department_name ?? 'N/A',
                 'Cadre' => $employee->cadre->cadre_name ?? 'N/A',
-                'Salary Scale' => $employee->salaryScale->scale_name ?? 'N/A',
+                'Grade Level' => $employee->gradeLevel->name ?? 'N/A',
                 'Years of Service' => $years,
                 'Gratuity' => $gratuity,
                 'Expected Retirement Date' => $employee->expected_retirement_date,
@@ -52,7 +52,7 @@ class SingleEmployeeExport implements FromCollection, WithHeadings
             'Gender',
             'Department',
             'Cadre',
-            'Salary Scale',
+            'Grade Level',
             'Years of Service',
             'Gratuity',
             'Expected Retirement Date',

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalaryScale;
+use App\Models\GradeLevel;
 use Illuminate\Http\Request;
 
-class SalaryScaleController extends Controller
+class GradeLevelController extends Controller
 {
     public function __construct()
     {
@@ -14,13 +14,13 @@ class SalaryScaleController extends Controller
 
     public function index(Request $request)
     {
-        $query = SalaryScale::query();
+        $query = GradeLevel::query();
 
         // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('scale_name', 'LIKE', '%' . $searchTerm . '%')
+                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
                   ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
             });
         }
@@ -45,97 +45,97 @@ class SalaryScaleController extends Controller
         }
 
         // Sorting
-        $sortBy = $request->get('sort_by', 'scale_name');
+        $sortBy = $request->get('sort_by', 'name');
         $sortOrder = $request->get('sort_order', 'asc');
         
-        $validSortColumns = ['scale_name', 'basic_salary', 'grade_level', 'step_level'];
+        $validSortColumns = ['name', 'basic_salary', 'grade_level', 'step_level'];
         if (in_array($sortBy, $validSortColumns)) {
             $query->orderBy($sortBy, $sortOrder);
         }
 
-        $salaryScales = $query->paginate(10)->appends($request->query());
+        $gradeLevels = $query->paginate(10)->appends($request->query());
 
         // Get unique values for filter dropdowns
-        $gradeLevels = SalaryScale::distinct()->pluck('grade_level')->sort();
-        $stepLevels = SalaryScale::distinct()->pluck('step_level')->sort();
+        $grades = GradeLevel::distinct()->pluck('grade_level')->sort();
+        $steps = GradeLevel::distinct()->pluck('step_level')->sort();
 
-        return view('salary-scales.index', compact('salaryScales', 'gradeLevels', 'stepLevels'));
+        return view('grade-levels.index', compact('gradeLevels', 'grades', 'steps'));
     }
 
    public function create()
 {
-    $gradeLevels = SalaryScale::distinct()->pluck('grade_level')->sort();
-    $stepLevels = SalaryScale::distinct()->pluck('step_level')->sort();
+    $grades = GradeLevel::distinct()->pluck('grade_level')->sort();
+    $steps = GradeLevel::distinct()->pluck('step_level')->sort();
 
-    return view('salary-scales.create', compact('gradeLevels', 'stepLevels'));
+    return view('grade-levels.create', compact('grades', 'steps'));
 }
 
 
     public function store(Request $request)
     {
         $request->validate([
-            'scale_name' => 'required|string|max:50',
+            'name' => 'required|string|max:50',
             'basic_salary' => 'required|numeric|min:0',
             'grade_level' => 'required|integer|min:1',
             'step_level' => 'required|integer|min:1',
             'description' => 'nullable|string',
         ]);
 
-        SalaryScale::create([
-            'scale_name' => $request->scale_name,
+        GradeLevel::create([
+            'name' => $request->name,
             'basic_salary' => $request->basic_salary,
             'grade_level' => $request->grade_level,
             'step_level' => $request->step_level,
             'description' => $request->description,
         ]);
 
-        return redirect()->route('salary-scales.index')
-            ->with('success', 'Salary scale added successfully.');
+        return redirect()->route('grade-levels.index')
+            ->with('success', 'Grade level added successfully.');
     }
 
     public function edit($id)
 {
-    $salaryScale = SalaryScale::findOrFail($id);
-    $gradeLevels = SalaryScale::distinct()->pluck('grade_level')->sort();
-    $stepLevels = SalaryScale::distinct()->pluck('step_level')->sort();
+    $gradeLevel = GradeLevel::findOrFail($id);
+    $grades = GradeLevel::distinct()->pluck('grade_level')->sort();
+    $steps = GradeLevel::distinct()->pluck('step_level')->sort();
 
-    return view('salary-scales.edit', compact('salaryScale', 'gradeLevels', 'stepLevels'));
+    return view('grade-levels.edit', compact('gradeLevel', 'grades', 'steps'));
 }
 
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'scale_name' => 'required|string|max:50',
+            'name' => 'required|string|max:50',
             'basic_salary' => 'required|numeric|min:0',
             'grade_level' => 'required|integer|min:1',
             'step_level' => 'required|integer|min:1',
             'description' => 'nullable|string',
         ]);
 
-        $salaryScale = SalaryScale::findOrFail($id);
-        $salaryScale->update([
-            'scale_name' => $request->scale_name,
+        $gradeLevel = GradeLevel::findOrFail($id);
+        $gradeLevel->update([
+            'name' => $request->name,
             'basic_salary' => $request->basic_salary,
             'grade_level' => $request->grade_level,
             'step_level' => $request->step_level,
             'description' => $request->description,
         ]);
 
-        return redirect()->route('salary-scales.index')
-            ->with('success', 'Salary scale updated successfully.');
+        return redirect()->route('grade-levels.index')
+            ->with('success', 'Grade level updated successfully.');
     }
 
     public function destroy($id)
     {
-        $salaryScale = SalaryScale::findOrFail($id);
-        if ($salaryScale->employees()->count() > 0) {
-            return redirect()->route('salary-scales.index')
-                ->with('error', 'Cannot delete salary scale with assigned employees.');
+        $gradeLevel = GradeLevel::findOrFail($id);
+        if ($gradeLevel->employees()->count() > 0) {
+            return redirect()->route('grade-levels.index')
+                ->with('error', 'Cannot delete grade level with assigned employees.');
         }
-        $salaryScale->delete();
+        $gradeLevel->delete();
 
-        return redirect()->route('salary-scales.index')
-            ->with('success', 'Salary scale deleted successfully.');
+        return redirect()->route('grade-levels.index')
+            ->with('success', 'Grade level deleted successfully.');
     }
 }

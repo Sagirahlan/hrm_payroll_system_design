@@ -440,7 +440,7 @@
                                         <div class="stat-label">Deceased</div>
                                     </div>
                                     <div class="stat-icon bg-secondary-light text-secondary">
-                                        <i class="fas fa-cross"></i>
+                                        <i class="fas fa-heartbeat"></i>
                                     </div>
                                 </div>
                             </div>

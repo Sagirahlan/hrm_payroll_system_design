@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\GradeLevel;
 
 class PayrollRecord extends Model
 {
@@ -9,7 +10,7 @@ class PayrollRecord extends Model
     protected $primaryKey = 'payroll_id';
     protected $fillable = [
         'employee_id',
-        'salary_scale_id',
+        'grade_level_id',
         'basic_salary',
         'status',
         'total_additions',
@@ -30,9 +31,9 @@ class PayrollRecord extends Model
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
 
-    public function salaryScale()
+    public function gradeLevel()
 {
-    return $this->belongsTo(SalaryScale::class, 'scale_id', 'scale_id');
+    return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
 }
 
     public function deductions()

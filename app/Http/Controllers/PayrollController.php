@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\GradeLevel;
 
 class PayrollController extends Controller
 {
@@ -32,15 +33,15 @@ class PayrollController extends Controller
         set_time_limit(0); // Set no time limit for this script
         $month = $request->input('month', now()->format('Y-m'));
         
-        // Fetch only employees with valid salary scale assigned
+        // Fetch only employees with valid grade level assigned
         $employees = Employee::where('status', 'Active')
-            ->whereNotNull('scale_id') // Ensures salary scale exists
-            ->with('salaryScale')      // Load related scale
+            ->whereNotNull('grade_level_id') // Ensures grade level exists
+            ->with('gradeLevel')      // Load related grade level
             ->get();
 
         foreach ($employees as $employee) {
             // Safety check if relationship failed
-            if (!$employee->salaryScale || !$employee->salaryScale->scale_id) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->id) {
                 continue;
             }
 
@@ -49,9 +50,9 @@ class PayrollController extends Controller
             // Create the payroll record
             $payroll = PayrollRecord::create([
                 'employee_id' => $employee->employee_id,
-                'salary_scale_id' => $employee->salaryScale->scale_id,
+                'grade_level_id' => $employee->gradeLevel->id,
                 'payroll_month' => $month . '-01',
-                'basic_salary' => $employee->salaryScale->basic_salary, // ✅ add this
+                'basic_salary' => $employee->gradeLevel->basic_salary, // ✅ add this
                 'total_additions' => $calculation['total_additions'],
                 'total_deductions' => $calculation['total_deductions'],
                 'net_salary' => $calculation['net_salary'],
@@ -78,7 +79,7 @@ class PayrollController extends Controller
     // Display payroll records with search and filter functionality
     public function index(Request $request)
     {
-        $query = PayrollRecord::with(['employee', 'salaryScale', 'transaction']);
+        $query = PayrollRecord::with(['employee', 'gradeLevel', 'transaction']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -89,8 +90,7 @@ class PayrollController extends Controller
                   ->orWhereHas('employee', function($employeeQuery) use ($searchTerm) {
                       $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
                                    ->orWhere('surname', 'like', "%{$searchTerm}%")
-                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%")
-                                   ->orWhere('email', 'like', "%{$searchTerm}%");
+                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%");
                   });
             });
         }
@@ -169,7 +169,7 @@ class PayrollController extends Controller
     // Generate pay slip
     public function generatePaySlip($payrollId)
     {
-        $payroll = PayrollRecord::with(['employee', 'salaryScale'])
+        $payroll = PayrollRecord::with(['employee', 'gradeLevel'])
             ->findOrFail($payrollId);
         $deductions = Deduction::where('employee_id', $payroll->employee_id)->get();
         $additions = Addition::where('employee_id', $payroll->employee_id)->get();
@@ -181,7 +181,7 @@ class PayrollController extends Controller
     public function exportPayroll(Request $request)
     {
         // Apply the same filters as in index method
-        $query = PayrollRecord::with(['employee', 'salaryScale', 'transaction']);
+        $query = PayrollRecord::with(['employee', 'gradeLevel', 'transaction']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -192,8 +192,7 @@ class PayrollController extends Controller
                   ->orWhereHas('employee', function($employeeQuery) use ($searchTerm) {
                       $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
                                    ->orWhere('surname', 'like', "%{$searchTerm}%")
-                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%")
-                                   ->orWhere('email', 'like', "%{$searchTerm}%");
+                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%");
                   });
             });
         }
@@ -374,7 +373,7 @@ class PayrollController extends Controller
     // Advanced search method for AJAX requests
     public function search(Request $request)
     {
-        $query = PayrollRecord::with(['employee', 'salaryScale']);
+        $query = PayrollRecord::with(['employee', 'gradeLevel']);
 
         if ($request->filled('term')) {
             $term = $request->term;
@@ -432,7 +431,7 @@ class PayrollController extends Controller
     // Show individual payroll record
     public function show($payrollId)
     {
-        $payroll = PayrollRecord::with(['employee', 'salaryScale', 'transaction'])
+        $payroll = PayrollRecord::with(['employee', 'gradeLevel', 'transaction'])
             ->findOrFail($payrollId);
         
         $deductions = Deduction::where('employee_id', $payroll->employee_id)
@@ -463,7 +462,7 @@ class PayrollController extends Controller
     // Edit payroll record
     public function edit($payrollId)
     {
-        $payroll = PayrollRecord::with(['employee', 'salaryScale'])
+        $payroll = PayrollRecord::with(['employee', 'gradeLevel'])
             ->findOrFail($payrollId);
         
         return view('payroll.edit', compact('payroll'));
@@ -527,12 +526,12 @@ class PayrollController extends Controller
     // Recalculate payroll for a specific record
     public function recalculate($payrollId)
     {
-        $payroll = PayrollRecord::with(['employee', 'salaryScale'])
+        $payroll = PayrollRecord::with(['employee', 'gradeLevel'])
             ->findOrFail($payrollId);
 
-        if (!$payroll->employee || !$payroll->employee->salaryScale) {
+        if (!$payroll->employee || !$payroll->employee->gradeLevel) {
             return redirect()->back()
-                ->with('error', 'Cannot recalculate: Employee or salary scale not found.');
+                ->with('error', 'Cannot recalculate: Employee or grade level not found.');
         }
 
         // Get the payroll month
@@ -543,7 +542,7 @@ class PayrollController extends Controller
 
         // Update the payroll record
         $payroll->update([
-            'basic_salary' => $payroll->employee->salaryScale->basic_salary,
+            'basic_salary' => $payroll->employee->gradeLevel->basic_salary,
             'total_additions' => $calculation['total_additions'],
             'total_deductions' => $calculation['total_deductions'],
             'net_salary' => $calculation['net_salary'],

@@ -38,7 +38,7 @@
                             <th>Reg No</th>
                             <th>Name</th>
                             <th>Retirement Date</th>
-                            <th>Salary Structure</th>
+                            <th>Grade Level</th>
                             <th>Gratuity</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -74,7 +74,7 @@
                                     <input type="hidden" name="appointment_date" value="{{ $employee->date_of_first_appointment }}">
                                 </td>
                                 <td>
-                                    {{ $employee->salaryScale->scale_name ?? 'N/A' }}
+                                    {{ $employee->gradeLevel->name ?? 'N/A' }}
                                     <input type="hidden" name="basic_salary" value="{{ $basic_salary }}">
                                 </td>
                                 <td>

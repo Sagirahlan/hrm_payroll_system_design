@@ -50,7 +50,7 @@
             <th>Net Salary</th>
         </tr>
         <tr>
-            <td>₦{{ number_format(optional($payroll->employee->salaryScale)->basic_salary, 2) }}</td>
+            <td>₦{{ number_format(optional($payroll->employee->gradeLevel)->basic_salary, 2) }}</td>
             <td>₦{{ number_format($payroll->total_additions, 2) }}</td>
             <td>₦{{ number_format($payroll->total_deductions, 2) }}</td>
             <td>₦{{ number_format($payroll->net_salary, 2) }}</td>

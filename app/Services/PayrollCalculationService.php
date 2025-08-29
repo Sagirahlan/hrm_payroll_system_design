@@ -11,11 +11,11 @@ class PayrollCalculationService
 {
     public function calculatePayroll(Employee $employee, string $month): array
     {
-        $salaryScale = $employee->relationLoaded('salaryScale')
-            ? $employee->salaryScale
-            : $employee->salaryScale()->first();
+        $gradeLevel = $employee->relationLoaded('gradeLevel')
+            ? $employee->gradeLevel
+            : $employee->gradeLevel()->first();
 
-        $basicSalary = optional($salaryScale)->basic_salary ?? 0;
+        $basicSalary = optional($gradeLevel)->basic_salary ?? 0;
 
         $payrollDate = Carbon::parse($month . '-01');
 
