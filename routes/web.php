@@ -57,6 +57,23 @@ Route::middleware(['auth'])->group(function () {
     // AJAX routes for location dropdowns (outside permission middleware so they can be accessed by anyone creating employees)
     Route::get('/employees/lgas-by-state', [EmployeeController::class, 'getLgasByState'])->name('employees.lgas-by-state');
     Route::get('/employees/wards-by-lga', [EmployeeController::class, 'getWardsByLga'])->name('employees.wards-by-lga');
+    
+    // AJAX route for salary scale grade levels
+    Route::get('/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
+        $gradeLevels = \App\Models\GradeLevel::where('salary_scale_id', $salaryScaleId)->get();
+        return response()->json($gradeLevels);
+    })->name('salary-scales.grade-levels');
+
+    Route::get('/salary-scales/{salaryScaleId}/retirement-info', function ($salaryScaleId) {
+        $salaryScale = \App\Models\SalaryScale::find($salaryScaleId);
+        if ($salaryScale) {
+            return response()->json([
+                'max_retirement_age' => (int)$salaryScale->max_retirement_age,
+                'max_years_of_service' => (int)$salaryScale->max_years_of_service,
+            ]);
+        }
+        return response()->json(null, 404);
+    })->name('salary-scales.retirement-info');
 
     // Employee Viewing - HR, Admin, and Bursary
     Route::middleware('permission:view_employees')->group(function () {

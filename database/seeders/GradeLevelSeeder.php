@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\GradeLevel;
+use App\Models\SalaryScale;
 
 class GradeLevelSeeder extends Seeder
 {
@@ -14,8 +15,22 @@ class GradeLevelSeeder extends Seeder
      */
     public function run()
     {
-        GradeLevel::create(['name' => 'Grade 1', 'basic_salary' => 50000, 'grade_level' => '1', 'step_level' => '1']);
-        GradeLevel::create(['name' => 'Grade 2', 'basic_salary' => 75000, 'grade_level' => '2', 'step_level' => '1']);
-        GradeLevel::create(['name' => 'Grade 3', 'basic_salary' => 100000, 'grade_level' => '3', 'step_level' => '1']);
+        // Get all salary scales
+        $salaryScales = SalaryScale::all();
+
+        // Define grade levels for each salary scale
+        foreach ($salaryScales as $salaryScale) {
+            // Example: Create grade levels 1 to 5 for each salary scale
+            // In a real application, you would define the actual grade levels for each salary scale
+            for ($i = 1; $i <= 5; $i++) {
+                GradeLevel::create([
+                    'name' => 'Grade ' . $i . ' - ' . $salaryScale->acronym,
+                    'basic_salary' => 50000 + ($i * 10000), // Example salary calculation
+                    'grade_level' => $i,
+                    'step_level' => 1,
+                    'salary_scale_id' => $salaryScale->id
+                ]);
+            }
+        }
     }
 }

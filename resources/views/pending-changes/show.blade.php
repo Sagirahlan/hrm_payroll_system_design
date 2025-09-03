@@ -88,8 +88,8 @@
                                     <tbody>
                                         @foreach($pendingChange->data as $key => $newValue)
                                             @php
-                                                $previousValue = $pendingChange->previous_data[$key] ?? 'N/A';
-                                                $hasChanged = $previousValue != $newValue;
+                                                $previousValue = $pendingChange->previous_data[$key] ?? null;
+                                                $hasChanged = App\Helpers\ComparisonHelper::isDifferent($previousValue, $newValue);
                                             @endphp
                                             @if($hasChanged)
                                             <tr>

@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             DepartmentSeeder::class,
             CadreSeeder::class,
-            GradeLevelSeeder::class,
+            // GradeLevelSeeder::class, // Commented out to avoid conflict with ConpossSeeder
+            ConpossSeeder::class,
             StateSeeder::class,
             LgaSeeder::class,
             WardSeeder::class,

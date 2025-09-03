@@ -134,9 +134,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Years of Service</label>
-                                    <div class="form-control bg-light text-muted">
-                                        Will be calculated after saving
-                                    </div>
+                                    <input type="text" id="years_of_service" name="years_of_service" class="form-control" readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
@@ -147,12 +145,25 @@
                                     </select>
                                     @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
+                                <!-- Updated to include salary scale and dynamic grade level -->
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
+                                    <select id="salary_scale_id" name="salary_scale_id" class="form-select" required>
+                                        <option value="">-- Select Salary Scale --</option>
+                                        @foreach ($salaryScales as $scale)
+                                            <option value="{{ $scale->id }}" {{ $employee->gradeLevel && $employee->gradeLevel->salary_scale_id == $scale->id ? 'selected' : '' }}>{{ $scale->acronym }} - {{ $scale->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
-                                    <select name="grade_level_id" class="form-select" required>
-                                        @foreach ($gradeLevels as $level)
-                                            <option value="{{ $level->id }}" {{ $employee->grade_level_id == $level->id ? 'selected' : '' }}>{{ $level->name }}</option>
-                                        @endforeach
+                                    <select id="grade_level_id" name="grade_level_id" class="form-select" required>
+                                        <option value="">-- Select Grade Level --</option>
+                                        <!-- Grade levels will be populated dynamically -->
+                                        @if($employee->gradeLevel)
+                                            <option value="{{ $employee->grade_level_id }}" selected>{{ $employee->gradeLevel->name }}</option>
+                                        @endif
                                     </select>
                                     @error('grade_level_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -367,6 +378,10 @@
 
         const stateSelect = document.getElementById('state_id');
         const lgaSelect = document.getElementById('lga_id');
+        
+        // Updated JavaScript for salary scale and grade level
+        const salaryScaleSelect = document.getElementById('salary_scale_id');
+        const gradeLevelSelect = document.getElementById('grade_level_id');
 
         stateSelect.addEventListener('change', function() {
             const stateId = this.value;
@@ -385,6 +400,46 @@
                     });
             }
         });
+        
+        // Function to populate grade levels based on selected salary scale
+        function populateGradeLevels(salaryScaleId, selectedGradeLevelId = null) {
+            // Clear existing options
+            gradeLevelSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
+            
+            if (!salaryScaleId) {
+                return;
+            }
+            
+            // Make an AJAX request to get grade levels for the selected salary scale
+            fetch(`/salary-scales/${salaryScaleId}/grade-levels`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(level => {
+                        const option = document.createElement('option');
+                        option.value = level.id;
+                        option.text = `${level.name} ${level.step_level ? `(Step ${level.step_level})` : ''}`;
+                        if (selectedGradeLevelId && level.id == selectedGradeLevelId) {
+                            option.selected = true;
+                        }
+                        gradeLevelSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching grade levels:', error);
+                });
+        }
+        
+        // Event listener for salary scale selection
+        salaryScaleSelect.addEventListener('change', function() {
+            populateGradeLevels(this.value);
+        });
+        
+        // Populate grade levels on page load if a salary scale is already selected
+        if (salaryScaleSelect.value) {
+            // Get the currently selected grade level ID
+            const selectedGradeLevelId = gradeLevelSelect.value;
+            populateGradeLevels(salaryScaleSelect.value, selectedGradeLevelId);
+        }
         
         // Camera functionality
         const cameraButton = document.getElementById('cameraButton');
@@ -483,5 +538,87 @@
         // Form will submit normally, no need to prevent default
         console.log('Form is being submitted');
     });
+
+    const dateOfAppointmentInput = document.querySelector('input[name="date_of_first_appointment"]');
+    const yearsOfServiceDisplay = document.getElementById('years_of_service');
+
+    function calculateYearsOfService() {
+        const appointmentDate = new Date(dateOfAppointmentInput.value);
+        if (!isNaN(appointmentDate.getTime())) {
+            const today = new Date();
+            let years = today.getFullYear() - appointmentDate.getFullYear();
+            const m = today.getMonth() - appointmentDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < appointmentDate.getDate())) {
+                years--;
+            }
+            yearsOfServiceDisplay.value = years + (years === 1 ? ' year' : ' years');
+        } else {
+            yearsOfServiceDisplay.value = '';
+        }
+    }
+
+    dateOfAppointmentInput.addEventListener('change', calculateYearsOfService);
+
+    // Calculate on page load
+    calculateYearsOfService();
+
+    const dateOfBirthInput = document.querySelector('input[name="date_of_birth"]');
+    const statusSelect = document.querySelector('select[name="status"]');
+    let maxRetirementAge = null;
+    let maxYearsOfService = null;
+
+    function fetchRetirementInfoAndCheckStatus() {
+        const salaryScaleId = salaryScaleSelect.value;
+        if (salaryScaleId) {
+            fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        maxRetirementAge = parseInt(data.max_retirement_age, 10);
+                        maxYearsOfService = parseInt(data.max_years_of_service, 10);
+                        checkRetirementStatus();
+                    }
+                });
+        }
+    }
+
+    salaryScaleSelect.addEventListener('change', fetchRetirementInfoAndCheckStatus);
+
+    function checkRetirementStatus() {
+        if (maxRetirementAge === null || maxYearsOfService === null) {
+            return;
+        }
+
+        const birthDate = new Date(dateOfBirthInput.value);
+        const appointmentDate = new Date(dateOfAppointmentInput.value);
+
+        if (!isNaN(birthDate.getTime()) && !isNaN(appointmentDate.getTime())) {
+            const today = new Date();
+
+            // Calculate age
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const mAge = today.getMonth() - birthDate.getMonth();
+            if (mAge < 0 || (mAge === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            // Calculate years of service
+            let yearsOfService = today.getFullYear() - appointmentDate.getFullYear();
+            const mService = today.getMonth() - appointmentDate.getMonth();
+            if (mService < 0 || (mService === 0 && today.getDate() < appointmentDate.getDate())) {
+                yearsOfService--;
+            }
+
+            if ((age + yearsOfService) >= maxRetirementAge || (age + yearsOfService) >= maxYearsOfService) {
+                statusSelect.value = 'Retired';
+            }
+        }
+    }
+
+    dateOfBirthInput.addEventListener('change', checkRetirementStatus);
+    dateOfAppointmentInput.addEventListener('change', checkRetirementStatus);
+
+    // Check on page load
+    fetchRetirementInfoAndCheckStatus();
 </script>
 @endsection

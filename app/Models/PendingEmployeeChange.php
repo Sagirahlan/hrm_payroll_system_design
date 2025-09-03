@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\ComparisonHelper;
 use Illuminate\Database\Eloquent\Model;
 
 class PendingEmployeeChange extends Model
@@ -49,7 +50,7 @@ class PendingEmployeeChange extends Model
                 $changes = [];
                 foreach ($this->data as $key => $value) {
                     $previousValue = $this->previous_data[$key] ?? null;
-                    if ($previousValue != $value) {
+                    if (ComparisonHelper::isDifferent($previousValue, $value)) {
                         $changes[] = ucfirst(str_replace('_', ' ', $key));
                     }
                 }

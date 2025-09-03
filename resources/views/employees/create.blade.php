@@ -152,9 +152,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Years of Service</label>
-                                    <div class="form-control bg-light text-muted">
-                                        Will be calculated after saving
-                                    </div>
+                                    <input type="text" id="years_of_service" name="years_of_service" class="form-control" readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
@@ -166,16 +164,20 @@
                                     @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
-                                    <select name="grade_level_id" class="form-select" required>
-                                        @foreach ($gradeLevels as $level)
-                                            <option value="{{ $level->id }}">
-                                                {{ $level->name }} 
-                                                @if(isset($level->step_level))
-                                                    (Step {{ $level->step_level }})
-                                                @endif
-                                            </option>
+                                    <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
+                                    <select id="salary_scale_id" name="salary_scale_id" class="form-select" required>
+                                        <option value="">-- Select Salary Scale --</option>
+                                        @foreach ($salaryScales as $scale)
+                                            <option value="{{ $scale->id }}">{{ $scale->acronym }} - {{ $scale->full_name }}</option>
                                         @endforeach
+                                    </select>
+                                    @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
+                                    <select id="grade_level_id" name="grade_level_id" class="form-select" required>
+                                        <option value="">-- Select Grade Level --</option>
+                                        <!-- Grade levels will be populated dynamically -->
                                     </select>
                                     @error('grade_level_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -195,7 +197,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Expected Retirement Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="expected_retirement_date" class="form-control" required>
+                                    <input type="date" name="expected_retirement_date" class="form-control" readonly required>
                                     @error('expected_retirement_date') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                             </div>
@@ -415,6 +417,8 @@
     const surnameInput = document.querySelector('input[name="surname"]');
     const middleNameInput = document.querySelector('input[name="middle_name"]');
     const accountNameInput = document.querySelector('input[name="account_name"]');
+    const salaryScaleSelect = document.getElementById('salary_scale_id');
+    const gradeLevelSelect = document.getElementById('grade_level_id');
 
     function updateAccountName() {
         const firstName = firstNameInput.value.trim();
@@ -428,6 +432,36 @@
     firstNameInput.addEventListener('input', updateAccountName);
     surnameInput.addEventListener('input', updateAccountName);
     middleNameInput.addEventListener('input', updateAccountName);
+
+    // Function to populate grade levels based on selected salary scale
+    function populateGradeLevels(salaryScaleId) {
+        // Clear existing options
+        gradeLevelSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
+        
+        if (!salaryScaleId) {
+            return;
+        }
+        
+        // Make an AJAX request to get grade levels for the selected salary scale
+        fetch(`/salary-scales/${salaryScaleId}/grade-levels`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level.id;
+                    option.text = `${level.name} ${level.step_level ? `(Step ${level.step_level})` : ''}`;
+                    gradeLevelSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching grade levels:', error);
+            });
+    }
+
+    // Event listener for salary scale selection
+    salaryScaleSelect.addEventListener('change', function() {
+        populateGradeLevels(this.value);
+    });
 
     function nextStep(step) {
         document.querySelectorAll('.step-card').forEach(card => card.classList.add('d-none'));
@@ -552,5 +586,87 @@
         // Form will submit normally, no need to prevent default
         console.log('Form is being submitted');
     });
+
+    const dateOfAppointmentInput = document.querySelector('input[name="date_of_first_appointment"]');
+    const yearsOfServiceDisplay = document.getElementById('years_of_service');
+
+    dateOfAppointmentInput.addEventListener('change', function() {
+        const appointmentDate = new Date(this.value);
+        if (!isNaN(appointmentDate.getTime())) {
+            const today = new Date();
+            let years = today.getFullYear() - appointmentDate.getFullYear();
+            const m = today.getMonth() - appointmentDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < appointmentDate.getDate())) {
+                years--;
+            }
+            yearsOfServiceDisplay.value = years + (years === 1 ? ' year' : ' years');
+        } else {
+            yearsOfServiceDisplay.value = '';
+        }
+    });
+
+    const dateOfBirthInput = document.querySelector('input[name="date_of_birth"]');
+    const statusSelect = document.querySelector('select[name="status"]');
+    const expectedRetirementDateInput = document.querySelector('input[name="expected_retirement_date"]');
+    let maxRetirementAge = null;
+    let maxYearsOfService = null;
+
+    salaryScaleSelect.addEventListener('change', function() {
+        const salaryScaleId = this.value;
+        if (salaryScaleId) {
+            fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        maxRetirementAge = parseInt(data.max_retirement_age, 10);
+                        maxYearsOfService = parseInt(data.max_years_of_service, 10);
+                        calculateRetirementDate();
+                    }
+                });
+        }
+    });
+
+        function calculateRetirementDate() {
+        if (maxRetirementAge === null || maxYearsOfService === null) {
+            return;
+        }
+
+        const birthDateStr = dateOfBirthInput.value;
+        const appointmentDateStr = dateOfAppointmentInput.value;
+
+        if (birthDateStr && appointmentDateStr) {
+            const birthDate = new Date(birthDateStr);
+            const appointmentDate = new Date(appointmentDateStr);
+
+            // To avoid timezone issues, we will work with UTC dates
+            const birthYear = birthDate.getUTCFullYear();
+            const birthMonth = birthDate.getUTCMonth();
+            const birthDay = birthDate.getUTCDate();
+
+            const appointmentYear = appointmentDate.getUTCFullYear();
+            const appointmentMonth = appointmentDate.getUTCMonth();
+            const appointmentDay = appointmentDate.getUTCDate();
+
+            const retirementDateByAge = new Date(Date.UTC(birthYear + maxRetirementAge, birthMonth, birthDay));
+            const retirementDateByService = new Date(Date.UTC(appointmentYear + maxYearsOfService, appointmentMonth, appointmentDay));
+
+            const expectedRetirementDate = new Date(Math.min(retirementDateByAge, retirementDateByService));
+
+            const formattedDate = expectedRetirementDate.toISOString().split('T')[0];
+            expectedRetirementDateInput.value = formattedDate;
+
+            const today = new Date();
+            // Compare dates by ignoring time part
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            if (expectedRetirementDate < todayDateOnly) {
+                statusSelect.value = 'Retired';
+            } else {
+                statusSelect.value = 'Active';
+            }
+        }
+    }
+
+    dateOfBirthInput.addEventListener('change', calculateRetirementDate);
+    dateOfAppointmentInput.addEventListener('change', calculateRetirementDate);
 </script>
 @endsection

@@ -343,6 +343,7 @@ class EmployeeController extends Controller
         $departments = Department::all();
         $cadres = Cadre::all();
         $gradeLevels = GradeLevel::all();
+        $salaryScales = \App\Models\SalaryScale::all(); // Get all salary scales
         $states = State::all();
         $lgas = Lga::all();
         $wards = Ward::all();
@@ -357,7 +358,7 @@ class EmployeeController extends Controller
             'entity_id' => auth()->id(),
         ]);
 
-        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'states', 'lgas', 'wards', 'appointmentTypes'));
+        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes'));
     }
 
     
@@ -380,7 +381,8 @@ public function store(Request $request)
             'address' => 'required|string',
             'date_of_first_appointment' => 'required|date',
             'cadre_id' => 'required|exists:cadres,cadre_id',
-            'grade_level_id' => 'required|exists:grade_levels,id', // from form input
+            'salary_scale_id' => 'required|exists:salary_scales,id', // New validation for salary scale
+            'grade_level_id' => 'required|exists:grade_levels,id', // Will be validated further below
             'department_id' => 'required|exists:departments,department_id',
             'expected_next_promotion' => 'nullable|date',
             'expected_retirement_date' => 'required|date',
@@ -404,6 +406,12 @@ public function store(Request $request)
             'account_name' => 'required|string|max:100',
             'account_no' => 'required|string|max:20',
         ]);
+        
+        // Additional validation to ensure grade_level belongs to the selected salary_scale
+        $gradeLevel = GradeLevel::find($validated['grade_level_id']);
+        if (!$gradeLevel || $gradeLevel->salary_scale_id != $validated['salary_scale_id']) {
+            return redirect()->back()->withErrors(['grade_level_id' => 'The selected grade level is not valid for the chosen salary scale.']);
+        }
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
@@ -423,26 +431,42 @@ public function store(Request $request)
             $validated['photo_path'] = $path;
         }
         
-        // Instead of creating employee directly, save as pending
-        $pendingChange = \App\Models\PendingEmployeeChange::create([
-            'employee_id' => 0, // Placeholder for new employees
-            'requested_by' => auth()->id(),
-            'change_type' => 'create',
-            'data' => $validated,
-            'previous_data' => [], // No previous data for new employees
-            'reason' => $request->input('change_reason', 'New employee creation')
-        ]);
+        // For new employees, we'll create the employee directly instead of saving as pending
+        // This avoids the foreign key constraint issue with employee_id = 0
+        $employee = Employee::create($validated);
+        
+        // Create next of kin record
+        if (isset($validated['kin_name'])) {
+            $employee->nextOfKin()->create([
+                'name' => $validated['kin_name'],
+                'relationship' => $validated['kin_relationship'],
+                'mobile_no' => $validated['kin_mobile_no'],
+                'address' => $validated['kin_address'],
+                'occupation' => $validated['kin_occupation'] ?? null,
+                'place_of_work' => $validated['kin_place_of_work'] ?? null,
+            ]);
+        }
+        
+        // Create bank record
+        if (isset($validated['bank_name'])) {
+            $employee->bank()->create([
+                'bank_name' => $validated['bank_name'],
+                'bank_code' => $validated['bank_code'],
+                'account_name' => $validated['account_name'],
+                'account_no' => $validated['account_no'],
+            ]);
+        }
 
         AuditTrail::create([
             'user_id' => auth()->id(),
-            'action' => 'requested_create',
-            'description' => "Requested creation of new employee: {$validated['first_name']} {$validated['surname']}. Changes: " . $pendingChange->change_description,
+            'action' => 'created',
+            'description' => "Created new employee: {$employee->first_name} {$employee->surname}",
             'action_timestamp' => now(),
             'entity_type' => 'Employee',
-            'entity_id' => 0, // Placeholder
+            'entity_id' => $employee->employee_id,
         ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employee creation requested. Changes are pending approval.');
+        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
     }
 
     public function show(Employee $employee)
@@ -466,6 +490,7 @@ public function store(Request $request)
         $departments = Department::all();
         $cadres = Cadre::all();
         $gradeLevels = GradeLevel::all();
+        $salaryScales = \App\Models\SalaryScale::all(); // Get all salary scales
         $states = State::all();
         $lgas = Lga::where('state_id', $employee->state_id)->get();
         $appointmentTypes = AppointmentType::all();
@@ -479,7 +504,7 @@ public function store(Request $request)
             'entity_id' => $employee->employee_id,
         ]);
 
-        return view('employees.edit', compact('employee', 'departments', 'cadres', 'gradeLevels', 'states', 'lgas', 'appointmentTypes'));
+        return view('employees.edit', compact('employee', 'departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'appointmentTypes'));
     }
 
     public function update(Request $request, Employee $employee)
@@ -500,7 +525,8 @@ public function store(Request $request)
             'address' => 'required|string',
             'date_of_first_appointment' => 'required|date',
             'cadre_id' => 'required|exists:cadres,cadre_id',
-            'grade_level_id' => 'required|exists:grade_levels,id',
+            'salary_scale_id' => 'required|exists:salary_scales,id', // New validation for salary scale
+            'grade_level_id' => 'required|exists:grade_levels,id', // Will be validated further below
             'department_id' => 'required|exists:departments,department_id',
             'expected_next_promotion' => 'nullable|date',
             'expected_retirement_date' => 'required|date',
@@ -522,6 +548,12 @@ public function store(Request $request)
             'account_name' => 'required|string|max:100',
             'account_no' => 'required|string|max:20',
         ]);
+        
+        // Additional validation to ensure grade_level belongs to the selected salary_scale
+        $gradeLevel = GradeLevel::find($validated['grade_level_id']);
+        if (!$gradeLevel || $gradeLevel->salary_scale_id != $validated['salary_scale_id']) {
+            return redirect()->back()->withErrors(['grade_level_id' => 'The selected grade level is not valid for the chosen salary scale.']);
+        }
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('photos', 'public');

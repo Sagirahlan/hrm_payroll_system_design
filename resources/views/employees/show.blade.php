@@ -70,7 +70,18 @@
     </li>
     <li class="list-group-item"><strong>Grade Level Limit:</strong> {{ $employee->grade_level_limit ?? 'N/A' }}</li>
     <li class="list-group-item"><strong>Highest Certificate:</strong> {{ $employee->highest_certificate ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Grade Level:</strong> @if($employee->gradeLevel) {{ $employee->gradeLevel->name }} @else N/A @endif</li>
+    
+    <!-- Updated to show salary scale and grade level information -->
+    @if($employee->gradeLevel)
+        @if($employee->gradeLevel->salaryScale)
+            <li class="list-group-item"><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym }} - {{ $employee->gradeLevel->salaryScale->full_name }}</li>
+        @endif
+        <li class="list-group-item"><strong>Grade Level:</strong> {{ $employee->gradeLevel->name }}</li>
+    @else
+        <li class="list-group-item"><strong>Salary Scale:</strong> N/A</li>
+        <li class="list-group-item"><strong>Grade Level:</strong> N/A</li>
+    @endif
+    
     <li class="list-group-item"><strong>Status:</strong> {{ $employee->status }}</li>
 </ul>
                     {{-- New Individual Export Button --}}
