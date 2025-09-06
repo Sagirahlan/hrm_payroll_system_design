@@ -33,7 +33,7 @@ class Employee extends Model
 
     public function department()
     {
-        return $this->belongsTo(Department::class, 'department_id');
+        return $this->belongsTo(Department::class, 'department_id', 'department_id');
     }
 
     public function cadre()
@@ -99,6 +99,26 @@ public function getYearsOfServiceAttribute(): ?int
 public function appointmentType()
 {
     return $this->belongsTo(AppointmentType::class, 'appointment_type_id');
+}
+
+public function retirement()
+{
+    return $this->hasOne(Retirement::class, 'employee_id', 'employee_id');
+}
+
+public function getCalculatedRetirementDateAttribute()
+{
+    if (!$this->gradeLevel || !$this->gradeLevel->salaryScale) {
+        return null;
+    }
+
+    $retirementAge = (int) $this->gradeLevel->salaryScale->max_retirement_age;
+    $yearsOfService = (int) $this->gradeLevel->salaryScale->max_years_of_service;
+
+    $retirementDateByAge = \Carbon\Carbon::parse($this->date_of_birth)->addYears($retirementAge);
+    $retirementDateByService = \Carbon\Carbon::parse($this->date_of_first_appointment)->addYears($yearsOfService);
+
+    return $retirementDateByAge->min($retirementDateByService);
 }
 
 

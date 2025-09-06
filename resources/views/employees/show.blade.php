@@ -20,6 +20,7 @@
                         <li class="list-group-item"><strong>Middle Name:</strong> {{ $employee->middle_name ?? 'N/A' }}</li>
                         <li class="list-group-item"><strong>Gender:</strong> {{ $employee->gender }}</li>
                         <li class="list-group-item"><strong>Date of Birth:</strong> {{ $employee->date_of_birth }}</li>
+                        <li class="list-group-item"><strong>Age:</strong> {{ \Carbon\Carbon::parse($employee->date_of_birth)->age }} years</li>
                         <li class="list-group-item"><strong>Mobile No:</strong> {{ $employee->mobile_no }}</li>
                         <li class="list-group-item"><strong>Email:</strong> {{ $employee->email ?? 'N/A' }}</li>
                         <li class="list-group-item"><strong>Address:</strong> {{ $employee->address }}</li>

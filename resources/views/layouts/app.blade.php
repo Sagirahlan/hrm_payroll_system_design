@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Zamfara HR & Payroll') }} - @yield('title')</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
@@ -14,6 +14,13 @@
             flex-direction: column;
             background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
         }
+        
+        /* Dark mode styles */
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(135deg, #0c2e3d 0%, #1a1a1a 100%);
+            color: #e0f7fa;
+        }
+        
         .sidebar {
             min-width: 180px;
             max-width: 180px;
@@ -27,6 +34,13 @@
             z-index: 1000;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
+        
+        /* Dark mode sidebar */
+        [data-bs-theme="dark"] .sidebar {
+            background: #00838f;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
         .sidebar.collapsed {
             transform: translateX(-180px);
         }
@@ -36,6 +50,13 @@
             border-bottom: 1px solid #b2ebf2;
             background: #00bcd4;
         }
+        
+        /* Dark mode sidebar header */
+        [data-bs-theme="dark"] .sidebar-header {
+            border-bottom: 1px solid #00838f;
+            background: #00838f;
+        }
+        
         .sidebar-header img {
             max-width: 100px;
         }
@@ -49,10 +70,23 @@
             border-radius: 20px;
             margin: 4px 8px;
         }
+        
+        /* Dark mode sidebar links */
+        [data-bs-theme="dark"] .sidebar .nav-link {
+            color: #e0f7fa;
+        }
+        
         .sidebar .nav-link:hover {
             background: #b2ebf2;
             color: #00bcd4;
         }
+        
+        /* Dark mode sidebar link hover */
+        [data-bs-theme="dark"] .sidebar .nav-link:hover {
+            background: #00838f;
+            color: #e0f7fa;
+        }
+        
         .sidebar .nav-link.active {
             background: #e0f7fa;
             color: #00bcd4;
@@ -60,6 +94,14 @@
             font-size: 0.75rem;
             padding: 8px 16px;
         }
+        
+        /* Dark mode active sidebar link */
+        [data-bs-theme="dark"] .sidebar .nav-link.active {
+            background: #00838f;
+            color: #e0f7fa;
+            border-left: 3px solid #e0f7fa;
+        }
+        
         .sidebar .nav-link i {
             margin-right: 12px;
             width: 20px;
@@ -83,6 +125,13 @@
             z-index: 900;
             width: calc(100% - 180px);
         }
+        
+        /* Dark mode navbar */
+        [data-bs-theme="dark"] .navbar {
+            background: #0c2e3d;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
         @media (max-width: 768px) {
             .navbar {
                 left: 0;
@@ -97,43 +146,106 @@
             color: #00bcd4 !important;
             font-weight: bold;
         }
+        
+        /* Dark mode navbar brand */
+        [data-bs-theme="dark"] .navbar-brand {
+            color: #e0f7fa !important;
+        }
+        
         .card {
             border-radius: 1.5rem;
             background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
         }
+        
+        /* Dark mode card */
+        [data-bs-theme="dark"] .card {
+            background: linear-gradient(135deg, #0c2e3d 0%, #1a1a1a 100%);
+            color: #e0f7fa;
+        }
+        
         .card-header {
             background: #00bcd4 !important;
             border-radius: 1.5rem 1.5rem 0 0 !important;
         }
+        
+        /* Dark mode card header */
+        [data-bs-theme="dark"] .card-header {
+            background: #00838f !important;
+        }
+        
         .card-header h4 {
             color: #fff !important;
             font-weight: bold;
         }
+        
+        /* Dark mode card header text */
+        [data-bs-theme="dark"] .card-header h4 {
+            color: #e0f7fa !important;
+        }
+        
         .form-label {
             font-weight: bold;
             color: #00bcd4;
         }
+        
+        /* Dark mode form label */
+        [data-bs-theme="dark"] .form-label {
+            color: #e0f7fa;
+        }
+        
         .form-control,
         .form-select {
             border-radius: 2rem;
             border: 1px solid #b2ebf2;
             background: #f7fafc;
         }
+        
+        /* Dark mode form controls */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background: #2a434a;
+            border: 1px solid #00838f;
+            color: #e0f7fa;
+        }
+        
         .form-control:focus,
         .form-select:focus {
             border-color: #00bcd4;
             box-shadow: 0 0 0 0.2rem rgba(0,188,212,.15);
         }
+        
+        /* Dark mode form control focus */
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 0.2rem rgba(0,188,212,.25);
+        }
+        
         .btn-info {
             background: #00bcd4;
             border: none;
             color: #fff;
             font-weight: bold;
         }
+        
+        /* Dark mode info button */
+        [data-bs-theme="dark"] .btn-info {
+            background: #00838f;
+            border: none;
+            color: #e0f7fa;
+        }
+        
         .btn-info:hover {
             background: #0097a7;
             color: #fff;
         }
+        
+        /* Dark mode info button hover */
+        [data-bs-theme="dark"] .btn-info:hover {
+            background: #006064;
+            color: #e0f7fa;
+        }
+        
         footer {
             background: #e0f7fa;
             color: rgb(25, 51, 224);
@@ -141,6 +253,35 @@
             text-align: center;
             margin-top: auto;
         }
+        
+        /* Dark mode footer */
+        [data-bs-theme="dark"] footer {
+            background: #0c2e3d;
+            color: #e0f7fa;
+        }
+        
+        /* Dark mode dropdown */
+        [data-bs-theme="dark"] .dropdown-menu {
+            background: #0c2e3d;
+            color: #e0f7fa;
+            border: 1px solid #00838f;
+        }
+        
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #e0f7fa;
+        }
+        
+        [data-bs-theme="dark"] .dropdown-item:hover {
+            background: #00838f;
+        }
+        
+        /* Dark mode alerts */
+        [data-bs-theme="dark"] .alert-success {
+            background: #0c2e3d;
+            border: 1px solid #00838f;
+            color: #e0f7fa;
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-180px);
@@ -154,6 +295,34 @@
             .content.collapsed {
                 margin-left: 0;
             }
+        }
+        
+        /* Dark mode toggle button */
+        .dark-mode-toggle {
+            background: transparent;
+            border: none;
+            color: #00bcd4;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dark-mode-toggle:hover {
+            background: rgba(0, 188, 212, 0.1);
+        }
+        
+        [data-bs-theme="dark"] .dark-mode-toggle {
+            color: #e0f7fa;
+        }
+        
+        [data-bs-theme="dark"] .dark-mode-toggle:hover {
+            background: rgba(224, 247, 250, 0.1);
         }
     </style>
     @yield('styles')
@@ -182,6 +351,12 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Dark mode toggle button -->
+                    <li class="nav-item d-flex align-items-center">
+                        <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
                     @auth
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #3288d3;">
@@ -368,18 +543,16 @@
             </a>
             @endif
 
-            @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_payroll') || auth()->user()->hasPermissionTo('view_payroll')))
+            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_payroll'))
                 <a class="nav-link {{ request()->routeIs('payroll.*') ? 'active' : '' }}" href="{{ route('payroll.index') }}">
                     <i class="fas fa-money-check-alt me-2"></i> Payroll
                 </a>
-                @if(auth()->user()->hasPermissionTo('manage_payroll'))
-                    <a class="nav-link {{ request()->routeIs('grade-levels.*') ? 'active' : '' }}" href="{{ route('grade-levels.index') }}">
-                        <i class="fas fa-coins me-2"></i> Salary Scales
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('payroll.adjustments.bulk') ? 'active' : '' }}" href="{{ route('payroll.adjustments.bulk') }}">
-                        <i class="fas fa-sliders-h me-2"></i> Addition/Deduction
-                    </a>
-                @endif
+                <a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">
+                    <i class="fas fa-coins me-2"></i> Salary Scales
+                </a>
+                <a class="nav-link {{ request()->routeIs('payroll.adjustments.bulk') ? 'active' : '' }}" href="{{ route('payroll.adjustments.bulk') }}">
+                    <i class="fas fa-sliders-h me-2"></i> Addition/Deduction
+                </a>
             @endif
 
             @if(auth()->user() && auth()->user()->hasPermissionTo('manage_reports'))
@@ -411,8 +584,46 @@
     </footer>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Dark mode toggle functionality
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        
+        // Check for saved theme preference or default to light mode
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            htmlElement.setAttribute('data-bs-theme', savedTheme);
+            updateDarkModeIcon(savedTheme);
+        } else {
+            // Default to light mode
+            htmlElement.setAttribute('data-bs-theme', 'light');
+            updateDarkModeIcon('light');
+        }
+        
+        // Toggle dark mode when button is clicked
+        darkModeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateDarkModeIcon(newTheme);
+        });
+        
+        // Update the dark mode icon based on current theme
+        function updateDarkModeIcon(theme) {
+            const icon = darkModeToggle.querySelector('i');
+            if (theme === 'dark') {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+        
+        // Existing sidebar functionality
         const sidebar = document.getElementById('sidebar');
         const content = document.getElementById('content');
         const sidebarToggle = document.getElementById('sidebarToggle');

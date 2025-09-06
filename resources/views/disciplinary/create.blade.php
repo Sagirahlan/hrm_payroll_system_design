@@ -16,7 +16,7 @@
                     <select name="employee_id" id="employee_ids" class="form-select" required>
                         <option value="" disabled selected>Select employee</option>
                         @foreach ($employees as $employee)
-                            <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->surname }}</option>
+                            <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->surname }} ({{ $employee->staff_id }} - {{ $employee->department->department_name ?? 'N/A' }}) - {{ $employee->status }}</option>
                         @endforeach
                     </select>
                     @error('employee_id') <small class="text-danger">{{ $message }}</small> @enderror
@@ -57,12 +57,26 @@
 </div>
 <script>
     document.getElementById('employeeSearch').addEventListener('input', function() {
-        const search = this.value.toLowerCase();
+        const search = this.value;
         const select = document.getElementById('employee_ids');
-        for (let option of select.options) {
-            const text = option.text.toLowerCase();
-            option.style.display = text.includes(search) ? '' : 'none';
+
+        if (search.length < 2) {
+            select.innerHTML = '<option value="" disabled selected>Select employee</option>';
+            return;
         }
+
+        fetch(`{{ route('disciplinary.employees.search') }}?search=${search}`)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="" disabled selected>Select employee</option>';
+                data.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.employee_id;
+                    let departmentName = employee.department ? employee.department.department_name : 'N/A';
+                    option.text = `${employee.first_name} ${employee.surname} (${employee.staff_id} - ${departmentName}) - ${employee.status}`;
+                    select.appendChild(option);
+                });
+            });
     });
 </script>
 @endsection

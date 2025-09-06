@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Retirement, Pensioner, Employee, PayrollRecord, AuditTrail};
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class RetirementController extends Controller
 {
@@ -14,29 +15,58 @@ class RetirementController extends Controller
 
     public function index(Request $request)
     {
-        // Automatically update employee status to 'Retired' if retirement date is today
-        Employee::where('status', '!=', 'Retired')
-            ->whereDate('expected_retirement_date', now()->toDateString())
-            ->update(['status' => 'Retired']);
+        $query = Employee::with('gradeLevel.salaryScale', 'department')
+            ->where('status', 'Active');
 
-        $threeMonthsFromNow = now()->addMonths(3);
-        $today = now();
-
-        $query = Employee::query()
-            ->where('status', '!=', 'Retired')
-            ->whereBetween('expected_retirement_date', [$today, $threeMonthsFromNow])
-            ->orderBy('expected_retirement_date', 'asc');
-
+        // Apply search filter
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('surname', 'like', "%{$search}%");
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('surname', 'like', "%{$searchTerm}%");
             });
         }
 
-        $retirements = $query->paginate(10);
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $employees = $query->get();
+
+        $sixMonthsFromNow = now()->addMonths(6);
+
+        $approachingRetirement = $employees->filter(function ($employee) use ($sixMonthsFromNow) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                return false;
+            }
+
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            return $actualRetirementDate->isBetween(now(), $sixMonthsFromNow);
+        });
+
+        // Manually paginate the filtered collection
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $paginatedItems = new \Illuminate\Pagination\LengthAwarePaginator(
+            $approachingRetirement->forPage($page, $perPage),
+            $approachingRetirement->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -47,126 +77,162 @@ class RetirementController extends Controller
             'entity_id' => 0,
         ]);
 
-        return view('retirements.index', compact('retirements'));
+        return view('retirements.index', ['retirements' => $paginatedItems]);
     }
 
-    public function retiredList()
+    public function retiredList(Request $request)
     {
-        $retiredEmployees = Employee::with(['gradeLevel', 'payrollRecords'])
-            ->where('status', 'Retired')
-            ->orderBy('expected_retirement_date', 'desc')
-            ->paginate(10);
-
-        return view('retirements.index', compact('retiredEmployees'));
-    }
-
-    public function create(Request $request)
-    {
-        $query = Employee::with(['gradeLevel', 'payrollRecords'])
+        // Get all employees with status "Retired" from the employees table
+        $query = \App\Models\Employee::with(['gradeLevel', 'department', 'retirement'])
             ->where('status', 'Retired');
 
+        // Apply search filter
         if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('reg_no', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('middle_name', 'like', "%{$search}%")
-                  ->orWhere('surname', 'like', "%{$search}%");
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('surname', 'like', "%{$searchTerm}%");
             });
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('expected_retirement_date', [$request->input('date_from'), $request->input('date_to')]);
+        // Apply retirement date filter if retirement record exists
+        if ($request->filled('retirement_date')) {
+            $query->whereHas('retirement', function ($q) use ($request) {
+                $q->whereDate('retirement_date', $request->retirement_date);
+            });
         }
 
-        $retiredEmployees = $query->orderBy('expected_retirement_date', 'asc')->paginate(10);
+        $retiredEmployees = $query->orderBy('surname', 'asc')->paginate(10);
 
-        return view('retirements.create', compact('retiredEmployees'));
+        return view('retirements.retired', compact('retiredEmployees'));
+    }
+
+    public function getAllRetiredStatuses()
+    {
+        // Get all retirement records with status containing "retired" (case insensitive)
+        $retiredRecords = \App\Models\Retirement::whereRaw('LOWER(status) LIKE ?', ['%retired%'])
+            ->with('employee')
+            ->get();
+
+        // Get distinct statuses
+        $distinctStatuses = \App\Models\Retirement::select('status')
+            ->distinct()
+            ->whereRaw('LOWER(status) LIKE ?', ['%retired%'])
+            ->pluck('status');
+
+        return response()->json([
+            'retired_records' => $retiredRecords,
+            'distinct_statuses' => $distinctStatuses,
+            'count' => $retiredRecords->count()
+        ]);
+    }
+
+    public function create()
+    {
+        $employees = Employee::with(['gradeLevel.salaryScale', 'department'])
+            ->where('status', 'Active')
+            ->get();
+
+        $eligibleEmployees = $employees->filter(function ($employee) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                return false;
+            }
+
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+            $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+
+            return $age >= $retirementAge || $serviceDuration >= $yearsOfService;
+        });
+
+        return view('retirements.create', compact('eligibleEmployees'));
     }
 
     public function store(Request $request)
-{
-    try {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,employee_id',
-            'retirement_date' => 'required|date',
-            'notification_date' => 'nullable|date',
-            'gratuity_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|string|in:pending,complete',
-        ]);
+    {
+        try {
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,employee_id',
+                'retirement_date' => 'required|date',
+                'notification_date' => 'nullable|date',
+                'gratuity_amount' => 'nullable|numeric|min:0',
+                'status' => 'nullable|string|in:pending,complete',
+            ]);
 
-        $employee = Employee::where('employee_id', $validated['employee_id'])->firstOrFail();
+            $employee = Employee::where('employee_id', $validated['employee_id'])->firstOrFail();
 
-        if (Retirement::where('employee_id', $employee->employee_id)->exists()) {
+            if (Retirement::where('employee_id', $employee->employee_id)->exists()) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Employee already processed for retirement.'
+                    ], 400);
+                }
+                return redirect()->back()->with('error', 'Employee already processed for retirement.');
+            }
+
+            $retirement = Retirement::create([
+                'employee_id' => $employee->employee_id,
+                'retirement_date' => $validated['retirement_date'],
+                'status' => 'Completed',
+                'notification_date' => $validated['notification_date'] ?? now(),
+                'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
+            ]);
+
+            $employee->update(['status' => 'Retired']);
+
+            Pensioner::create([
+                'employee_id' => $employee->employee_id,
+                'pension_start_date' => $validated['retirement_date'],
+                'pension_amount' => $this->calculatePension($employee),
+                'status' => 'Active',
+            ]);
+
+            AuditTrail::create([
+                'user_id' => auth()->id(),
+                'action' => 'created',
+                'description' => 'Retirement processed for employee ID ' . $employee->employee_id,
+                'action_timestamp' => now(),
+                'entity_type' => 'Retirement',
+                'entity_id' => $retirement->id,
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Retirement processed successfully.',
+                    'data' => [
+                        'employee_id' => $employee->employee_id,
+                        'retirement_id' => $retirement->id,
+                        'gratuity_amount' => $retirement->gratuity_amount,
+                        'pension_amount' => $this->calculatePension($employee)
+                    ]
+                ]);
+            }
+
+            return redirect()->route('retirements.create')->with([
+                'success' => 'Retirement processed successfully.',
+                'processed_employee_id' => $employee->employee_id,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Retirement processing error: ' . $e->getMessage());
+            
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Employee already processed for retirement.'
-                ], 400);
+                    'message' => 'An error occurred while processing retirement.'
+                ], 500);
             }
-            return redirect()->back()->with('error', 'Employee already processed for retirement.');
+
+            return redirect()->back()->with('error', 'An error occurred while processing retirement.');
         }
-
-        $retirement = Retirement::create([
-            'employee_id' => $employee->employee_id,
-            'retirement_date' => $validated['retirement_date'],
-            'status' => 'Completed',
-            'notification_date' => $validated['notification_date'] ?? now(),
-            'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
-        ]);
-
-        $employee->update(['status' => 'Retired']);
-
-        Pensioner::create([
-            'employee_id' => $employee->employee_id,
-            'pension_start_date' => $validated['retirement_date'],
-            'pension_amount' => $this->calculatePension($employee),
-            'status' => 'Active',
-        ]);
-
-        AuditTrail::create([
-            'user_id' => auth()->id(),
-            'action' => 'created',
-            'description' => 'Retirement processed for employee ID ' . $employee->employee_id,
-            'action_timestamp' => now(),
-            'entity_type' => 'Retirement',
-            'entity_id' => $retirement->id,
-        ]);
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Retirement processed successfully.',
-                'data' => [
-                    'employee_id' => $employee->employee_id,
-                    'retirement_id' => $retirement->id,
-                    'gratuity_amount' => $retirement->gratuity_amount,
-                    'pension_amount' => $this->calculatePension($employee)
-                ]
-            ]);
-        }
-
-        return redirect()->route('retirements.create')->with([
-            'success' => 'Retirement processed successfully.',
-            'processed_employee_id' => $employee->employee_id,
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Retirement processing error: ' . $e->getMessage());
-        
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while processing retirement.'
-            ], 500);
-        }
-
-        return redirect()->back()->with('error', 'An error occurred while processing retirement.');
     }
-}
 
     private function calculateGratuity(Employee $employee)
-    
     {
         // Get the last payroll record for the employee (by created_at, fallback to payroll_date)
         $lastPayroll = \App\Models\PayrollRecord::where('employee_id', $employee->employee_id)

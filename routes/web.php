@@ -62,7 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
         $gradeLevels = \App\Models\GradeLevel::where('salary_scale_id', $salaryScaleId)->get();
         return response()->json($gradeLevels);
-    })->name('salary-scales.grade-levels');
+    })->name('salary-scales.grade-levels.ajax');
 
     Route::get('/salary-scales/{salaryScaleId}/retirement-info', function ($salaryScaleId) {
         $salaryScale = \App\Models\SalaryScale::find($salaryScaleId);
@@ -93,6 +93,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Disciplinary Management - HR and Admin only
     Route::middleware('permission:manage_disciplinary')->group(function () {
+        Route::get('/disciplinary/employees/search', [DisciplinaryController::class, 'searchEmployees'])->name('disciplinary.employees.search');
         Route::resource('disciplinary', DisciplinaryController::class);
     });
 
@@ -119,6 +120,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Retirement Management - HR and Admin only
     Route::middleware('permission:manage_retirement')->group(function () {
+        Route::get('/retirements/retired', [RetirementController::class, 'retiredList'])->name('retirements.retired');
+        Route::get('/retirements/retired-statuses', [RetirementController::class, 'getAllRetiredStatuses'])->name('retirements.retired-statuses');
         Route::resource('retirements', RetirementController::class);
         Route::post('/employees/{employee}/retire', [RetirementController::class, 'retire'])->name('retirement.retire');
         Route::get('/retirements', [RetirementController::class, 'index'])->name('retirements.index'); 
@@ -181,7 +184,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/nabroll-response', [PaymentController::class, 'handleNabrollResponse'])->name('nabroll.response');
         
         // Salary Scales
-        Route::resource('grade-levels', GradeLevelController::class);
+        Route::resource('salary-scales', \App\Http\Controllers\SalaryScaleController::class);
+        Route::get('/salary-scales/{salaryScale}/grade-levels', [\App\Http\Controllers\SalaryScaleController::class, 'showGradeLevels'])->name('salary-scales.grade-levels');
+        
+        // Grade Levels within Salary Scales
+        Route::prefix('salary-scales/{salaryScale}')->group(function () {
+            Route::get('/grade-levels/create', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'create'])->name('salary-scales.grade-levels.create');
+            Route::post('/grade-levels', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'store'])->name('salary-scales.grade-levels.store');
+            Route::get('/grade-levels/{gradeLevel}/edit', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'edit'])->name('salary-scales.grade-levels.edit');
+            Route::put('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'update'])->name('salary-scales.grade-levels.update');
+            Route::delete('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'destroy'])->name('salary-scales.grade-levels.destroy');
+        });
     });
 
     // Pending Employee Changes - Admin only

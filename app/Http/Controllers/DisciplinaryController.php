@@ -74,7 +74,7 @@ class DisciplinaryController extends Controller
 
     public function create()
     {
-        $employees = Employee::where('status', '!=', 'Retired')->get();
+        $employees = Employee::with('department')->where('status', '!=', 'Retired')->get();
         return view('disciplinary.create', compact('employees'));
     }
 
@@ -281,5 +281,20 @@ class DisciplinaryController extends Controller
         ]);
 
         return redirect()->route('disciplinary.index')->with('success', 'Disciplinary action deleted.');
+    }
+
+    public function searchEmployees(Request $request)
+    {
+        $search = $request->input('search');
+        $employees = Employee::with('department')
+            ->where(function ($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('surname', 'like', "%{$search}%")
+                      ->orWhere('staff_id', 'like', "%{$search}%");
+            })
+            ->where('status', '!=', 'Retired')
+            ->get();
+
+        return response()->json($employees);
     }
 }
