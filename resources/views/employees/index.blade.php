@@ -129,7 +129,7 @@
                                                 @foreach($cadres as $cadre)
                                                     <option value="{{ $cadre->cadre_id }}" 
                                                             {{ request('cadre') == $cadre->cadre_id ? 'selected' : '' }}>
-                                                        {{ $cadre->cadre_name }}
+                                                        {{ $cadre->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -340,7 +340,7 @@
                                     </div>
                                 </td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
-                                <td>{{ $employee->cadre->cadre_name ?? 'N/A' }}</td>
+                                <td>{{ $employee->cadre->name ?? 'N/A' }}</td>
                                 <td>{{ $employee->appointmentType->name ?? 'N/A' }}</td>
                                 <td>
                                     <span class="badge {{ 

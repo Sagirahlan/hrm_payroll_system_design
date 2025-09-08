@@ -35,7 +35,7 @@
                 <div class="col-md-6 mb-3">
                 <ul class="list-group list-group-flush">
     <li class="list-group-item"><strong>Appointment Type:</strong> {{ $employee->appointmentType->name ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Cadre:</strong> {{ $employee->cadre->cadre_name }}</li>
+    <li class="list-group-item"><strong>Cadre:</strong> {{ $employee->cadre->name }}</li>
 
     {{-- date hired --}}
     <li class="list-group-item">

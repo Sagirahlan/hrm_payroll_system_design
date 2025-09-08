@@ -247,7 +247,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <div class="stat-number">
-                                            {{ auth()->user()->employee->cadre->cadre_name ?? 'N/A' }}
+                                            {{ auth()->user()->employee->cadre->name ?? 'N/A' }}
                                         </div>
                                         <div class="stat-label">Position</div>
                                     </div>

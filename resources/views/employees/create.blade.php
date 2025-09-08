@@ -158,11 +158,12 @@
                                     <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
                                     <select name="cadre_id" class="form-select" required>
                                         @foreach ($cadres as $cadre)
-                                            <option value="{{ $cadre->cadre_id }}">{{ $cadre->cadre_name }}</option>
+                                            <option value="{{ $cadre->cadre_id }}">{{ $cadre->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
+                                
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
                                     <select id="salary_scale_id" name="salary_scale_id" class="form-select" required>
@@ -180,6 +181,15 @@
                                         <!-- Grade levels will be populated dynamically -->
                                     </select>
                                     @error('grade_level_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
+                                    <select name="rank_id" class="form-select" required>
+                                        @foreach ($ranks as $rank)
+                                            <option value="{{ $rank->id }}">{{ $rank->title }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('rank_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Department <span class="text-danger">*</span></label>
@@ -457,6 +467,25 @@
                 console.error('Error fetching grade levels:', error);
             });
     }
+
+    gradeLevelSelect.addEventListener('change', function() {
+        const gradeLevelId = this.value;
+        const rankSelect = document.getElementById('rank_id');
+        rankSelect.innerHTML = '<option value="">-- Select Rank --</option>';
+
+        if (gradeLevelId) {
+            fetch(`/employees/ranks-by-grade-level?grade_level_id=${gradeLevelId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(rank => {
+                        const option = document.createElement('option');
+                        option.value = rank.id;
+                        option.text = `${rank.name} - ${rank.title}`;
+                        rankSelect.appendChild(option);
+                    });
+                });
+        }
+    });
 
     // Event listener for salary scale selection
     salaryScaleSelect.addEventListener('change', function() {

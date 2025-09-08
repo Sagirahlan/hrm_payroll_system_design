@@ -140,7 +140,7 @@
                                     <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
                                     <select name="cadre_id" class="form-select" required>
                                         @foreach ($cadres as $cadre)
-                                            <option value="{{ $cadre->cadre_id }}" {{ $employee->cadre_id == $cadre->cadre_id ? 'selected' : '' }}>{{ $cadre->cadre_name }}</option>
+                                            <option value="{{ $cadre->cadre_id }}" {{ $employee->cadre_id == $cadre->cadre_id ? 'selected' : '' }}>{{ $cadre->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror

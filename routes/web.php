@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
     // AJAX routes for location dropdowns (outside permission middleware so they can be accessed by anyone creating employees)
     Route::get('/employees/lgas-by-state', [EmployeeController::class, 'getLgasByState'])->name('employees.lgas-by-state');
     Route::get('/employees/wards-by-lga', [EmployeeController::class, 'getWardsByLga'])->name('employees.wards-by-lga');
+    Route::get('/employees/ranks-by-grade-level', [EmployeeController::class, 'getRanksByGradeLevel'])->name('employees.ranks-by-grade-level');
     
     // AJAX route for salary scale grade levels
     Route::get('/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {

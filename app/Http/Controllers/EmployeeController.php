@@ -11,6 +11,7 @@ use App\Models\UserRole;
 use App\Models\AuditTrail;
 use App\Models\NextOfKin;
 use App\Models\Bank;
+use App\Models\Rank;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -138,7 +139,7 @@ class EmployeeController extends Controller
 
         // Get filter options
         $departments = Department::orderBy('department_name')->get();
-        $cadres = Cadre::orderBy('cadre_name')->get();
+        $cadres = Cadre::orderBy('name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();
         $states = State::orderBy('name')->get();
 
@@ -348,6 +349,7 @@ class EmployeeController extends Controller
         $lgas = Lga::all();
         $wards = Ward::all();
         $appointmentTypes = AppointmentType::all();
+        $ranks = Rank::all();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -358,7 +360,7 @@ class EmployeeController extends Controller
             'entity_id' => auth()->id(),
         ]);
 
-        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes'));
+        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks'));
     }
 
     
@@ -390,6 +392,7 @@ public function store(Request $request)
             'highest_certificate' => 'nullable|string|max:100',
             'grade_level_limit' => 'nullable|integer',
             'appointment_type_id' => 'required|exists:appointment_types,id',
+            'rank_id' => 'required|exists:ranks,id',
             'photo' => 'nullable|image|max:2048',
 
             // NOK
@@ -534,6 +537,7 @@ public function store(Request $request)
             'highest_certificate' => 'nullable|string|max:100',
             'grade_level_limit' => 'nullable|integer',
             'appointment_type_id' => 'required|exists:appointment_types,id',
+            'rank_id' => 'required|exists:ranks,id',
             'photo' => 'nullable|image|max:2048',
 
             'kin_name' => 'required|string|max:100',
@@ -697,5 +701,13 @@ public function store(Request $request)
                      ->select('ward_id', 'ward_name')  // Only select the fields we need
                      ->get();
         return response()->json($wards);
+    }
+
+    public function getRanksByGradeLevel(Request $request)
+    {
+        $gradeLevelId = $request->input('grade_level_id');
+        $gradeLevel = GradeLevel::find($gradeLevelId);
+        $ranks = Rank::where('name', $gradeLevel->name)->get();
+        return response()->json($ranks);
     }
 }

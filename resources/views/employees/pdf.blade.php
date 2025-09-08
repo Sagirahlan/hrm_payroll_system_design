@@ -40,7 +40,7 @@
                     <td>{{ $employee->mobile_no }}</td>
                     <td>{{ $employee->email }}</td>
                     <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
-                    <td>{{ $employee->cadre->cadre_name ?? 'N/A' }}</td>
+                    <td>{{ $employee->cadre->name ?? 'N/A' }}</td>
                     <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
                     <td>{{ $employee->date_of_first_appointment }}</td>
                     <td>{{ $employee->expected_retirement_date }}</td>

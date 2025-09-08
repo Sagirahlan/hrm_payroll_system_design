@@ -233,7 +233,7 @@
                                     <th>
                                         <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'payroll_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
                                            class="text-decoration-none text-dark">
-                                            Payroll ID
+                                            Staff No
                                             @if(request('sort_by') == 'payroll_id')
                                                 <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
                                             @endif
@@ -287,7 +287,9 @@
                             <tbody>
                                 @forelse ($payrolls as $payroll)
                                     <tr>
-                                        <td>{{ $payroll->payroll_id }}</td>
+                                        <td>
+                                            {{ $payroll->employee && $payroll->employee->staff_no ? $payroll->employee->staff_no : 'N/A' }}
+                                        </td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div>
