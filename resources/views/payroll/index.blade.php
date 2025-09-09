@@ -4,7 +4,12 @@
 <div class="container-fluid py-4">
     <div class="card border-primary shadow">
         <div class="card-header" style="background-color: skyblue; color: white;">
-            <h5 class="mb-0">Payroll Records</h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Payroll Records</h5>
+                <a href="{{ route('payroll.adjustments.manage') }}" class="btn btn-light">
+                    <i class="fas fa-users-cog"></i> Manage All Deductions/Additions
+                </a>
+            </div>
         </div>
         <div class="card-body">
             
@@ -288,7 +293,7 @@
                                 @forelse ($payrolls as $payroll)
                                     <tr>
                                         <td>
-                                            {{ $payroll->employee && $payroll->employee->staff_no ? $payroll->employee->staff_no : 'N/A' }}
+                                            {{ $payroll->employee && $payroll->employee->reg_no ? $payroll->employee->reg_no : 'N/A' }}
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -365,6 +370,11 @@
                                                     <li>
                                                         <a class="dropdown-item" href="{{ route('payroll.deductions_additions', $payroll->employee_id) }}">
                                                             <i class="fas fa-cog"></i> Manage Deductions/Additions
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ route('payroll.adjustments.manage') }}">
+                                                            <i class="fas fa-users-cog"></i> Manage All Adjustments
                                                         </a>
                                                     </li>
                                                     @php $tx = optional($payroll->transaction); @endphp

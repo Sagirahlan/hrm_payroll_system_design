@@ -547,12 +547,33 @@
                 <a class="nav-link {{ request()->routeIs('payroll.*') ? 'active' : '' }}" href="{{ route('payroll.index') }}">
                     <i class="fas fa-money-check-alt me-2"></i> Payroll
                 </a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('payroll.adjustments.manage') || request()->routeIs('deduction-types.*') || request()->routeIs('addition-types.*') ? 'active' : '' }}" href="#" id="deductionsAdditionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-users-cog me-2"></i> Manage All Deductions/Additions
+                    </a>
+                    <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="deductionsAdditionsDropdown" style="min-width: 140px; font-size: 0.85rem;">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}" style="padding: 6px 12px;">
+                                <i class="fas fa-users me-2 text-primary" style="font-size: 0.9em;"></i> Employee Adjustments
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}" style="padding: 6px 12px;">
+                                <i class="fas fa-minus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Deduction Types
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}" style="padding: 6px 12px;">
+                                <i class="fas fa-plus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Addition Types
+                            </a>
+                        </li>
+                    </ul>
+                </div>
                 <a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">
                     <i class="fas fa-coins me-2"></i> Salary Scales
                 </a>
-                <a class="nav-link {{ request()->routeIs('payroll.adjustments.bulk') ? 'active' : '' }}" href="{{ route('payroll.adjustments.bulk') }}">
-                    <i class="fas fa-sliders-h me-2"></i> Addition/Deduction
-                </a>
+                
             @endif
 
             @if(auth()->user() && auth()->user()->hasPermissionTo('manage_reports'))
@@ -644,6 +665,23 @@
             if (link.href === window.location.href) {
                 link.classList.add('active');
             }
+        });
+        
+        // Handle nested dropdowns in sidebar
+        document.querySelectorAll('.sidebar .dropdown-submenu').forEach(submenu => {
+            submenu.addEventListener('mouseover', function() {
+                const dropdownMenu = this.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.add('show');
+                }
+            });
+            
+            submenu.addEventListener('mouseout', function() {
+                const dropdownMenu = this.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
         });
     </script>
     @yield('scripts')

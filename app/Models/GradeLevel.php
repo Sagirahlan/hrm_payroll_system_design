@@ -18,4 +18,14 @@ class GradeLevel extends Model
     {
         return $this->belongsTo(SalaryScale::class, 'salary_scale_id');
     }
+
+    public function deductionTypes()
+    {
+        return $this->morphedByMany(DeductionType::class, 'adjustable', 'grade_level_adjustments')->withPivot('percentage');
+    }
+
+    public function additionTypes()
+    {
+        return $this->morphedByMany(AdditionType::class, 'adjustable', 'grade_level_adjustments')->withPivot('percentage');
+    }
 }

@@ -31,6 +31,28 @@
                 <i class="fas fa-money-check"></i> Salary Scales
             </a>
         </li>
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-submenu">
+            <a class="dropdown-item dropdown-toggle" href="#">Manage All Deductions/Additions</a>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{{ route('payroll.adjustments.manage') }}">
+                        <i class="fas fa-users"></i> Employee Adjustments
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('deduction-types.index') }}">
+                        <i class="fas fa-minus-circle"></i> Deduction Types
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('addition-types.index') }}">
+                        <i class="fas fa-plus-circle"></i> Addition Types
+                    </a>
+                </li>
+            </ul>
+        </li>
     </ul>
 </li>
 

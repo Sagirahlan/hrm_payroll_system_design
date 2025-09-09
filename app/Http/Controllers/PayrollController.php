@@ -275,28 +275,31 @@ class PayrollController extends Controller
     // Manage deductions and additions
     public function manageDeductionsAdditions($employeeId)
     {
-        $employee = Employee::findOrFail($employeeId);
-        $deductions = Deduction::where('employee_id', $employeeId)->get();
-        $additions = Addition::where('employee_id', $employeeId)->get();
-        return view('payroll.deductions_additions', compact('employee', 'deductions', 'additions'));
+        $employee = \App\Models\Employee::findOrFail($employeeId);
+        $deductions = \App\Models\Deduction::where('employee_id', $employeeId)->get();
+        $additions = \App\Models\Addition::where('employee_id', $employeeId)->get();
+        $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
+        $additionTypes = \App\Models\AdditionType::where('is_statutory', false)->get();
+
+        return view('payroll.deductions_additions', compact('employee', 'deductions', 'additions', 'deductionTypes', 'additionTypes'));
     }
 
     // Store a new deduction
     public function storeDeduction(Request $request, $employeeId)
     {
         $request->validate([
-            'name_type' => 'required|string|max:50',
+            'deduction_type_id' => 'required|exists:deduction_types,id',
             'amount' => 'required|numeric|min:0',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        Deduction::create([
+        \App\Models\Deduction::create([
             'employee_id' => $employeeId,
-            'name_type' => $request->deduction_type,
+            'deduction_type_id' => $request->deduction_type_id,
             'amount' => $request->amount,
-            'period' => $request->deduction_period,
+            'period' => $request->period,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
         ]);
@@ -308,7 +311,7 @@ class PayrollController extends Controller
     public function storeAddition(Request $request, $employeeId)
     {
         $request->validate([
-            'name_type' => 'required|string|max:50',
+            'addition_type_id' => 'required|exists:addition_types,id',
             'amount' => 'required|numeric|min:0',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
@@ -317,9 +320,9 @@ class PayrollController extends Controller
 
         \App\Models\Addition::create([
             'employee_id' => $employeeId,
-            'name_type' => $request->addition_type,
+            'addition_type_id' => $request->addition_type_id,
             'amount' => $request->amount,
-            'period' => $request->addition_period,
+            'period' => $request->period,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
         ]);
@@ -328,47 +331,54 @@ class PayrollController extends Controller
             ->with('success', 'Addition added successfully.');
     }
 
-    public function submitAdjustments(Request $request)
+    public function manageAllAdjustments(Request $request)
     {
-        $validated = $request->validate([
-            'adjustment_type' => 'required|in:addition,deduction',
-            'name_type'       => 'required|string|max:255',
-            'amount'          => 'required|numeric|min:0',
-            'period'          => 'required|in:OneTime,Monthly,Perpetual',
-            'start_date'      => 'required|date',
-            'end_date'        => 'nullable|date|after_or_equal:start_date',
-            'employee_ids'    => 'required|array',
-            'employee_ids.*'  => 'exists:employees,employee_id',
-        ]);
-
-        foreach ($validated['employee_ids'] as $empId) {
-            $data = [
-                'employee_id' => $empId,
-                'name_type' => $validated['name_type'],  
-                'amount'      => $validated['amount'],
-                'period'      => $validated['period'],
-                'start_date'  => $validated['start_date'],
-                'end_date'    => $validated['end_date'],
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ];
-
-            if ($validated['adjustment_type'] === 'addition') {
-                DB::table('additions')->insert($data);
-            } elseif ($validated['adjustment_type'] === 'deduction') {
-                DB::table('deductions')->insert($data);
-            }
+        $query = \App\Models\Employee::where('status', 'Active')
+            ->with(['department', 'gradeLevel']);
+            
+        // Search functionality - include full name search
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('employee_id', 'like', "%{$search}%")
+                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('middle_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$search}%"])
+                  ->orWhereRaw("CONCAT(first_name, ' ', middle_name, ' ', surname) LIKE ?", ["%{$search}%"])
+                  ->orWhereRaw("CONCAT(surname, ' ', first_name) LIKE ?", ["%{$search}%"]);
+            });
         }
+        
+        // Department filter
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        
+        // Sort by
+        $sortBy = $request->get('sort_by', 'employee_id');
+        $sortDirection = $request->get('sort_direction', 'asc');
+        
+        $allowedSorts = ['employee_id', 'first_name', 'surname'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDirection);
+        } else {
+            $query->orderBy('employee_id', 'asc');
+        }
+        
+        $employees = $query->paginate(10)->withQueryString();
+        
+        $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
+        $additionTypes = \App\Models\AdditionType::where('is_statutory', false)->get();
+        
+        // Get departments for filter dropdown
+        $departments = \App\Models\Department::orderBy('department_name')->get();
 
-        return redirect()->back()->with('success', 'Adjustments applied successfully.');
+        return view('payroll.manage_all_adjustments', compact('employees', 'deductionTypes', 'additionTypes', 'departments'));
     }
 
-    public function showBulkAdjustmentForm()
-    {
-        $employees = Employee::where('status', 'Active')->get();
-       
-        return view('payroll.bulk_adjustments', compact('employees'));
-    }
+    
 
     // Advanced search method for AJAX requests
     public function search(Request $request)

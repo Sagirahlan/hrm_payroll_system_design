@@ -155,13 +155,15 @@ Route::middleware(['auth'])->group(function () {
         
         // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
         Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
-        Route::get('/payroll/bulk/adjustments', [PayrollController::class, 'showBulkAdjustmentForm'])->name('payroll.adjustments.bulk');
-        Route::post('/payroll/bulk/adjustments', [PayrollController::class, 'submitAdjustments'])->name('payroll.adjustments.submit');
+        
         
         // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
         Route::get('/payroll/employee/{employeeId}/deductions-additions', [PayrollController::class, 'manageDeductionsAdditions'])->name('payroll.deductions_additions');
         Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
         Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
+
+        // Manage All Adjustments
+        Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
         
         // Main payroll resource routes - DYNAMIC ROUTES COME LAST
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
@@ -196,6 +198,17 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'update'])->name('salary-scales.grade-levels.update');
             Route::delete('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'destroy'])->name('salary-scales.grade-levels.destroy');
         });
+
+        // Deduction Types
+        Route::resource('deduction-types', \App\Http\Controllers\DeductionTypeController::class);
+
+        // Addition Types
+        Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
+
+        // Grade Level Adjustments
+        Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
+        Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
+        Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
     });
 
     // Pending Employee Changes - Admin only
