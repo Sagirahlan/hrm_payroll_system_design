@@ -553,6 +553,12 @@
                     </a>
                     <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="deductionsAdditionsDropdown" style="min-width: 140px; font-size: 0.85rem;">
                         <li>
+                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('bulk-assignment.create') ? 'active' : '' }}" href="{{ route('bulk-assignment.create') }}" style="padding: 6px 12px;">
+                                <i class="fas fa-users me-2 text-primary" style="font-size: 0.9em;"></i> Bulk Assignment
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}" style="padding: 6px 12px;">
                                 <i class="fas fa-users me-2 text-primary" style="font-size: 0.9em;"></i> Employee Adjustments
                             </a>

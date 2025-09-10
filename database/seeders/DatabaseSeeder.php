@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             EmployeesTableSeeder::class,
             DeductionTypesSeeder::class,
+            NonStatutoryItemsSeeder::class,
             AppointmentTypeSeeder::class,
         ]);
     }

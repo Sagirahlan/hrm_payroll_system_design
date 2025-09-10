@@ -205,6 +205,10 @@ Route::middleware(['auth'])->group(function () {
         // Addition Types
         Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
 
+        // Bulk Assignment
+        Route::get('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'create'])->name('bulk-assignment.create');
+        Route::post('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'store'])->name('bulk-assignment.store');
+
         // Grade Level Adjustments
         Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
         Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
