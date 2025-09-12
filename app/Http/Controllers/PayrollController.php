@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\GradeLevel;
+use App\Models\DeductionType;
+use App\Models\AdditionType;
 
 class PayrollController extends Controller
 {
@@ -295,14 +297,18 @@ class PayrollController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        \App\Models\Deduction::create([
-            'employee_id' => $employeeId,
-            'deduction_type_id' => $request->deduction_type_id,
-            'amount' => $request->amount,
-            'period' => $request->period,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-        ]);
+        $deductionType = DeductionType::find($request->deduction_type_id);
+
+        if ($deductionType) {
+            Deduction::create([
+                'employee_id' => $employeeId,
+                'deduction_type' => $deductionType->name,
+                'amount' => $request->amount,
+                'deduction_period' => $request->period,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+            ]);
+        }
 
         return redirect()->route('payroll.deductions_additions', $employeeId)
             ->with('success', 'Deduction added successfully.');
@@ -318,14 +324,18 @@ class PayrollController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        \App\Models\Addition::create([
-            'employee_id' => $employeeId,
-            'addition_type_id' => $request->addition_type_id,
-            'amount' => $request->amount,
-            'period' => $request->period,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-        ]);
+        $additionType = AdditionType::find($request->addition_type_id);
+
+        if ($additionType) {
+            Addition::create([
+                'employee_id' => $employeeId,
+                'addition_type' => $additionType->name,
+                'amount' => $request->amount,
+                'addition_period' => $request->period,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+            ]);
+        }
 
         return redirect()->route('payroll.deductions_additions', $employeeId)
             ->with('success', 'Addition added successfully.');

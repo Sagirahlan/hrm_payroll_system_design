@@ -6,6 +6,8 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\SalaryScale;
+use App\Models\GradeLevel;
+use App\Models\Step;
 
 class SalaryScaleGradeLevelSeeder extends Seeder
 {
@@ -14,7 +16,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
      */
     public function run(): void
     {
-        // Clear existing grade levels
+        // Clear existing grade levels and steps
+        DB::table('steps')->delete();
         DB::table('grade_levels')->delete();
         
         // Create or update the HAP salary scale
@@ -111,7 +114,6 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL05', 'step_level' => 2, 'basic_salary' => 74047.17],
             ['grade_level' => 'GL05', 'step_level' => 3, 'basic_salary' => 74894.34],
             ['grade_level' => 'GL05', 'step_level' => 4, 'basic_salary' => 75741.51],
-            ['grade_level' => 'GL05', 'step_level' => 5, 'basic_salary' => 76588.68],
             ['grade_level' => 'GL05', 'step_level' => 6, 'basic_salary' => 77435.85],
             ['grade_level' => 'GL05', 'step_level' => 7, 'basic_salary' => 78283.02],
             ['grade_level' => 'GL05', 'step_level' => 8, 'basic_salary' => 79130.19],
@@ -281,18 +283,24 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL16', 'step_level' => 9, 'basic_salary' => 433997.22]
         ];
         
-        // Create grade levels in the database
-        foreach ($gradeLevelData as $data) {
-            DB::table('grade_levels')->insert([
-                'name' => "HAP {$data['grade_level']} Step {$data['step_level']}",
-                'basic_salary' => $data['basic_salary'],
-                'grade_level' => $data['grade_level'],
-                'step_level' => $data['step_level'],
-                'description' => "Grade Level {$data['grade_level']} Step {$data['step_level']} for Harmonized Academic Pay",
+        $groupedData = collect($gradeLevelData)->groupBy('grade_level');
+
+        foreach ($groupedData as $gradeLevelName => $steps) {
+            $gradeLevel = GradeLevel::create([
+                'name' => $gradeLevelName,
                 'salary_scale_id' => $salaryScaleId,
-                'created_at' => now(),
-                'updated_at' => now()
+                'description' => "Grade Level {$gradeLevelName} for Harmonized Academic Pay",
+                // Add other grade level fields if necessary
             ]);
+
+            foreach ($steps as $stepData) {
+                Step::create([
+                    'name' => 'Step ' . $stepData['step_level'],
+                    'grade_level_id' => $gradeLevel->id,
+                    // You might want to store basic_salary on the step level
+                    // 'basic_salary' => $stepData['basic_salary'], 
+                ]);
+            }
         }
     }
 }

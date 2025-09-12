@@ -60,10 +60,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/employees/ranks-by-grade-level', [EmployeeController::class, 'getRanksByGradeLevel'])->name('employees.ranks-by-grade-level');
     
     // AJAX route for salary scale grade levels
-    Route::get('/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
+    Route::get('/api/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
         $gradeLevels = \App\Models\GradeLevel::where('salary_scale_id', $salaryScaleId)->get();
         return response()->json($gradeLevels);
     })->name('salary-scales.grade-levels.ajax');
+
+    Route::get('/api/salary-scales/{salaryScaleId}/grade-levels/{gradeLevelName}/steps', [\App\Http\Controllers\SalaryScaleController::class, 'getStepsForGradeLevel'])->name('salary-scales.grade-levels.steps.ajax');
 
     Route::get('/salary-scales/{salaryScaleId}/retirement-info', function ($salaryScaleId) {
         $salaryScale = \App\Models\SalaryScale::find($salaryScaleId);
@@ -208,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
         // Bulk Assignment
         Route::get('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'create'])->name('bulk-assignment.create');
         Route::post('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'store'])->name('bulk-assignment.store');
+        Route::get('/bulk-assignment/employees', [\App\Http\Controllers\BulkAssignmentController::class, 'fetchEmployees'])->name('bulk-assignment.fetch-employees');
 
         // Grade Level Adjustments
         Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');

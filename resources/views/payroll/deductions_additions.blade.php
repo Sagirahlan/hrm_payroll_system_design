@@ -122,9 +122,9 @@
                                             <tbody>
                                                 @forelse($deductions as $deduction)
                                                     <tr>
-                                                        <td>{{ $deduction->deductionType->name ?? $deduction->name_type }}</td>
+                                                        <td>{{ $deduction->deduction_type }}</td>
                                                         <td>₦{{ number_format($deduction->amount, 2) }}</td>
-                                                        <td>{{ $deduction->period }}</td>
+                                                        <td>{{ $deduction->deduction_period }}</td>
                                                         <td>{{ $deduction->start_date }}</td>
                                                         <td>{{ $deduction->end_date ?? 'N/A' }}</td>
                                                     </tr>
@@ -157,9 +157,9 @@
                                             <tbody>
                                                 @forelse($additions as $addition)
                                                     <tr>
-                                                        <td>{{ $addition->additionType->name ?? $addition->name_type }}</td>
+                                                        <td>{{ $addition->addition_type }}</td>
                                                         <td>₦{{ number_format($addition->amount, 2) }}</td>
-                                                        <td>{{ $addition->period }}</td>
+                                                        <td>{{ $addition->addition_period }}</td>
                                                         <td>{{ $addition->start_date }}</td>
                                                         <td>{{ $addition->end_date ?? 'N/A' }}</td>
                                                     </tr>

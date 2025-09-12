@@ -7,7 +7,7 @@ class GradeLevel extends Model
 {
     protected $table = 'grade_levels';
     protected $primaryKey = 'id';
-    protected $fillable = ['name', 'basic_salary', 'grade_level', 'step_level', 'description', 'salary_scale_id'];
+    protected $fillable = ['name', 'basic_salary', 'grade_level', 'description', 'salary_scale_id'];
 
     public function employees()
     {
@@ -27,5 +27,10 @@ class GradeLevel extends Model
     public function additionTypes()
     {
         return $this->morphedByMany(AdditionType::class, 'adjustable', 'grade_level_adjustments')->withPivot('percentage');
+    }
+
+    public function steps()
+    {
+        return $this->hasMany(Step::class);
     }
 }

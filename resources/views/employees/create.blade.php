@@ -174,14 +174,21 @@
                                     </select>
                                     @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
-                                    <select id="grade_level_id" name="grade_level_id" class="form-select" required>
+                                    <select id="grade_level_name" name="grade_level_name" class="form-select" required>
                                         <option value="">-- Select Grade Level --</option>
                                         <!-- Grade levels will be populated dynamically -->
                                     </select>
-                                    @error('grade_level_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
+                                <div class="col-md-2">
+                                    <label class="form-label font-weight-bold">Step <span class="text-danger">*</span></label>
+                                    <select id="step_level" name="step_level" class="form-select" required>
+                                        <option value="">-- Step --</option>
+                                        <!-- Steps will be populated dynamically -->
+                                    </select>
+                                </div>
+                                <input type="hidden" id="grade_level_id" name="grade_level_id">
                                 <div class="col-md-6">
                                     <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
                                     <select name="rank_id" class="form-select" required>
@@ -428,7 +435,11 @@
     const middleNameInput = document.querySelector('input[name="middle_name"]');
     const accountNameInput = document.querySelector('input[name="account_name"]');
     const salaryScaleSelect = document.getElementById('salary_scale_id');
-    const gradeLevelSelect = document.getElementById('grade_level_id');
+    const gradeLevelNameSelect = document.getElementById('grade_level_name');
+    const stepLevelSelect = document.getElementById('step_level');
+    const gradeLevelIdInput = document.getElementById('grade_level_id');
+
+    let gradeLevelsData = [];
 
     function updateAccountName() {
         const firstName = firstNameInput.value.trim();
@@ -443,53 +454,58 @@
     surnameInput.addEventListener('input', updateAccountName);
     middleNameInput.addEventListener('input', updateAccountName);
 
-    // Function to populate grade levels based on selected salary scale
-    function populateGradeLevels(salaryScaleId) {
-        // Clear existing options
-        gradeLevelSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
-        
-        if (!salaryScaleId) {
-            return;
-        }
-        
-        // Make an AJAX request to get grade levels for the selected salary scale
-        fetch(`/salary-scales/${salaryScaleId}/grade-levels`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(level => {
-                    const option = document.createElement('option');
-                    option.value = level.id;
-                    option.text = `${level.name} ${level.step_level ? `(Step ${level.step_level})` : ''}`;
-                    gradeLevelSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching grade levels:', error);
-            });
-    }
+    salaryScaleSelect.addEventListener('change', function() {
+        const salaryScaleId = this.value;
+        gradeLevelNameSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
+        stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
+        gradeLevelIdInput.value = '';
 
-    gradeLevelSelect.addEventListener('change', function() {
-        const gradeLevelId = this.value;
-        const rankSelect = document.getElementById('rank_id');
-        rankSelect.innerHTML = '<option value="">-- Select Rank --</option>';
-
-        if (gradeLevelId) {
-            fetch(`/employees/ranks-by-grade-level?grade_level_id=${gradeLevelId}`)
+        if (salaryScaleId) {
+            fetch(`/api/salary-scales/${salaryScaleId}/grade-levels`)
                 .then(response => response.json())
                 .then(data => {
-                    data.forEach(rank => {
+                    gradeLevelsData = data;
+                    const uniqueGradeLevels = [...new Set(data.map(item => item.name))];
+                    uniqueGradeLevels.forEach(name => {
                         const option = document.createElement('option');
-                        option.value = rank.id;
-                        option.text = `${rank.name} - ${rank.title}`;
-                        rankSelect.appendChild(option);
+                        option.value = name;
+                        option.text = name;
+                        gradeLevelNameSelect.appendChild(option);
                     });
                 });
         }
     });
 
-    // Event listener for salary scale selection
-    salaryScaleSelect.addEventListener('change', function() {
-        populateGradeLevels(this.value);
+    gradeLevelNameSelect.addEventListener('change', function() {
+        const selectedGradeLevelName = this.value;
+        stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
+        gradeLevelIdInput.value = '';
+
+        if (selectedGradeLevelName) {
+            const steps = gradeLevelsData
+                .filter(item => item.name === selectedGradeLevelName)
+                .map(item => item.step_level);
+            
+            steps.forEach(step => {
+                const option = document.createElement('option');
+                option.value = step;
+                option.text = step;
+                stepLevelSelect.appendChild(option);
+            });
+        }
+    });
+
+    stepLevelSelect.addEventListener('change', function() {
+        const selectedGradeLevelName = gradeLevelNameSelect.value;
+        const selectedStep = this.value;
+        gradeLevelIdInput.value = '';
+
+        if (selectedGradeLevelName && selectedStep) {
+            const selectedGradeLevel = gradeLevelsData.find(item => item.name === selectedGradeLevelName && item.step_level == selectedStep);
+            if (selectedGradeLevel) {
+                gradeLevelIdInput.value = selectedGradeLevel.id;
+            }
+        }
     });
 
     function nextStep(step) {

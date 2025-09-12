@@ -16,6 +16,28 @@
                 </a>
             </div>
 
+            <form action="{{ route('salary-scales.grade-levels', $salaryScale->id) }}" method="GET" class="mb-4">
+                <div class="row">
+                    <div class="col-md-5">
+                        <input type="text" name="search" class="form-control" placeholder="Search name or description..." value="{{ request('search') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <select name="filter_grade_level" class="form-select">
+                            <option value="">All Grade Levels</option>
+                            @foreach($distinctGradeLevels as $grade)
+                                <option value="{{ $grade->grade_level }}" {{ request('filter_grade_level') == $grade->grade_level ? 'selected' : '' }}>
+                                    {{ $grade->grade_level }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <a href="{{ route('salary-scales.grade-levels', $salaryScale->id) }}" class="btn btn-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+
             @if (session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
@@ -56,6 +78,10 @@
                         @endforeach
                     </tbody>
                 </table>
+
+                <div class="d-flex justify-content-center">
+                    {{ $gradeLevels->links('pagination::bootstrap-5') }}
+                </div>
             @else
                 <div class="alert alert-info">
                     No grade levels found for this salary scale. 

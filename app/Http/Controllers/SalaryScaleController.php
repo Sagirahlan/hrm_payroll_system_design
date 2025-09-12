@@ -99,11 +99,37 @@ class SalaryScaleController extends Controller
             ->with('success', 'Salary scale deleted successfully.');
     }
 
-    public function showGradeLevels($salaryScaleId)
+    public function showGradeLevels(Request $request, $salaryScaleId)
     {
-        $salaryScale = SalaryScale::with('gradeLevels')->findOrFail($salaryScaleId);
-        $gradeLevels = $salaryScale->gradeLevels;
+        $salaryScale = SalaryScale::findOrFail($salaryScaleId);
+        $query = $salaryScale->gradeLevels();
 
-        return view('salary-scales.grade-levels', compact('salaryScale', 'gradeLevels'));
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
+            });
+        }
+
+        if ($request->filled('filter_grade_level')) {
+            $query->where('grade_level', $request->filter_grade_level);
+        }
+
+        $gradeLevels = $query->paginate(15)->appends($request->query());
+
+        $distinctGradeLevels = $salaryScale->gradeLevels()->select('grade_level')->distinct()->get();
+
+        return view('salary-scales.grade-levels', compact('salaryScale', 'gradeLevels', 'distinctGradeLevels'));
+    }
+
+    public function getStepsForGradeLevel($salaryScaleId, $gradeLevelName)
+    {
+        $steps = GradeLevel::where('salary_scale_id', $salaryScaleId)
+                             ->where('name', $gradeLevelName)
+                             ->orderBy('step_level', 'asc')
+                             ->pluck('step_level');
+
+        return response()->json($steps);
     }
 }

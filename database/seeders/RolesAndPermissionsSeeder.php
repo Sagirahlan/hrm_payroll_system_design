@@ -33,6 +33,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_payroll',
             'view_audit_logs',
             'manage_reports',
+            'approve_employee_changes'
         ];
 
         foreach ($permissions as $permission) {
