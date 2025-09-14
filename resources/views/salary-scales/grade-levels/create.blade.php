@@ -18,26 +18,9 @@
                         @enderror
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="basic_salary" class="form-label">Basic Salary <span class="text-danger">*</span></label>
-                        <input type="number" name="basic_salary" id="basic_salary" step="0.01" class="form-control" value="{{ old('basic_salary') }}" required min="0">
-                        @error('basic_salary')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
                         <label for="grade_level" class="form-label">Grade Level <span class="text-danger">*</span></label>
-                        <input type="number" name="grade_level" id="grade_level" class="form-control" value="{{ old('grade_level') }}" required min="1">
+                        <input type="text" name="grade_level" id="grade_level" class="form-control" value="{{ old('grade_level') }}" required>
                         @error('grade_level')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="step_level" class="form-label">Step Level <span class="text-danger">*</span></label>
-                        <input type="number" name="step_level" id="step_level" class="form-control" value="{{ old('step_level') }}" required min="1">
-                        @error('step_level')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>

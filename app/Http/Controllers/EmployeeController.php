@@ -371,7 +371,7 @@ public function store(Request $request)
             'surname' => 'required|string|max:50',
             'middle_name' => 'nullable|string|max:50',
             'gender' => 'required|string|max:50',
-            'date_of_birth' => 'required|date',
+            'date_of_birth' => 'required|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
             'state_id' => 'required|exists:states,state_id',
             'lga_id' => 'required|exists:lgas,id',
             'ward_id' => 'nullable|exists:wards,ward_id',

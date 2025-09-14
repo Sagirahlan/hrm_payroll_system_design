@@ -478,20 +478,21 @@
 
     gradeLevelNameSelect.addEventListener('change', function() {
         const selectedGradeLevelName = this.value;
+        const salaryScaleId = salaryScaleSelect.value;
         stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
         gradeLevelIdInput.value = '';
 
-        if (selectedGradeLevelName) {
-            const steps = gradeLevelsData
-                .filter(item => item.name === selectedGradeLevelName)
-                .map(item => item.step_level);
-            
-            steps.forEach(step => {
-                const option = document.createElement('option');
-                option.value = step;
-                option.text = step;
-                stepLevelSelect.appendChild(option);
-            });
+        if (selectedGradeLevelName && salaryScaleId) {
+            fetch(`/api/salary-scales/${salaryScaleId}/grade-levels/${selectedGradeLevelName}/steps`)
+                .then(response => response.json())
+                .then(steps => {
+                    steps.forEach(step => {
+                        const option = document.createElement('option');
+                        option.value = step;
+                        option.text = step;
+                        stepLevelSelect.appendChild(option);
+                    });
+                });
         }
     });
 
@@ -700,14 +701,7 @@
             const formattedDate = expectedRetirementDate.toISOString().split('T')[0];
             expectedRetirementDateInput.value = formattedDate;
 
-            const today = new Date();
-            // Compare dates by ignoring time part
-            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            if (expectedRetirementDate < todayDateOnly) {
-                statusSelect.value = 'Retired';
-            } else {
-                statusSelect.value = 'Active';
-            }
+            
         }
     }
 

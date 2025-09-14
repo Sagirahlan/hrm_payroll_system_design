@@ -1,21 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Bulk Assignment')
+@section('title', 'Bulk Deductions')
 
 @section('content')
-<div class="container-fluid"
-    x-data="{
-        adjustmentType: '',
-        additionTypes: {{ json_encode($additionTypes) }},
-        deductionTypes: {{ json_encode($deductionTypes) }},
-        get items() {
-            if (this.adjustmentType === 'addition') return this.additionTypes;
-            if (this.adjustmentType === 'deduction') return this.deductionTypes;
-            return [];
-        }
-    }">
+<div class="container-fluid">
 
-    <h1 class="mb-4">Bulk Additions & Deductions</h1>
+    <h1 class="mb-4">Bulk Deductions</h1>
 
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -36,7 +26,7 @@
         </div>
     @endif
 
-    <form action="{{ route('bulk-assignment.store') }}" method="POST" id="bulk-assignment-form">
+    <form action="{{ route('payroll.deductions.bulk.store') }}" method="POST" id="bulk-assignment-form">
         @csrf
         <input type="hidden" name="select_all_pages" id="select_all_pages" value="0">
         {{-- Hidden fields to carry over filter query params --}}
@@ -49,30 +39,16 @@
             <div class="col-md-5">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">1. Define the Adjustment</h5>
+                        <h5 class="mb-0">1. Define the Deduction</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label for="adjustment_type" class="form-label">Adjustment Type</label>
-                            <select name="adjustment_type" id="adjustment_type" class="form-select" x-model="adjustmentType" required>
+                            <label for="type_id" class="form-label">Deduction Type</label>
+                            <select name="type_id" id="type_id" class="form-select" required>
                                 <option value="" selected disabled>-- Select Type --</option>
-                                <option value="addition">Addition</option>
-                                <option value="deduction">Deduction</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="type_id" class="form-label">Specific Item</label>
-                            <select name="type_id" id="type_id" class="form-select" :disabled="!adjustmentType || items.length === 0" required>
-                                <template x-if="!adjustmentType">
-                                    <option value="" selected disabled>-- First Select an Adjustment Type --</option>
-                                </template>
-                                <template x-if="adjustmentType && items.length === 0">
-                                    <option value="" selected disabled>-- No items available --</option>
-                                </template>
-                                <template x-for="item in items" :key="item.id">
-                                    <option :value="item.id" x-text="item.name"></option>
-                                </template>
+                                @foreach($deductionTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -129,11 +105,11 @@
                     </div>
                     <div class="card-body">
                         <!-- Filter Form -->
-                        <form action="{{ route('bulk-assignment.create') }}" method="GET" id="employee-filter-form">
+                        <form action="{{ route('payroll.deductions') }}" method="GET" id="employee-filter-form">
                             <div class="input-group mb-3">
                                 <input type="text" name="search" class="form-control" placeholder="Search by name or ID..." value="{{ request('search') }}">
                                 <button class="btn btn-outline-secondary" type="submit">Search</button>
-                                <a href="{{ route('bulk-assignment.create') }}" class="btn btn-outline-danger" title="Clear Search">Clear</a>
+                                <a href="{{ route('payroll.deductions') }}" class="btn btn-outline-danger" title="Clear Search">Clear</a>
                             </div>
                         </form>
 
@@ -148,7 +124,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="employee-list-tbody">
-                                    @include('bulk-assignment._employee_rows', ['employees' => $employees])
+                                    @include('payroll._employee_rows', ['employees' => $employees])
                                 </tbody>
                             </table>
                         </div>

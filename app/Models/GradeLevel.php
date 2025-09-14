@@ -7,7 +7,7 @@ class GradeLevel extends Model
 {
     protected $table = 'grade_levels';
     protected $primaryKey = 'id';
-    protected $fillable = ['name', 'basic_salary', 'grade_level', 'description', 'salary_scale_id'];
+    protected $fillable = ['name', 'grade_level', 'description', 'salary_scale_id'];
 
     public function employees()
     {

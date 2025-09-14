@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SalaryScale;
 use App\Models\GradeLevel;
+use App\Models\Step;
 use Illuminate\Http\Request;
 
 class SalaryScaleController extends Controller
@@ -102,7 +103,7 @@ class SalaryScaleController extends Controller
     public function showGradeLevels(Request $request, $salaryScaleId)
     {
         $salaryScale = SalaryScale::findOrFail($salaryScaleId);
-        $query = $salaryScale->gradeLevels();
+        $query = $salaryScale->gradeLevels()->with('steps');
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -125,11 +126,17 @@ class SalaryScaleController extends Controller
 
     public function getStepsForGradeLevel($salaryScaleId, $gradeLevelName)
     {
-        $steps = GradeLevel::where('salary_scale_id', $salaryScaleId)
-                             ->where('name', $gradeLevelName)
-                             ->orderBy('step_level', 'asc')
-                             ->pluck('step_level');
+        $gradeLevel = GradeLevel::where('salary_scale_id', $salaryScaleId)
+                                 ->where('name', $gradeLevelName)
+                                 ->first();
 
-        return response()->json($steps);
+        if ($gradeLevel) {
+            $steps = Step::where('grade_level_id', $gradeLevel->id)
+                         ->orderBy('name', 'asc')
+                         ->pluck('name');
+            return response()->json($steps);
+        }
+
+        return response()->json([]);
     }
 }

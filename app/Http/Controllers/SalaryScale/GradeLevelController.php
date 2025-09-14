@@ -26,13 +26,11 @@ class GradeLevelController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:50',
-            'basic_salary' => 'required|numeric|min:0',
-            'grade_level' => 'required|integer|min:1',
-            'step_level' => 'required|integer|min:1',
+            'grade_level' => 'required|string|max:50',
             'description' => 'nullable|string',
         ]);
 
-        $gradeLevel = new GradeLevel($request->all());
+        $gradeLevel = new GradeLevel($request->except(['basic_salary', 'step_level']));
         $gradeLevel->salary_scale_id = $salaryScale->id;
         $gradeLevel->save();
 
@@ -54,13 +52,11 @@ class GradeLevelController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:50',
-            'basic_salary' => 'required|numeric|min:0',
-            'grade_level' => 'required|integer|min:1',
-            'step_level' => 'required|integer|min:1',
+            'grade_level' => 'required|string|max:50',
             'description' => 'nullable|string',
         ]);
 
-        $gradeLevel->update($request->all());
+        $gradeLevel->update($request->except(['basic_salary', 'step_level']));
 
         return redirect()->route('salary-scales.grade-levels', $salaryScale->id)
             ->with('success', 'Grade level updated successfully.');

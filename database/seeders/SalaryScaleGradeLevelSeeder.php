@@ -288,6 +288,7 @@ class SalaryScaleGradeLevelSeeder extends Seeder
         foreach ($groupedData as $gradeLevelName => $steps) {
             $gradeLevel = GradeLevel::create([
                 'name' => $gradeLevelName,
+                'grade_level' => $gradeLevelName,
                 'salary_scale_id' => $salaryScaleId,
                 'description' => "Grade Level {$gradeLevelName} for Harmonized Academic Pay",
                 // Add other grade level fields if necessary
@@ -298,7 +299,7 @@ class SalaryScaleGradeLevelSeeder extends Seeder
                     'name' => 'Step ' . $stepData['step_level'],
                     'grade_level_id' => $gradeLevel->id,
                     // You might want to store basic_salary on the step level
-                    // 'basic_salary' => $stepData['basic_salary'], 
+                    'basic_salary' => $stepData['basic_salary'], 
                 ]);
             }
         }

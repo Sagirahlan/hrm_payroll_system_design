@@ -29,6 +29,9 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Simple test route
+Route::get('/test-page', [TestController::class, 'index'])->name('test.page');
+
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible to all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -182,6 +185,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/payroll/{payrollId}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
         Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
         Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
+
+        Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
+        Route::get('/payroll/test', function() {
+            return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
+        })->name('payroll.test');
+        Route::post('/payroll/additions/bulk', [PayrollController::class, 'storeBulkAdditions'])->name('payroll.additions.bulk.store');
+        Route::get('/payroll/deductions', [PayrollController::class, 'deductions'])->name('payroll.deductions');
+        Route::post('/payroll/deductions/bulk', [PayrollController::class, 'storeBulkDeductions'])->name('payroll.deductions.bulk.store');
         
         // Payment integration routes
         Route::post('/payments/nabroll/batch', [PaymentController::class, 'initiateBatchNabroll'])->name('payments.nabroll.batch');
@@ -207,15 +218,20 @@ Route::middleware(['auth'])->group(function () {
         // Addition Types
         Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
 
-        // Bulk Assignment
-        Route::get('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'create'])->name('bulk-assignment.create');
-        Route::post('/bulk-assignment', [\App\Http\Controllers\BulkAssignmentController::class, 'store'])->name('bulk-assignment.store');
-        Route::get('/bulk-assignment/employees', [\App\Http\Controllers\BulkAssignmentController::class, 'fetchEmployees'])->name('bulk-assignment.fetch-employees');
-
         // Grade Level Adjustments
         Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
         Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
         Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
+        
+        // Step Management Routes
+        Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
+            // Steps
+            Route::get('/steps/create', [\App\Http\Controllers\SalaryScale\StepController::class, 'create'])->name('salary-scales.grade-levels.steps.create');
+            Route::post('/steps', [\App\Http\Controllers\SalaryScale\StepController::class, 'store'])->name('salary-scales.grade-levels.steps.store');
+            Route::get('/steps/{step}/edit', [\App\Http\Controllers\SalaryScale\StepController::class, 'edit'])->name('salary-scales.grade-levels.steps.edit');
+            Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
+            Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
+        });
     });
 
     // Pending Employee Changes - Admin only
