@@ -104,10 +104,23 @@
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
                                 <td>
-                                    <a href="{{ route('payroll.deductions_additions', $employee->employee_id) }}" 
-                                       class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit"></i> Manage
-                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="actionsDropdown{{ $employee->employee_id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Manage
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="actionsDropdown{{ $employee->employee_id }}">
+                                            <li>
+                                                <a class="dropdown-item" href="{{ route('payroll.deductions.show', $employee->employee_id) }}">
+                                                    <i class="fas fa-minus-circle"></i> Manage Deductions
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="{{ route('payroll.additions.show', $employee->employee_id) }}">
+                                                    <i class="fas fa-plus-circle"></i> Manage Additions
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

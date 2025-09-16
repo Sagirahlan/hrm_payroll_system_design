@@ -27,7 +27,21 @@ class PayrollCalculationService
             ];
         }
 
-        $basicSalary = $gradeLevel->basic_salary;
+        $step = $gradeLevel->steps()->first();
+
+        if (!$step) {
+            // Handle case where grade level has no steps
+            return [
+                'basic_salary'     => 0,
+                'total_deductions' => 0,
+                'total_additions'  => 0,
+                'net_salary'       => 0,
+                'deductions'       => [],
+                'additions'        => [],
+            ];
+        }
+
+        $basicSalary = $step->basic_salary;
         $payrollDate = Carbon::parse($month . '-01');
 
         $totalDeductions = 0;
@@ -71,12 +85,18 @@ class PayrollCalculationService
             })->get();
 
         foreach ($nonStatutoryDeductions as $deduction) {
-            $totalDeductions += $deduction->amount;
+            $deductionAmount = 0;
+            if ($deduction->amount_type === 'percentage') {
+                $deductionAmount = ($deduction->amount / 100) * $basicSalary;
+            } else {
+                $deductionAmount = $deduction->amount;
+            }
+            $totalDeductions += $deductionAmount;
             $deductionRecords[] = [
                 'type' => 'deduction',
-                'name_type' => $deduction->name_type,
-                'amount' => $deduction->amount,
-                'frequency' => $deduction->period,
+                'name_type' => $deduction->deduction_type,
+                'amount' => $deductionAmount,
+                'frequency' => $deduction->deduction_period,
             ];
         }
 
@@ -88,12 +108,18 @@ class PayrollCalculationService
             })->get();
 
         foreach ($nonStatutoryAdditions as $addition) {
-            $totalAdditions += $addition->amount;
+            $additionAmount = 0;
+            if ($addition->amount_type === 'percentage') {
+                $additionAmount = ($addition->amount / 100) * $basicSalary;
+            } else {
+                $additionAmount = $addition->amount;
+            }
+            $totalAdditions += $additionAmount;
             $additionRecords[] = [
                 'type' => 'addition',
-                'name_type' => $addition->name_type,
-                'amount' => $addition->amount,
-                'frequency' => $addition->period,
+                'name_type' => $addition->addition_type,
+                'amount' => $additionAmount,
+                'frequency' => $addition->addition_period,
             ];
         }
 

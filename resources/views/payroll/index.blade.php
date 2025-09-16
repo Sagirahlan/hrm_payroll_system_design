@@ -64,15 +64,14 @@
                                     <a href="{{ route('payroll.index') }}" class="btn btn-outline-secondary">
                                         <i class="fas fa-refresh"></i> Clear All
                                     </a>
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-download"></i> Export
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ route('payroll.export', request()->query()) }}">Export Current Results</a></li>
-                                            <li><a class="dropdown-item" href="{{ route('payroll.export') }}">Export All Records</a></li>
-                                        </ul>
-                                    </div>
+                                    <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('payroll.export', array_merge(request()->query(), ['detailed' => 0])) }}">Export Summary</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('payroll.export', array_merge(request()->query(), ['detailed' => 1])) }}">Export Detailed</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('payroll.export') }}">Export All Records</a></li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -225,68 +224,33 @@
                 </div>
             </div>
 
-            <!-- Payroll Table -->
+            <!-- Enhanced Payroll Table -->
             <div class="card border-primary shadow">
                 <div class="card-header" style="background-color: skyblue; color: white;">
-                    <strong>Payroll List</strong>
+                    <strong>Payroll List with Detailed Adjustments</strong>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered align-items-center mb-0">
                             <thead class="table-primary">
                                 <tr>
-                                    <th>
-                                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'payroll_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
-                                           class="text-decoration-none text-dark">
-                                            Staff No
-                                            @if(request('sort_by') == 'payroll_id')
-                                                <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th>
-                                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'employee_name', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
-                                           class="text-decoration-none text-dark">
-                                            Employee
-                                            @if(request('sort_by') == 'employee_name')
-                                                <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th>Expected Retirement</th>
-                                    <th>
-                                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'basic_salary', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
-                                           class="text-decoration-none text-dark">
-                                            Basic Salary
-                                            @if(request('sort_by') == 'basic_salary')
-                                                <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th>Total Additions</th>
-                                    <th>Total Deductions</th>
-                                    <th>
-                                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'net_salary', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
-                                           class="text-decoration-none text-dark">
-                                            Net Salary
-                                            @if(request('sort_by') == 'net_salary')
-                                                <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th>Status</th>
-                                    <th>Payment Date</th>
-                                    <th>
-                                        <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'payroll_month', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc']) }}" 
-                                           class="text-decoration-none text-dark">
-                                            Month
-                                            @if(request('sort_by') == 'payroll_month')
-                                                <i class="fas fa-sort-{{ request('sort_direction') == 'asc' ? 'up' : 'down' }}"></i>
-                                            @endif
-                                        </a>
-                                    </th>
-                                    <th>Remarks</th>
-                                    <th>Actions</th>
+                                    <th rowspan="2" class="align-middle">Staff No</th>
+                                    <th rowspan="2" class="align-middle">Employee</th>
+                                    <th rowspan="2" class="align-middle">Expected Retirement</th>
+                                    <th rowspan="2" class="align-middle">Basic Salary</th>
+                                    <th colspan="2" class="text-center">Additions</th>
+                                    <th colspan="2" class="text-center">Deductions</th>
+                                    <th rowspan="2" class="align-middle">Net Salary</th>
+                                    <th rowspan="2" class="align-middle">Status</th>
+                                    <th rowspan="2" class="align-middle">Payment Date</th>
+                                    <th rowspan="2" class="align-middle">Month</th>
+                                    <th rowspan="2" class="align-middle">Actions</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">Details</th>
+                                    <th class="text-success">Total</th>
+                                    <th class="text-danger">Details</th>
+                                    <th class="text-danger">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -321,18 +285,82 @@
                                             @endif
                                         </td>
                                         <td>₦{{ number_format($payroll->basic_salary, 2) }}</td>
-                                        <td>
-                                            <span class="text-success">
-                                                ₦{{ number_format($payroll->total_additions, 2) }}
-                                            </span>
+                                        
+                                        <!-- Additions Details -->
+                                        <td class="text-success" style="min-width: 200px;">
+                                            @php
+                                                $payrollMonth = $payroll->payroll_month;
+                                                $additions = collect();
+                                                
+                                                if ($payroll->employee_id) {
+                                                    $additions = \App\Models\Addition::where('employee_id', $payroll->employee_id)
+                                                        ->where(function($query) use ($payrollMonth) {
+                                                            $query->where('start_date', '<=', $payrollMonth)
+                                                                  ->where(function($q) use ($payrollMonth) {
+                                                                      $q->whereNull('end_date')
+                                                                        ->orWhere('end_date', '>=', $payrollMonth);
+                                                                  });
+                                                        })
+                                                        ->get();
+                                                }
+                                            @endphp
+                                            
+                                            @if($additions->count() > 0)
+                                                <div class="small">
+                                                    @foreach($additions as $addition)
+                                                        <div class="mb-1">
+                                                            <span class="badge bg-success bg-opacity-25 text-success">
+                                                                {{ $addition->addition_type }}: ₦{{ number_format($addition->amount, 2) }}
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <small class="text-muted">No additions</small>
+                                            @endif
                                         </td>
-                                        <td>
-                                            <span class="text-danger">
-                                                ₦{{ number_format($payroll->total_deductions, 2) }}
-                                            </span>
+                                        <td class="text-success">
+                                            <strong>₦{{ number_format($additions->sum('amount'), 2) }}</strong>
                                         </td>
+                                        
+                                        <!-- Deductions Details -->
+                                        <td class="text-danger" style="min-width: 200px;">
+                                            @php
+                                                $deductions = collect();
+                                                
+                                                if ($payroll->employee_id) {
+                                                    $deductions = \App\Models\Deduction::where('employee_id', $payroll->employee_id)
+                                                        ->where(function($query) use ($payrollMonth) {
+                                                            $query->where('start_date', '<=', $payrollMonth)
+                                                                  ->where(function($q) use ($payrollMonth) {
+                                                                      $q->whereNull('end_date')
+                                                                        ->orWhere('end_date', '>=', $payrollMonth);
+                                                                  });
+                                                        })
+                                                        ->get();
+                                                }
+                                            @endphp
+                                            
+                                            @if($deductions->count() > 0)
+                                                <div class="small">
+                                                    @foreach($deductions as $deduction)
+                                                        <div class="mb-1">
+                                                            <span class="badge bg-danger bg-opacity-25 text-danger">
+                                                                {{ $deduction->deduction_type }}: ₦{{ number_format($deduction->amount, 2) }}
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <small class="text-muted">No deductions</small>
+                                            @endif
+                                        </td>
+                                        <td class="text-danger">
+                                            <strong>₦{{ number_format($deductions->sum('amount'), 2) }}</strong>
+                                        </td>
+                                        
                                         <td>
-                                            <strong>₦{{ number_format($payroll->net_salary, 2) }}</strong>
+                                            <strong class="text-primary">₦{{ number_format($payroll->net_salary, 2) }}</strong>
                                         </td>
                                         <td>
                                             <span class="badge 
@@ -355,7 +383,6 @@
                                                 N/A
                                             @endif
                                         </td>
-                                        <td>{{ $payroll->remarks ?? 'N/A' }}</td>
                                         <td>
                                             <div class="dropdown">
                                                 <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="actionsDropdown{{ $payroll->payroll_id }}" data-bs-toggle="dropdown" aria-expanded="false">
@@ -363,13 +390,23 @@
                                                 </button>
                                                 <ul class="dropdown-menu" aria-labelledby="actionsDropdown{{ $payroll->payroll_id }}">
                                                     <li>
+                                                        <a class="dropdown-item" href="{{ route('payroll.show', $payroll->payroll_id) }}">
+                                                            <i class="fas fa-eye"></i> View Details
+                                                        </a>
+                                                    </li>
+                                                    <li>
                                                         <a class="dropdown-item" href="{{ route('payroll.payslip', $payroll->payroll_id) }}">
                                                             <i class="fas fa-download"></i> Download Pay Slip
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <a class="dropdown-item" href="{{ route('payroll.deductions_additions', $payroll->employee_id) }}">
-                                                            <i class="fas fa-cog"></i> Manage Deductions/Additions
+                                                        <a class="dropdown-item" href="{{ route('payroll.deductions.show', $payroll->employee_id) }}">
+                                                            <i class="fas fa-minus-circle"></i> Manage Deductions
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ route('payroll.additions.show', $payroll->employee_id) }}">
+                                                            <i class="fas fa-plus-circle"></i> Manage Additions
                                                         </a>
                                                     </li>
                                                     <li>
@@ -406,7 +443,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="text-center text-muted py-4">
+                                        <td colspan="13" class="text-center text-muted py-4">
                                             <i class="fas fa-search fa-2x mb-3 text-muted"></i>
                                             <br>
                                             @if(request()->hasAny(['search', 'status', 'month_filter', 'salary_range', 'date_from', 'date_to']))
@@ -451,4 +488,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<style>
+/* Additional styling for better presentation */
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.75em;
+    margin-bottom: 2px;
+    display: inline-block;
+}
+
+.table-responsive {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Sticky header for better UX */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bs-primary);
+    z-index: 10;
+}
+
+/* Better spacing for adjustment details */
+.small .badge {
+    white-space: nowrap;
+}
+</style>
 @endsection

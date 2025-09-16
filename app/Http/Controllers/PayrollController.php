@@ -55,7 +55,7 @@ class PayrollController extends Controller
                 'employee_id' => $employee->employee_id,
                 'grade_level_id' => $employee->gradeLevel->id,
                 'payroll_month' => $month . '-01',
-                'basic_salary' => $employee->gradeLevel->basic_salary, // ✅ add this
+                'basic_salary' => $calculation['basic_salary'],
                 'total_additions' => $calculation['total_additions'],
                 'total_deductions' => $calculation['total_deductions'],
                 'net_salary' => $calculation['net_salary'],
@@ -272,46 +272,72 @@ class PayrollController extends Controller
         }
         $filename .= '.xlsx';
 
-        return Excel::download(new PayrollRecordsExport($payrolls), $filename);
+        // Check if detailed export is requested
+        if ($request->get('detailed', false)) {
+            return Excel::download(new \App\Exports\PayrollRecordsDetailedExport($payrolls), $filename);
+        } else {
+            return Excel::download(new PayrollRecordsExport($payrolls), $filename);
+        }
     }
 
-    // Manage deductions and additions
-    public function manageDeductionsAdditions($employeeId)
+    public function showDeductions($employeeId)
+    {
+        $employee = \App\Models\Employee::with('gradeLevel.steps')->findOrFail($employeeId);
+        $deductions = \App\Models\Deduction::with(['deductionType', 'employee.gradeLevel.steps'])->where('employee_id', $employeeId)->get();
+        $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
+
+        return view('payroll.show_deductions', compact('employee', 'deductions', 'deductionTypes'));
+    }
+
+    public function showAdditions($employeeId)
     {
         $employee = \App\Models\Employee::findOrFail($employeeId);
-        $deductions = \App\Models\Deduction::where('employee_id', $employeeId)->get();
         $additions = \App\Models\Addition::where('employee_id', $employeeId)->get();
-        $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
         $additionTypes = \App\Models\AdditionType::where('is_statutory', false)->get();
 
-        return view('payroll.deductions_additions', compact('employee', 'deductions', 'additions', 'deductionTypes', 'additionTypes'));
+        return view('payroll.show_additions', compact('employee', 'additions', 'additionTypes'));
     }
 
-    // Store a new deduction
     public function storeDeduction(Request $request, $employeeId)
     {
-        $request->validate([
+        $deductionType = DeductionType::find($request->deduction_type_id);
+        
+        // Validation rules
+        $rules = [
             'deduction_type_id' => 'required|exists:deduction_types,id',
-            'amount' => 'required|numeric|min:0',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        ];
+        
+        // For non-statutory deductions, we need amount_type and amount
+        if ($deductionType && !$deductionType->is_statutory) {
+            $rules['amount_type'] = 'required|in:fixed,percentage';
+            $rules['amount'] = 'required|min:0';
+        }
 
-        $deductionType = DeductionType::find($request->deduction_type_id);
+        $request->validate($rules);
 
         if ($deductionType) {
+            // Update the deduction type with the provided amount/percentage for non-statutory deductions
+            if (!$deductionType->is_statutory) {
+                $deductionType->rate_or_amount = $request->amount;
+                $deductionType->calculation_type = $request->amount_type === 'percentage' ? 'percentage' : 'fixed_amount';
+                $deductionType->save();
+            }
+            
             Deduction::create([
                 'employee_id' => $employeeId,
                 'deduction_type' => $deductionType->name,
-                'amount' => $request->amount,
+                'amount_type' => $request->amount_type ?? null,
                 'deduction_period' => $request->period,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
+                'deduction_type_id' => $deductionType->id,
             ]);
         }
 
-        return redirect()->route('payroll.deductions_additions', $employeeId)
+        return redirect()->route('payroll.deductions.show', $employeeId)
             ->with('success', 'Deduction added successfully.');
     }
 
@@ -319,7 +345,8 @@ class PayrollController extends Controller
     {
         $request->validate([
             'addition_type_id' => 'required|exists:addition_types,id',
-            'amount' => 'required|numeric|min:0',
+            'amount_type' => 'required|in:fixed,percentage',
+            'amount' => 'required|min:0',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -328,23 +355,27 @@ class PayrollController extends Controller
         $additionType = AdditionType::find($request->addition_type_id);
 
         if ($additionType) {
+            $amount = $request->input('amount');
+            \Illuminate\Support\Facades\Log::info('Addition Amount: ' . $amount);
+
             Addition::create([
                 'employee_id' => $employeeId,
                 'addition_type' => $additionType->name,
-                'amount' => $request->amount,
+                'amount_type' => $request->amount_type,
+                'amount' => $amount,
                 'addition_period' => $request->period,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
             ]);
         }
 
-        return redirect()->route('payroll.deductions_additions', $employeeId)
+        return redirect()->route('payroll.additions.show', $employeeId)
             ->with('success', 'Addition added successfully.');
     }
 
     public function manageAllAdjustments(Request $request)
     {
-        $query = \App\Models\Employee::where('status', 'Active')
+        $query = \App\Models\Employee::whereIn('status', ['Active', 'Suspended'])
             ->with(['department', 'gradeLevel']);
             
         // Search functionality - include full name search
@@ -464,6 +495,7 @@ class PayrollController extends Controller
                             ->orWhere('end_date', '>=', $payrollMonth);
                       });
             })
+            ->with(['deductionType', 'employee.gradeLevel.steps']) // Eager load relationships for amount calculation
             ->get();
         
         $additions = Addition::where('employee_id', $payroll->employee_id)
@@ -475,9 +507,69 @@ class PayrollController extends Controller
                             ->orWhere('end_date', '>=', $payrollMonth);
                       });
             })
+            ->with(['additionType', 'employee.gradeLevel.steps']) // Eager load relationships for amount calculation
             ->get();
 
         return view('payroll.show', compact('payroll', 'deductions', 'additions'));
+    }
+
+    // Get detailed payroll information with deductions and additions for a specific month
+    public function getDetailedPayroll($payrollId)
+    {
+        $payroll = PayrollRecord::with(['employee', 'gradeLevel'])
+            ->findOrFail($payrollId);
+        
+        // Get deductions for the payroll month
+        $deductions = Deduction::where('employee_id', $payroll->employee_id)
+            ->where(function($query) use ($payroll) {
+                $payrollMonth = Carbon::parse($payroll->payroll_month);
+                $query->where('start_date', '<=', $payrollMonth)
+                      ->where(function($q) use ($payrollMonth) {
+                          $q->whereNull('end_date')
+                            ->orWhere('end_date', '>=', $payrollMonth);
+                      });
+            })
+            ->with(['deductionType', 'employee.gradeLevel.steps'])
+            ->get();
+        
+        // Get additions for the payroll month
+        $additions = Addition::where('employee_id', $payroll->employee_id)
+            ->where(function($query) use ($payroll) {
+                $payrollMonth = Carbon::parse($payroll->payroll_month);
+                $query->where('start_date', '<=', $payrollMonth)
+                      ->where(function($q) use ($payrollMonth) {
+                          $q->whereNull('end_date')
+                            ->orWhere('end_date', '>=', $payrollMonth);
+                      });
+            })
+            ->with(['additionType', 'employee.gradeLevel.steps'])
+            ->get();
+        
+        // Format the response
+        $deductionsData = $deductions->map(function ($deduction) {
+            return [
+                'type' => $deduction->deduction_type,
+                'amount' => $deduction->amount,
+                'formatted_amount' => $deduction->formatted_amount,
+                'calculation_type' => $deduction->calculation_type_description,
+            ];
+        });
+        
+        $additionsData = $additions->map(function ($addition) {
+            return [
+                'type' => $addition->addition_type,
+                'amount' => $addition->amount,
+                'formatted_amount' => $addition->formatted_amount,
+                'calculation_type' => $addition->calculation_type_description,
+            ];
+        });
+        
+        return response()->json([
+            'payroll' => $payroll,
+            'deductions' => $deductionsData,
+            'additions' => $additionsData,
+            'payroll_month' => Carbon::parse($payroll->payroll_month)->format('F Y'),
+        ]);
     }
 
     // Edit payroll record
@@ -616,11 +708,14 @@ class PayrollController extends Controller
 
     public function additions(Request $request)
     {
-        $additionTypes = AdditionType::where('is_statutory', false)->get();
+        $allAdditionTypes = AdditionType::all();
+        $statutoryAdditions = $allAdditionTypes->where('is_statutory', true);
+        $nonStatutoryAdditions = $allAdditionTypes->where('is_statutory', false);
+
         $departments = Department::orderBy('department_name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();
 
-        $employeesQuery = Employee::where('status', 'Active')->with(['department', 'gradeLevel']);
+        $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with(['department', 'gradeLevel']);
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -648,26 +743,34 @@ class PayrollController extends Controller
             ]);
         }
 
-        return view('payroll.additions', compact('additionTypes', 'departments', 'gradeLevels', 'employees'));
+        return view('payroll.additions', compact('statutoryAdditions', 'nonStatutoryAdditions', 'departments', 'gradeLevels', 'employees'));
     }
 
     public function storeBulkAdditions(Request $request)
     {
         $request->validate([
-            'type_id' => 'required|integer',
-            'period' => 'required|in:OneTime,Monthly,Perpetual',
+            'addition_types' => 'sometimes|array',
+            'addition_types.*' => 'integer|exists:addition_types,id',
+            'type_id' => 'sometimes|integer|exists:addition_types,id',
+            'period' => 'required_with:type_id|nullable|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'amount' => 'required|numeric|min:0',
-            'amount_type' => 'required|in:fixed,percentage',
+            'amount' => 'required_with:type_id|nullable|numeric|min:0',
+            'amount_type' => 'required_with:type_id|nullable|in:fixed,percentage',
             'employee_ids' => 'required_if:select_all_pages,0|array',
             'employee_ids.*' => 'exists:employees,employee_id',
         ]);
 
+        if (!$request->filled('addition_types') && !$request->filled('type_id')) {
+            return redirect()->back()
+                ->withErrors(['addition_error' => 'Please select at least one addition type.'])
+                ->withInput();
+        }
+
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::where('status', 'Active')->with('gradeLevel');
+            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with('gradeLevel');
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
@@ -690,28 +793,43 @@ class PayrollController extends Controller
             $employees = Employee::whereIn('employee_id', $request->employee_ids)->with('gradeLevel')->get();
         }
 
-        $typeId = $request->input('type_id');
+        $additionTypeIds = $request->input('addition_types', []);
+        if ($request->filled('type_id')) {
+            $additionTypeIds[] = $request->input('type_id');
+        }
+        
+        $additionTypes = AdditionType::findMany($additionTypeIds);
+
         $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type']);
 
         foreach ($employees as $employee) {
-            $finalAmount = $data['amount'];
-            if ($data['amount_type'] === 'percentage') {
-                if ($employee->gradeLevel && $employee->gradeLevel->basic_salary) {
-                    $finalAmount = ($data['amount'] / 100) * $employee->gradeLevel->basic_salary;
+            foreach ($additionTypes as $additionType) {
+                $amount = 0;
+                if ($additionType->is_statutory) {
+                    if ($additionType->calculation_type === 'percentage') {
+                        $amount = ($additionType->rate_or_amount / 100) * $employee->gradeLevel->basic_salary;
+                    } else {
+                        $amount = $additionType->rate_or_amount;
+                    }
                 } else {
-                    continue; // Skip employee if they don't have a grade level or basic salary
+                    if ($data['amount_type'] === 'percentage') {
+                        if ($employee->gradeLevel && $employee->gradeLevel->basic_salary) {
+                            $amount = ($data['amount'] / 100) * $employee->gradeLevel->basic_salary;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        $amount = $data['amount'];
+                    }
                 }
-            }
 
-            $additionType = AdditionType::find($typeId);
-            if ($additionType) {
                 Addition::create([
                     'employee_id' => $employee->employee_id,
                     'addition_type' => $additionType->name,
-                    'amount' => $finalAmount,
-                    'addition_period' => $data['period'],
+                    'amount' => $amount,
+                    'addition_period' => $additionType->is_statutory ? 'Monthly' : $data['period'],
                     'start_date' => $data['start_date'],
-                    'end_date' => $data['end_date'],
+                    'end_date' => $additionType->is_statutory ? null : $data['end_date'],
                 ]);
             }
         }
@@ -722,11 +840,14 @@ class PayrollController extends Controller
 
     public function deductions(Request $request)
     {
-        $deductionTypes = DeductionType::where('is_statutory', false)->get();
+        $allDeductionTypes = DeductionType::all();
+        $statutoryDeductions = $allDeductionTypes->where('is_statutory', true);
+        $nonStatutoryDeductions = $allDeductionTypes->where('is_statutory', false);
+
         $departments = Department::orderBy('department_name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();
 
-        $employeesQuery = Employee::where('status', 'Active')->with(['department', 'gradeLevel']);
+        $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with(['department', 'gradeLevel']);
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -754,26 +875,34 @@ class PayrollController extends Controller
             ]);
         }
 
-        return view('payroll.deductions', compact('deductionTypes', 'departments', 'gradeLevels', 'employees'));
+        return view('payroll.deductions', compact('statutoryDeductions', 'nonStatutoryDeductions', 'departments', 'gradeLevels', 'employees'));
     }
 
     public function storeBulkDeductions(Request $request)
     {
         $request->validate([
-            'type_id' => 'required|integer',
-            'period' => 'required|in:OneTime,Monthly,Perpetual',
+            'deduction_types' => 'sometimes|array',
+            'deduction_types.*' => 'integer|exists:deduction_types,id',
+            'type_id' => 'sometimes|integer|exists:deduction_types,id',
+            'period' => 'required_with:type_id|nullable|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'amount' => 'required|numeric|min:0',
-            'amount_type' => 'required|in:fixed,percentage',
+            'amount' => 'required_with:type_id|nullable|numeric|min:0',
+            'amount_type' => 'required_with:type_id|nullable|in:fixed,percentage',
             'employee_ids' => 'required_if:select_all_pages,0|array',
             'employee_ids.*' => 'exists:employees,employee_id',
         ]);
 
+        if (!$request->filled('deduction_types') && !$request->filled('type_id')) {
+            return redirect()->back()
+                ->withErrors(['deduction_error' => 'Please select at least one deduction type.'])
+                ->withInput();
+        }
+
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::where('status', 'Active')->with('gradeLevel');
+            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with('gradeLevel');
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
@@ -796,28 +925,43 @@ class PayrollController extends Controller
             $employees = Employee::whereIn('employee_id', $request->employee_ids)->with('gradeLevel')->get();
         }
 
-        $typeId = $request->input('type_id');
+        $deductionTypeIds = $request->input('deduction_types', []);
+        if ($request->filled('type_id')) {
+            $deductionTypeIds[] = $request->input('type_id');
+        }
+        
+        $deductionTypes = DeductionType::findMany($deductionTypeIds);
+
         $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type']);
 
         foreach ($employees as $employee) {
-            $finalAmount = $data['amount'];
-            if ($data['amount_type'] === 'percentage') {
-                if ($employee->gradeLevel && $employee->gradeLevel->basic_salary) {
-                    $finalAmount = ($data['amount'] / 100) * $employee->gradeLevel->basic_salary;
+            foreach ($deductionTypes as $deductionType) {
+                $amount = 0;
+                if ($deductionType->is_statutory) {
+                    if ($deductionType->calculation_type === 'percentage') {
+                        $amount = ($deductionType->rate_or_amount / 100) * $employee->gradeLevel->basic_salary;
+                    } else {
+                        $amount = $deductionType->rate_or_amount;
+                    }
                 } else {
-                    continue; // Skip employee if they don't have a grade level or basic salary
+                    if ($data['amount_type'] === 'percentage') {
+                        if ($employee->gradeLevel && $employee->gradeLevel->basic_salary) {
+                            $amount = ($data['amount'] / 100) * $employee->gradeLevel->basic_salary;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        $amount = $data['amount'];
+                    }
                 }
-            }
 
-            $deductionType = DeductionType::find($typeId);
-            if ($deductionType) {
                 Deduction::create([
                     'employee_id' => $employee->employee_id,
                     'deduction_type' => $deductionType->name,
-                    'amount' => $finalAmount,
-                    'deduction_period' => $data['period'],
+                    'deduction_period' => $deductionType->is_statutory ? 'Monthly' : $data['period'],
                     'start_date' => $data['start_date'],
-                    'end_date' => $data['end_date'],
+                    'end_date' => $deductionType->is_statutory ? null : $data['end_date'],
+                    'deduction_type_id' => $deductionType->id,
                 ]);
             }
         }

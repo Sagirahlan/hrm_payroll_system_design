@@ -42,7 +42,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
     
-
     // Profile - accessible to all authenticated users
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
 
@@ -112,7 +111,6 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:manage_employees')->group(function () {
         // Main user resource routes
        
-        
         // FIXED: Additional user management routes with correct HTTP methods
         Route::resource('users', UserController::class)->except([
             'show'
@@ -161,15 +159,26 @@ Route::middleware(['auth'])->group(function () {
         // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
         Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
         
+        // Detailed payroll information route
+        Route::get('/payroll/{payrollId}/detailed', [PayrollController::class, 'getDetailedPayroll'])->name('payroll.detailed');
         
         // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
-        Route::get('/payroll/employee/{employeeId}/deductions-additions', [PayrollController::class, 'manageDeductionsAdditions'])->name('payroll.deductions_additions');
+        Route::get('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'showDeductions'])->name('payroll.deductions.show');
+        Route::get('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'showAdditions'])->name('payroll.additions.show');
         Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
         Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
 
         // Manage All Adjustments
         Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
         
+        Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
+        Route::get('/payroll/test', function() {
+            return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
+        })->name('payroll.test');
+        Route::post('/payroll/additions/bulk', [PayrollController::class, 'storeBulkAdditions'])->name('payroll.additions.bulk.store');
+        Route::get('/payroll/deductions', [PayrollController::class, 'deductions'])->name('payroll.deductions');
+        Route::post('/payroll/deductions/bulk', [PayrollController::class, 'storeBulkDeductions'])->name('payroll.deductions.bulk.store');
+
         // Main payroll resource routes - DYNAMIC ROUTES COME LAST
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
         Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
@@ -186,14 +195,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
         Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
 
-        Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
-        Route::get('/payroll/test', function() {
-            return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
-        })->name('payroll.test');
-        Route::post('/payroll/additions/bulk', [PayrollController::class, 'storeBulkAdditions'])->name('payroll.additions.bulk.store');
-        Route::get('/payroll/deductions', [PayrollController::class, 'deductions'])->name('payroll.deductions');
-        Route::post('/payroll/deductions/bulk', [PayrollController::class, 'storeBulkDeductions'])->name('payroll.deductions.bulk.store');
-        
         // Payment integration routes
         Route::post('/payments/nabroll/batch', [PaymentController::class, 'initiateBatchNabroll'])->name('payments.nabroll.batch');
         Route::post('/payments/nabroll/initiate/{transactionId}', [PaymentController::class, 'initiateSingleNabroll'])->name('payments.nabroll.initiate');

@@ -51,7 +51,7 @@ class SalaryScaleController extends Controller
         $request->validate([
             'acronym' => 'required|string|max:10|unique:salary_scales',
             'full_name' => 'required|string|max:100',
-            'sector_coverage' => 'required|string|max:50',
+            'sector_coverage' => 'required|string',
             'max_retirement_age' => 'required|integer|min:1',
             'max_years_of_service' => 'required|integer|min:1',
             'notes' => 'nullable|string',
@@ -74,7 +74,7 @@ class SalaryScaleController extends Controller
         $request->validate([
             'acronym' => 'required|string|max:10|unique:salary_scales,acronym,' . $id,
             'full_name' => 'required|string|max:100',
-            'sector_coverage' => 'required|string|max:50',
+            'sector_coverage' => 'required|string',
             'max_retirement_age' => 'required|integer|min:1',
             'max_years_of_service' => 'required|integer|min:1',
             'notes' => 'nullable|string',

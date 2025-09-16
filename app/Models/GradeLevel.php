@@ -33,4 +33,11 @@ class GradeLevel extends Model
     {
         return $this->hasMany(Step::class);
     }
+
+    // Get the basic salary (assuming first step is the basic salary)
+    public function getBasicSalaryAttribute()
+    {
+        $firstStep = $this->steps()->orderBy('name')->first();
+        return $firstStep ? $firstStep->basic_salary : 0;
+    }
 }
