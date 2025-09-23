@@ -36,7 +36,7 @@ class DeductionTypesSeeder extends Seeder
                 'description' => 'Health scheme contribution',
                 'is_statutory' => 1,
                 'calculation_type' => 'percentage',
-                'rate_or_amount' => 0.015,
+                'rate_or_amount' => 1.0,
             ],
             [
                 'name' => 'NHF Deduction',
@@ -44,7 +44,7 @@ class DeductionTypesSeeder extends Seeder
                 'description' => 'National Housing Fund deduction',
                 'is_statutory' => 1,
                 'calculation_type' => 'percentage',
-                'rate_or_amount' => 0.025,
+                'rate_or_amount' => 2.5,
             ],
             [
                 'name' => 'NHF Renovation Loan',
@@ -100,7 +100,7 @@ class DeductionTypesSeeder extends Seeder
                 'description' => 'Pension scheme deduction (Employee 8%)',
                 'is_statutory' => 1,
                 'calculation_type' => 'percentage',
-                'rate_or_amount' => 0.08,
+                'rate_or_amount' =>8.0,
             ],
             [
                 'name' => 'Union Dues',
@@ -108,7 +108,7 @@ class DeductionTypesSeeder extends Seeder
                 'description' => 'Union membership deduction',
                 'is_statutory' => 1,
                 'calculation_type' => 'percentage',
-                'rate_or_amount' => 0.01,
+                'rate_or_amount' => 1.0,
             ],
             [
                 'name' => 'ITF Deduction',
@@ -116,7 +116,7 @@ class DeductionTypesSeeder extends Seeder
                 'description' => 'Industrial Training Fund contribution (Employer statutory, not deducted from staff)',
                 'is_statutory' => 1,
                 'calculation_type' => 'percentage',
-                'rate_or_amount' => 0.01,
+                'rate_or_amount' => 1.0,
             ],
             [
                 'name' => 'KTSWB July 2025 NHF Deduction',

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\State;
 
 class StateSeeder extends Seeder
 {
@@ -15,44 +15,14 @@ class StateSeeder extends Seeder
     public function run()
     {
         $states = [
-            ['name' => 'Abia'],
-            ['name' => 'Adamawa'],
-            ['name' => 'Akwa Ibom'],
-            ['name' => 'Anambra'],
-            ['name' => 'Bauchi'],
-            ['name' => 'Bayelsa'],
-            ['name' => 'Benue'],
-            ['name' => 'Borno'],
-            ['name' => 'Cross River'],
-            ['name' => 'Delta'],
-            ['name' => 'Ebonyi'],
-            ['name' => 'Edo'],
-            ['name' => 'Ekiti'],
-            ['name' => 'Enugu'],
-            ['name' => 'Gombe'],
-            ['name' => 'Imo'],
-            ['name' => 'Jigawa'],
-            ['name' => 'Kaduna'],
-            ['name' => 'Kano'],
-            ['name' => 'Katsina'],
-            ['name' => 'Kebbi'],
-            ['name' => 'Kogi'],
-            ['name' => 'Kwara'],
-            ['name' => 'Lagos'],
-            ['name' => 'Nasarawa'],
-            ['name' => 'Niger'],
-            ['name' => 'Ogun'],
-            ['name' => 'Ondo'],
-            ['name' => 'Osun'],
-            ['name' => 'Oyo'],
-            ['name' => 'Plateau'],
-            ['name' => 'Rivers'],
-            ['name' => 'Sokoto'],
-            ['name' => 'Taraba'],
-            ['name' => 'Yobe'],
-            ['name' => 'Zamfara'],
+            "abia", "adamawa", "akwa-ibom", "anambra", "abuja", "bauchi", "bayelsa", "benue", "borno", "cross-river",
+            "delta", "ebonyi", "edo", "ekiti", "enugu", "gombe", "imo", "jigawa", "kaduna", "kano",
+            "katsina", "kebbi", "kogi", "kwara", "lagos", "nasarawa", "niger", "ogun", "ondo", "osun",
+            "oyo", "plateau", "rivers", "sokoto", "taraba", "yobe", "zamfara"
         ];
 
-        DB::table('states')->insert($states);
+        foreach ($states as $stateName) {
+            State::create(['name' => $stateName]);
+        }
     }
 }

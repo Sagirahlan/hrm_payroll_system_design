@@ -27,10 +27,10 @@ class PayrollCalculationService
             ];
         }
 
-        $step = $gradeLevel->steps()->first();
+        $step = $gradeLevel->steps()->orderBy('name')->first();
 
-        if (!$step) {
-            // Handle case where grade level has no steps
+        if (!$step || !$step->basic_salary) {
+            // Handle case where grade level has no steps or basic salary
             return [
                 'basic_salary'     => 0,
                 'total_deductions' => 0,
@@ -85,12 +85,7 @@ class PayrollCalculationService
             })->get();
 
         foreach ($nonStatutoryDeductions as $deduction) {
-            $deductionAmount = 0;
-            if ($deduction->amount_type === 'percentage') {
-                $deductionAmount = ($deduction->amount / 100) * $basicSalary;
-            } else {
-                $deductionAmount = $deduction->amount;
-            }
+            $deductionAmount = $deduction->amount; // Use the calculated amount from the model
             $totalDeductions += $deductionAmount;
             $deductionRecords[] = [
                 'type' => 'deduction',
@@ -108,12 +103,7 @@ class PayrollCalculationService
             })->get();
 
         foreach ($nonStatutoryAdditions as $addition) {
-            $additionAmount = 0;
-            if ($addition->amount_type === 'percentage') {
-                $additionAmount = ($addition->amount / 100) * $basicSalary;
-            } else {
-                $additionAmount = $addition->amount;
-            }
+            $additionAmount = $addition->amount; // Use the calculated amount from the model
             $totalAdditions += $additionAmount;
             $additionRecords[] = [
                 'type' => 'addition',

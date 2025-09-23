@@ -4,648 +4,568 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Zamfara HR & Payroll') }} - @yield('title')</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>{{ config('app.name', 'Kundi HR') }} - @yield('title')</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
     <style>
+        /* ================================
+        CSS Variables for Easy Theming
+        ================================
+        */
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #00bcd4;
+            /* 👇 THE BACKGROUND COLOR IS CHANGED HERE 👇 */
+            --primary-color-darker: #2c3e50; /* Changed from #73d4ddff to charcoal */
+            --primary-color-lighter: #0ed2ecff;
+            --text-color-light: #ffffff;
+            --text-color-dark: #212529;
+            --body-bg-light: #f4f7f6;
+            --card-bg-light: #ffffff;
+            --border-color-light: #dee2e6;
+            --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+            --border-radius: 0.75rem;
+            --transition-speed: 0.3s;
+        }
+
+        [data-bs-theme="dark"] {
+            --primary-color: #00bcd4;
+            --primary-color-darker: #2c3e50; /* Also update for dark mode if needed */
+            --primary-color-lighter: #e0f7fa;
+            --text-color-light: #e9ecef;
+            --text-color-dark: #0c2e3d;
+            --body-bg-light: #0c1e29;
+            --card-bg-light: #162c3a;
+            --border-color-light: #2a434a;
+        }
+
+        /* ================================
+        General Layout & Body
+        ================================
+        */
         body {
-            min-height: 100vh;
+            background-color: var(--body-bg-light);
             display: flex;
             flex-direction: column;
-            background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
+            min-height: 100vh;
+            padding-top: 56px; /* Space for top navbar on mobile */
         }
         
-        /* Dark mode styles */
-        [data-bs-theme="dark"] body {
-            background: linear-gradient(135deg, #0c2e3d 0%, #1a1a1a 100%);
-            color: #e0f7fa;
+        .wrapper {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+            flex-grow: 1;
         }
         
+        /* Ensure proper scrolling on small devices */
+        @media (max-width: 991.98px) {
+            .wrapper {
+                overflow: hidden;
+                flex-direction: column;
+            }
+            
+            body {
+                padding-top: 0;
+            }
+        }
+
+        /* ================================
+        Sidebar (Off-canvas for Mobile)
+        ================================
+        */
         .sidebar {
-            min-width: 180px;
-            max-width: 180px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: #00bcd4;
-            color: #ffffff;
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            width: var(--sidebar-width);
+            background: var(--primary-color-darker);
+            color: var(--text-color-light);
+            transition: margin-left var(--transition-speed) ease;
+            /* Add scrollbar for small devices */
+            overflow-y: auto;
+            max-height: 100vh;
         }
         
-        /* Dark mode sidebar */
-        [data-bs-theme="dark"] .sidebar {
-            background: #00838f;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
         }
         
-        .sidebar.collapsed {
-            transform: translateX(-180px);
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
         }
-        .sidebar-header {
-            padding: 20px;
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color-lighter);
+        }
+        
+        /* Mobile sidebar improvements */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                max-height: 100vh;
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                z-index: 1050; /* Above content but below offcanvas backdrop */
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+        }
+        
+        .sidebar .sidebar-header {
+            padding: 1.25rem;
             text-align: center;
-            border-bottom: 1px solid #b2ebf2;
-            background: #00bcd4;
+            background: rgba(0,0,0,0.1); /* Changed to be slightly darker than sidebar */
         }
         
-        /* Dark mode sidebar header */
-        [data-bs-theme="dark"] .sidebar-header {
-            border-bottom: 1px solid #00838f;
-            background: #00838f;
+        /* Compact sidebar header on mobile */
+        @media (max-width: 991.98px) {
+            .sidebar .sidebar-header {
+                padding: 0.75rem;
+            }
+            
+            .sidebar .sidebar-header img {
+                max-width: 100px;
+            }
         }
         
-        .sidebar-header img {
-            max-width: 100px;
-        }
+        /* Sidebar Navigation Links */
         .sidebar .nav-link {
-            color: rgb(25, 0, 136);
-            padding: 12px 20px;
+            color: var(--primary-color-lighter);
+            padding: 0.8rem 1.25rem;
             display: flex;
             align-items: center;
-            font-size: 0.8rem;
-            transition: background-color 0.2s ease;
-            border-radius: 20px;
-            margin: 4px 8px;
-        }
-        
-        /* Dark mode sidebar links */
-        [data-bs-theme="dark"] .sidebar .nav-link {
-            color: #e0f7fa;
+            font-size: 0.95rem;
+            transition: all var(--transition-speed) ease;
+            border-radius: var(--border-radius);
+            margin: 0.25rem 0.5rem;
         }
         
         .sidebar .nav-link:hover {
-            background: #b2ebf2;
-            color: #00bcd4;
+            background: var(--primary-color);
+            color: var(--text-color-light);
+            transform: translateX(5px);
         }
-        
-        /* Dark mode sidebar link hover */
-        [data-bs-theme="dark"] .sidebar .nav-link:hover {
-            background: #00838f;
-            color: #e0f7fa;
-        }
-        
+
         .sidebar .nav-link.active {
-            background: #e0f7fa;
-            color: #00bcd4;
-            border-left: 3px solid #00bcd4;
-            font-size: 0.75rem;
-            padding: 8px 16px;
-        }
-        
-        /* Dark mode active sidebar link */
-        [data-bs-theme="dark"] .sidebar .nav-link.active {
-            background: #00838f;
-            color: #e0f7fa;
-            border-left: 3px solid #e0f7fa;
+            background: var(--text-color-light);
+            color: var(--primary-color-darker);
+            font-weight: 600;
         }
         
         .sidebar .nav-link i {
-            margin-right: 12px;
+            margin-right: 1rem;
             width: 20px;
             text-align: center;
         }
-        .content {
-            margin-left: 180px;
-            flex: 1;
-            padding: 20px;
-            transition: margin-left 0.3s ease;
+
+        /* Accordion Menu in Sidebar */
+        .sidebar .dropdown-toggle::after {
+            margin-left: auto;
+            transition: transform var(--transition-speed) ease;
         }
-        .content.collapsed {
-            margin-left: 0;
+        .sidebar .dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(90deg);
         }
-        .navbar {
-            background: rgb(255, 255, 255);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            position: sticky;
+        .sidebar .collapse .nav-link {
+            font-size: 0.85rem;
+            padding-left: 3.5rem; /* Indent sub-items */
+            background-color: rgba(0,0,0,0.1);
+        }
+        .sidebar .collapse .nav-link:hover {
+            background-color: var(--primary-color);
+        }
+
+        /* ================================
+        Main Content & Navbar
+        ================================
+        */
+        #content {
+            flex-grow: 1;
+            padding: 1.5rem;
+            transition: margin-left var(--transition-speed) ease;
+            width: 100%;
+        }
+
+        .top-navbar {
+            background: var(--card-bg-light);
+            box-shadow: var(--box-shadow);
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            padding: 0.5rem 1rem;
+            position: fixed;
             top: 0;
-            left: 180px;
-            z-index: 900;
-            width: calc(100% - 180px);
+            left: 0;
+            right: 0;
+            z-index: 1040;
         }
         
-        /* Dark mode navbar */
-        [data-bs-theme="dark"] .navbar {
-            background: #0c2e3d;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-        
-        @media (max-width: 768px) {
-            .navbar {
-                left: 0;
-                width: 100%;
-            }
-        }
-        .navbar-brand img {
-            height: 40px;
-            margin-right: 10px;
-        }
-        .navbar-brand {
-            color: #00bcd4 !important;
-            font-weight: bold;
-        }
-        
-        /* Dark mode navbar brand */
-        [data-bs-theme="dark"] .navbar-brand {
-            color: #e0f7fa !important;
-        }
-        
-        .card {
-            border-radius: 1.5rem;
-            background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
-        }
-        
-        /* Dark mode card */
-        [data-bs-theme="dark"] .card {
-            background: linear-gradient(135deg, #0c2e3d 0%, #1a1a1a 100%);
-            color: #e0f7fa;
-        }
-        
-        .card-header {
-            background: #00bcd4 !important;
-            border-radius: 1.5rem 1.5rem 0 0 !important;
-        }
-        
-        /* Dark mode card header */
-        [data-bs-theme="dark"] .card-header {
-            background: #00838f !important;
-        }
-        
-        .card-header h4 {
-            color: #fff !important;
-            font-weight: bold;
-        }
-        
-        /* Dark mode card header text */
-        [data-bs-theme="dark"] .card-header h4 {
-            color: #e0f7fa !important;
-        }
-        
-        .form-label {
-            font-weight: bold;
-            color: #00bcd4;
-        }
-        
-        /* Dark mode form label */
-        [data-bs-theme="dark"] .form-label {
-            color: #e0f7fa;
-        }
-        
-        .form-control,
-        .form-select {
-            border-radius: 2rem;
-            border: 1px solid #b2ebf2;
-            background: #f7fafc;
-        }
-        
-        /* Dark mode form controls */
-        [data-bs-theme="dark"] .form-control,
-        [data-bs-theme="dark"] .form-select {
-            background: #2a434a;
-            border: 1px solid #00838f;
-            color: #e0f7fa;
-        }
-        
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #00bcd4;
-            box-shadow: 0 0 0 0.2rem rgba(0,188,212,.15);
-        }
-        
-        /* Dark mode form control focus */
-        [data-bs-theme="dark"] .form-control:focus,
-        [data-bs-theme="dark"] .form-select:focus {
-            border-color: #00bcd4;
-            box-shadow: 0 0 0 0.2rem rgba(0,188,212,.25);
-        }
-        
-        .btn-info {
-            background: #00bcd4;
-            border: none;
-            color: #fff;
-            font-weight: bold;
-        }
-        
-        /* Dark mode info button */
-        [data-bs-theme="dark"] .btn-info {
-            background: #00838f;
-            border: none;
-            color: #e0f7fa;
-        }
-        
-        .btn-info:hover {
-            background: #0097a7;
-            color: #fff;
-        }
-        
-        /* Dark mode info button hover */
-        [data-bs-theme="dark"] .btn-info:hover {
-            background: #006064;
-            color: #e0f7fa;
-        }
-        
-        footer {
-            background: #e0f7fa;
-            color: rgb(25, 51, 224);
-            padding: 15px 0;
-            text-align: center;
-            margin-top: auto;
-        }
-        
-        /* Dark mode footer */
-        [data-bs-theme="dark"] footer {
-            background: #0c2e3d;
-            color: #e0f7fa;
-        }
-        
-        /* Dark mode dropdown */
-        [data-bs-theme="dark"] .dropdown-menu {
-            background: #0c2e3d;
-            color: #e0f7fa;
-            border: 1px solid #00838f;
-        }
-        
-        [data-bs-theme="dark"] .dropdown-item {
-            color: #e0f7fa;
-        }
-        
-        [data-bs-theme="dark"] .dropdown-item:hover {
-            background: #00838f;
-        }
-        
-        /* Dark mode alerts */
-        [data-bs-theme="dark"] .alert-success {
-            background: #0c2e3d;
-            border: 1px solid #00838f;
-            color: #e0f7fa;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-180px);
-            }
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            .content {
-                margin-left: 0;
-            }
-            .content.collapsed {
-                margin-left: 0;
+        @media (max-width: 991.98px) {
+            .top-navbar {
+                position: relative;
+                margin-bottom: 1rem;
             }
         }
         
-        /* Dark mode toggle button */
-        .dark-mode-toggle {
-            background: transparent;
-            border: none;
-            color: #00bcd4;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
+        [data-bs-theme="dark"] .top-navbar .nav-link,
+        [data-bs-theme="dark"] .top-navbar .dropdown-item {
+            color: var(--text-color-light);
+        }
+
+        .user-dropdown-toggle img {
             width: 40px;
             height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            object-fit: cover;
+            border: 2px solid var(--primary-color);
         }
         
-        .dark-mode-toggle:hover {
-            background: rgba(0, 188, 212, 0.1);
+        .dropdown-menu {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border-color: var(--border-color-light);
+            background-color: var(--card-bg-light);
+        }
+
+        /* ================================
+        Cards, Forms & UI Components
+        ================================
+        */
+        .card {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+            background-color: var(--card-bg-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: var(--primary-color);
+            color: var(--text-color-light);
+            font-weight: 600;
+            border-bottom: none;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
         }
         
-        [data-bs-theme="dark"] .dark-mode-toggle {
-            color: #e0f7fa;
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+        }
+
+        /* ================================
+        Footer
+        ================================
+        */
+        footer {
+            background: var(--card-bg-light);
+            color: var(--text-color-dark);
+            padding: 1rem 0;
+            text-align: center;
+            margin-top: auto;
+            border-top: 1px solid var(--border-color-light);
         }
         
-        [data-bs-theme="dark"] .dark-mode-toggle:hover {
-            background: rgba(224, 247, 250, 0.1);
+        [data-bs-theme="dark"] footer {
+            color: var(--text-color-light);
         }
+
+        /* ================================
+        Mobile-specific improvements
+        ================================
+        */
+        @media (max-width: 767.98px) {
+            .container, .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .top-navbar .navbar-text {
+                font-size: 0.9rem;
+            }
+            
+            .user-dropdown-toggle img {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .sidebar .nav-link {
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .sidebar .nav-link i {
+                margin-right: 0.75rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .btn {
+                font-size: 0.875rem;
+                padding: 0.375rem 0.75rem;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            .top-navbar .navbar-text {
+                display: none;
+            }
+            
+            .sidebar .nav-link {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            
+            .card-header h4, .card-header h5, .card-header h6 {
+                font-size: 1.1rem;
+            }
+        }
+
     </style>
     @yield('styles')
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <button class="btn btn-outline-light me-2 d-lg-none" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            <!-- Search & Filter Form -->
-            <form class="d-flex me-auto ms-3" method="GET" action="{{ url()->current() }}">
-                <input class="form-control me-2" type="search" name="search" placeholder="Search..." value="{{ request('search') }}" aria-label="Search">
-                <select class="form-select me-2" name="filter" style="width: auto;">
-                    @yield('filter-options')
-                    <option value="">All</option>
-                    <option value="active" {{ request('filter') == 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="inactive" {{ request('filter') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                </select>
-                <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i></button>
-            </form>
-            <!-- End Search & Filter Form -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Dark mode toggle button -->
-                    <li class="nav-item d-flex align-items-center">
-                        <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">
-                            <i class="fas fa-moon"></i>
-                        </button>
-                    </li>
-                    @auth
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #3288d3;">
-                                <img src="{{ auth()->user()->employee && auth()->user()->employee->photo_path ? asset('storage/' . auth()->user()->employee->photo_path) : asset('images/default-image.png') }}" alt="Profile" class="rounded-circle me-2" style="width:32px; height:32px; object-fit:cover; border:2px solid #3288d3;">
-                                <span>{{ auth()->user()->username }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('profile') }}">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i> Profile
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="dropdown-item d-flex align-items-center">
-                                            <i class="fas fa-sign-out-alt me-2 text-danger"></i> Logout
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    @else
-                        <li class="nav-item">
-                            <a class="nav-link" style="color: #3288d3;" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" style="color: #3288d3;" href="{{ route('register') }}"><i class="fas fa-user-plus me-1"></i> Register</a>
-                        </li>
-                    @endauth
-                </ul>
-            </div>
+
+<div class="wrapper">
+    <nav id="sidebar" class="sidebar offcanvas-lg offcanvas-start d-flex flex-column flex-shrink-0 p-3">
+        <div class="sidebar-header">
+            <a href="{{ route('dashboard') }}">
+                <img src="{{ asset('images/logo-white.png') }}" alt="Logo" class="img-fluid">
+            </a>
+        </div>
+        
+        <div class="overflow-auto flex-grow-1">
+            <ul class="nav nav-pills flex-column mb-auto mt-4">
+            <li>
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+
+            @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_employees') || auth()->user()->hasPermissionTo('view_employees')))
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('employees.*', 'pending-changes.*') ? 'active' : '' }}" href="#employeesSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('employees.*', 'pending-changes.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-users"></i> Employees
+                </a>
+                <div class="collapse {{ request()->routeIs('employees.*', 'pending-changes.*') ? 'show' : '' }}" id="employeesSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('employees.index') ? 'active' : '' }}" href="{{ route('employees.index') }}">Employee List</a></li>
+                        @can('manage_employees')
+                        <li><a class="nav-link {{ request()->routeIs('employees.create') ? 'active' : '' }}" href="{{ route('employees.create') }}">Add Employee</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}">Pending Changes</a></li>
+                        @endcan
+                    </ul>
+                </div>
+            </li>
+            @endif
+
+            @can('manage_users')
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('users.*', 'roles.*') ? 'active' : '' }}" href="#usersSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('users.*', 'roles.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+                <div class="collapse {{ request()->routeIs('users.*', 'roles.*') ? 'show' : '' }}" id="usersSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Users</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}" href="{{ route('roles.index') }}">Roles</a></li>
+                    </ul>
+                </div>
+            </li>
+            @endcan
+
+            @can('manage_departments')
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('departments.*') ? 'active' : '' }}" href="#departmentsSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('departments.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-building"></i> Departments
+                </a>
+                <div class="collapse {{ request()->routeIs('departments.*') ? 'show' : '' }}" id="departmentsSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('departments.index') ? 'active' : '' }}" href="{{ route('departments.index') }}">Department List</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('departments.create') ? 'active' : '' }}" href="{{ route('departments.create') }}">Add Department</a></li>
+                    </ul>
+                </div>
+            </li>
+            @endcan
+
+            @can('manage_biometrics')
+            <li>
+                <a class="nav-link {{ request()->routeIs('biometrics.*') ? 'active' : '' }}" href="{{ route('biometrics.index') }}">
+                    <i class="fas fa-fingerprint"></i> Biometrics
+                </a>
+            </li>
+            @endcan
+
+            @can('view_audit_logs')
+            <li>
+                <a class="nav-link {{ request()->routeIs('audit-trails.*') ? 'active' : '' }}" href="{{ route('audit-trails.index') }}">
+                    <i class="fas fa-history"></i> Audit Trail
+                </a>
+            </li>
+            @endcan
+
+            @can('manage_disciplinary')
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('disciplinary.*') ? 'active' : '' }}" href="#disciplinarySubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('disciplinary.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-gavel"></i> Disciplinary
+                </a>
+                <div class="collapse {{ request()->routeIs('disciplinary.*') ? 'show' : '' }}" id="disciplinarySubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('disciplinary.index') ? 'active' : '' }}" href="{{ route('disciplinary.index') }}">Disciplinary List</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('disciplinary.create') ? 'active' : '' }}" href="{{ route('disciplinary.create') }}">Log Action</a></li>
+                    </ul>
+                </div>
+            </li>
+            @endcan
+
+            @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_retirement') || auth()->user()->hasPermissionTo('view_retirement')))
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('retirements.*') ? 'active' : '' }}" href="#retirementsSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('retirements.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-briefcase"></i> Retirements
+                </a>
+                <div class="collapse {{ request()->routeIs('retirements.*') ? 'show' : '' }}" id="retirementsSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}">Retirement List</a></li>
+                        @can('manage_retirement')
+                        <li><a class="nav-link {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}">Add Retirement</a></li>
+                        @endcan
+                    </ul>
+                </div>
+            </li>
+            @endif
+
+            @can('manage_employees')
+            <li>
+                <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
+                    <i class="fas fa-user-shield"></i> Pensioners
+                </a>
+            </li>
+            @endcan
+
+            @can('manage_sms')
+            <li>
+                <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}" href="{{ route('sms.index') }}">
+                    <i class="fas fa-sms"></i> SMS Notifications
+                </a>
+            </li>
+            @endcan
+
+            @can('manage_payroll')
+            <li>
+                <a class="nav-link dropdown-toggle {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'active' : '' }}" href="#payrollSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'true' : 'false' }}">
+                    <i class="fas fa-money-check-alt"></i> Payroll
+                </a>
+                <div class="collapse {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'show' : '' }}" id="payrollSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        <li><a class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}" href="{{ route('payroll.index') }}">Process Payroll</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}">Bulk Additions</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}">Bulk Deductions</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}">Employee Adjustments</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}">Addition Types</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}">Deduction Types</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">Salary Scales</a></li>
+                    </ul>
+                </div>
+            </li>
+            @endcan
+
+            @can('manage_reports')
+            <li>
+                <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
+                    <i class="fas fa-chart-bar"></i> Reports
+                </a>
+            </li>
+            @endcan
+        </ul>
         </div>
     </nav>
 
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="{{ asset('images/logo-white.png') }}" alt="Logo">
-        </div>
-        <nav class="nav flex-column">
-            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_employees') || auth()->user()->hasPermissionTo('view_employees')))
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('employees.*') ? 'active' : '' }}" href="#" id="employeesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #000;">
-                    <i class="fas fa-users me-2"></i> Employees
-                </a>
-                <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="employeesDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('employees.index') ? 'active' : '' }}" href="{{ route('employees.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-list me-2 text-primary" style="font-size: 0.9em;"></i> Index
-                        </a>
-                    </li>
-                    @if(auth()->user()->hasPermissionTo('manage_employees'))
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('employees.create') ? 'active' : '' }}" href="{{ route('employees.create') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-hourglass-half me-2 text-primary" style="font-size: 0.9em;"></i> Pending Changes
-                        </a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-            @endif
-            
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_users'))
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'active' : '' }}" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #000;">
-                    <i class="fas fa-user me-2"></i> Users
-                </a>
-                <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="usersDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('users.index') ? 'active' : '' }}" href="{{ route('users.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-list me-2 text-primary" style="font-size: 0.9em;"></i> Index
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('users.create') ? 'active' : '' }}" href="{{ route('users.create') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('roles.index') ? 'active' : '' }}" href="{{ route('roles.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-user-tag me-2 text-primary" style="font-size: 0.9em;"></i> Roles
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_departments'))
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('departments.*') ? 'active' : '' }}" href="#" id="departmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #000;">
-                    <i class="fas fa-building me-2"></i> Departments
-                </a>
-                <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="departmentsDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('departments.index') ? 'active' : '' }}" href="{{ route('departments.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-list me-2 text-primary" style="font-size: 0.9em;"></i> Index
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('departments.create') ? 'active' : '' }}" href="{{ route('departments.create') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_biometrics'))
-            <a class="nav-link {{ request()->routeIs('biometrics.*') ? 'active' : '' }}" href="{{ route('biometrics.index') }}">
-                <i class="fas fa-fingerprint"></i> Biometrics 
-            </a>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('view_audit_logs'))
-            <a class="nav-link {{ request()->routeIs('audit-trails.*') ? 'active' : '' }}" href="{{ route('audit-trails.index') }}">
-                <i class="fas fa-history"></i> Audit Trail
-            </a>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_disciplinary'))
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('disciplinary.*') ? 'active' : '' }}" href="#" id="disciplinaryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #000;">
-                    <i class="fas fa-gavel me-2"></i> Disciplinary
-                </a>
-                <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="disciplinaryDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('disciplinary.index') ? 'active' : '' }}" href="{{ route('disciplinary.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-list me-2 text-primary" style="font-size: 0.9em;"></i> Index
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('disciplinary.create') ? 'active' : '' }}" href="{{ route('disciplinary.create') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            @endif
-
-            @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_retirement') || auth()->user()->hasPermissionTo('view_retirement')))
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('retirements.*') ? 'active' : '' }}" href="#" id="retirementsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #000;">
-                    <i class="fas fa-briefcase me-2"></i> Retirements
-                </a>
-                <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="retirementsDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-list me-2 text-primary" style="font-size: 0.9em;"></i> Index
-                        </a>
-                    </li>
-                    @if(auth()->user()->hasPermissionTo('manage_retirement'))
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}" style="padding: 6px 12px;">
-                            <i class="fas fa-plus me-2 text-primary" style="font-size: 0.9em;"></i> Create
-                        </a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_employees'))
-            <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
-                <i class="fas fa-user-shield me-2"></i> Pensioners
-            </a>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_sms'))
-            <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}" href="{{ route('sms.index') }}">
-                <i class="fas fa-sms"></i> SMS Notifications 
-            </a>
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_payroll'))
-                <a class="nav-link {{ request()->routeIs('payroll.*') ? 'active' : '' }}" href="{{ route('payroll.index') }}">
-                    <i class="fas fa-money-check-alt me-2"></i> Payroll
-                </a>
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center {{ request()->routeIs('payroll.adjustments.manage') || request()->routeIs('deduction-types.*') || request()->routeIs('addition-types.*') ? 'active' : '' }}" href="#" id="deductionsAdditionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-users-cog me-2"></i> Manage All Deductions/Additions
-                    </a>
-                    <ul class="dropdown-menu bg-light border-0 shadow" aria-labelledby="deductionsAdditionsDropdown" style="min-width: 140px; font-size: 0.85rem;">
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}" style="padding: 6px 12px;">
-                                <i class="fas fa-plus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Bulk Additions
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}" style="padding: 6px 12px;">
-                                <i class="fas fa-minus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Bulk Deductions
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}" style="padding: 6px 12px;">
-                                <i class="fas fa-users me-2 text-primary" style="font-size: 0.9em;"></i> Employee Adjustments
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}" style="padding: 6px 12px;">
-                                <i class="fas fa-minus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Deduction Types
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}" style="padding: 6px 12px;">
-                                <i class="fas fa-plus-circle me-2 text-primary" style="font-size: 0.9em;"></i> Addition Types
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">
-                    <i class="fas fa-coins me-2"></i> Salary Scales
-                </a>
+    <div id="content">
+        <nav class="navbar navbar-expand-lg top-navbar">
+            <div class="container-fluid">
+                <button class="btn btn-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
                 
-            @endif
-
-            @if(auth()->user() && auth()->user()->hasPermissionTo('manage_reports'))
-            <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
-                <i class="fas fa-chart-bar"></i> Reports 
-            </a>
-            @endif
-        </nav>
-    </div>
-
-    <!-- Main Content -->
-    <div class="content" id="content">
-        <div class="container-fluid">
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="collapse navbar-collapse">
+                    <span class="navbar-text fw-bold">
+                        Welcome, {{ auth()->user()->username ?? 'Guest' }}!
+                    </span>
                 </div>
+
+                <div class="d-flex align-items-center">
+                    <button class="btn border-0" id="darkModeToggle" title="Toggle dark mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+
+                    @auth
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center user-dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="{{ auth()->user()->employee && auth()->user()->employee->photo_path ? asset('storage/' . auth()->user()->employee->photo_path) : asset('images/default-image.png') }}" alt="Profile" class="rounded-circle me-2">
+                            <span class="d-none d-sm-inline">{{ auth()->user()->username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    @else
+                    <ul class="navbar-nav flex-row">
+                        <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login</a></li>
+                        <li class="nav-item ms-3"><a class="nav-link" href="{{ route('register') }}">Register</a></li>
+                    </ul>
+                    @endauth
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
             @yield('content')
-        </div>
+        </main>
     </div>
+</div>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>© {{ date('Y') }} HR & Payroll. All rights reserved. | Version 1.0.0</p>
-        </div>
-    </footer>
+<footer>
+    <div class="container">
+        <p class="mb-0">© {{ date('Y') }} Powered by Steadfast Tech. All rights reserved.</p>
+    </div>
+</footer>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Dark mode toggle functionality
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
         const darkModeToggle = document.getElementById('darkModeToggle');
         const htmlElement = document.documentElement;
-        
-        // Check for saved theme preference or default to light mode
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            htmlElement.setAttribute('data-bs-theme', savedTheme);
-            updateDarkModeIcon(savedTheme);
-        } else {
-            // Default to light mode
-            htmlElement.setAttribute('data-bs-theme', 'light');
-            updateDarkModeIcon('light');
-        }
-        
-        // Toggle dark mode when button is clicked
-        darkModeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            htmlElement.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateDarkModeIcon(newTheme);
-        });
-        
-        // Update the dark mode icon based on current theme
-        function updateDarkModeIcon(theme) {
+
+        // Function to update the icon based on the current theme
+        const updateIcon = (theme) => {
             const icon = darkModeToggle.querySelector('i');
             if (theme === 'dark') {
                 icon.classList.remove('fa-moon');
@@ -654,48 +574,48 @@
                 icon.classList.remove('fa-sun');
                 icon.classList.add('fa-moon');
             }
-        }
+        };
+
+        // Check for saved theme in localStorage and apply it
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+        updateIcon(savedTheme);
+
+        // Add click event listener to the toggle button
+        darkModeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
         
-        // Existing sidebar functionality
+        // Handle sidebar scrolling for small devices
         const sidebar = document.getElementById('sidebar');
-        const content = document.getElementById('content');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            content.classList.toggle('collapsed');
-        });
-
-        // Auto-collapse sidebar on mobile
-        if (window.innerWidth <= 768) {
-            sidebar.classList.remove('active');
-            content.classList.add('collapsed');
-        }
-
-        // Highlight active link
-        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-            if (link.href === window.location.href) {
-                link.classList.add('active');
-            }
-        });
-        
-        // Handle nested dropdowns in sidebar
-        document.querySelectorAll('.sidebar .dropdown-submenu').forEach(submenu => {
-            submenu.addEventListener('mouseover', function() {
-                const dropdownMenu = this.querySelector('.dropdown-menu');
-                if (dropdownMenu) {
-                    dropdownMenu.classList.add('show');
-                }
+        if (sidebar) {
+            // Ensure sidebar content is scrollable on small devices
+            sidebar.style.overflowY = 'auto';
+            
+            // Add touch support for better scrolling on mobile devices
+            sidebar.addEventListener('touchstart', function() {
+                this.style.overflowY = 'auto';
             });
             
-            submenu.addEventListener('mouseout', function() {
-                const dropdownMenu = this.querySelector('.dropdown-menu');
-                if (dropdownMenu) {
-                    dropdownMenu.classList.remove('show');
+            // Ensure momentum scrolling on iOS devices
+            sidebar.style.webkitOverflowScrolling = 'touch';
+        }
+        
+        // Handle mobile sidebar toggle
+        const sidebarToggle = document.querySelector('[data-bs-toggle="offcanvas"]');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                if (sidebar) {
+                    sidebar.classList.toggle('show');
                 }
             });
-        });
-    </script>
-    @stack('scripts')
+        }
+    });
+</script>
+@stack('scripts')
 </body>
 </html>

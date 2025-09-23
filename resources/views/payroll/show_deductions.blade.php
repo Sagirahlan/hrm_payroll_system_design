@@ -22,14 +22,15 @@
                                         <div class="mb-3">
                                             <label for="deduction_type_id" class="form-label">Deduction Type</label>
                                             <select name="deduction_type_id" id="deduction_type_id" class="form-select" required>
-                                                <option value="">-- Select --</option>
+                                                <option value="">-- Select Non-Statutory Deduction --</option>
                                                 @foreach($deductionTypes as $type)
-                                                    <option value="{{ $type->id }}" 
-                                                            data-is-statutory="{{ $type->is_statutory }}"
-                                                            data-calculation-type="{{ $type->calculation_type }}"
-                                                            data-rate-or-amount="{{ $type->rate_or_amount }}">
-                                                        {{ $type->name }}
-                                                    </option>
+                                                    @if(!$type->is_statutory)
+                                                        <option value="{{ $type->id }}" 
+                                                                data-calculation-type="{{ $type->calculation_type }}"
+                                                                data-rate-or-amount="{{ $type->rate_or_amount }}">
+                                                            {{ $type->name }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         </div>

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card border-0 shadow-lg" style="max-width: 700px; width: 100%; background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);">
+    <div class="card border-0 shadow-lg" style="max-width: 800px; width: 100%; background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);">
         <div class="card-header text-center" style="background: #00bcd4;">
             <h4 class="mb-0 text-white font-weight-bold">Employee Details</h4>
         </div>
@@ -12,113 +12,194 @@
                     <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="Employee Photo" class="img-thumbnail border border-info shadow-sm" width="120">
                 </div>
             @endif
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><strong>Name:</strong> {{ $employee->first_name }}</li>
-                        <li class="list-group-item"><strong>Surname:</strong> {{ $employee->surname }}</li>
-                        <li class="list-group-item"><strong>Middle Name:</strong> {{ $employee->middle_name ?? 'N/A' }}</li>
-                        <li class="list-group-item"><strong>Gender:</strong> {{ $employee->gender }}</li>
-                        <li class="list-group-item"><strong>Date of Birth:</strong> {{ $employee->date_of_birth }}</li>
-                        <li class="list-group-item"><strong>Age:</strong> {{ \Carbon\Carbon::parse($employee->date_of_birth)->age }} years</li>
-                        <li class="list-group-item"><strong>Mobile No:</strong> {{ $employee->mobile_no }}</li>
-                        <li class="list-group-item"><strong>Email:</strong> {{ $employee->email ?? 'N/A' }}</li>
-                        <li class="list-group-item"><strong>Address:</strong> {{ $employee->address }}</li>
-                        <li class="list-group-item"><strong>ID:</strong> {{ $employee->employee_id }}</li>
-                        <li class="list-group-item"><strong>NIN:</strong> {{ $employee->nin ?? 'N/A' }}</li>
-                        <li class="list-group-item"><strong>Staff ID:</strong> {{ $employee->reg_no ?? 'N/A' }}</li>
-                        <li class="list-group-item"><strong>Nationality:</strong> {{ $employee->nationality }}</li>
-                        <li class="list-group-item"><strong>State of Origin:</strong> {{ $employee->state->name ?? 'N/A' }}</li>
-                        <li class="list-group-item"><strong>LGA:</strong> {{ $employee->lga->name ?? 'N/A' }}</li>
-                    </ul>
+            
+            <!-- Step Navigation -->
+            <ul class="nav nav-pills justify-content-center flex-nowrap overflow-auto mb-4" id="employeeTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">Personal</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab">Contact</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="work-tab" data-bs-toggle="tab" data-bs-target="#work" type="button" role="tab">Work</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">Other</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="kin-tab" data-bs-toggle="tab" data-bs-target="#kin" type="button" role="tab">Next of Kin</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">Bank</button>
+                </li>
+                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">History</button>
+                </li>
+            </ul>
+            
+            <!-- Step Content -->
+            <div class="tab-content" id="employeeTabContent">
+                <!-- Personal Information Step -->
+                <div class="tab-pane fade show active" id="personal" role="tabpanel">
+                    <h5 class="text-primary mb-3">Personal Information</h5>
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>First Name:</strong> {{ $employee->first_name }}</p></div>
+                        <div class="col-md-6"><p><strong>Surname:</strong> {{ $employee->surname }}</p></div>
+                        <div class="col-md-6"><p><strong>Middle Name:</strong> {{ $employee->middle_name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Gender:</strong> {{ $employee->gender }}</p></div>
+                        <div class="col-md-6"><p><strong>Date of Birth:</strong> {{ $employee->date_of_birth }}</p></div>
+                        <div class="col-md-6"><p><strong>Age:</strong> {{ \Carbon\Carbon::parse($employee->date_of_birth)->age }} years</p></div>
+                        <div class="col-md-6"><p><strong>Nationality:</strong> {{ $employee->nationality }}</p></div>
+                        <div class="col-md-6"><p><strong>State of Origin:</strong> {{ $employee->state->name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>LGA:</strong> {{ $employee->lga->name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Ward:</strong> {{ $employee->ward->ward_name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Staff ID:</strong> {{ $employee->reg_no ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>NIN:</strong> {{ $employee->nin ?? 'N/A' }}</p></div>
+                    </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                <ul class="list-group list-group-flush">
-    <li class="list-group-item"><strong>Appointment Type:</strong> {{ $employee->appointmentType->name ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Cadre:</strong> {{ $employee->cadre->name }}</li>
 
-    {{-- date hired --}}
-    <li class="list-group-item">
-        <strong>Date of First Appointment:</strong>
-        @php
-            $dfa = $employee->date_of_first_appointment;
-        @endphp
-        {{ $dfa ? \Carbon\Carbon::parse($dfa)->format('j M Y') : '—' }}
-    </li>
+                <!-- Contact & Address Step -->
+                <div class="tab-pane fade" id="contact" role="tabpanel">
+                    <h5 class="text-primary mb-3">Contact & Address</h5>
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>Mobile No:</strong> {{ $employee->mobile_no }}</p></div>
+                        <div class="col-md-6"><p><strong>Email:</strong> {{ $employee->email ?? 'N/A' }}</p></div>
+                        <div class="col-md-12"><p><strong>Address:</strong> {{ $employee->address }}</p></div>
+                    </div>
+                </div>
+                
+                <!-- Work Information Step -->
+                <div class="tab-pane fade" id="work" role="tabpanel">
+                    <h5 class="text-primary mb-3">Work Information</h5>
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>Date of First Appointment:</strong> {{ $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('j M Y') : '—' }}</p></div>
+                        <div class="col-md-6"><p><strong>Years of Service:</strong> {{ $employee->years_of_service !== null ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service) : '—' }}</p></div>
+                        <div class="col-md-6"><p><strong>Cadre:</strong> {{ $employee->cadre->name }}</p></div>
+                        <div class="col-md-6"><p><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym ?? 'N/A' }} - {{ $employee->gradeLevel->salaryScale->full_name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Grade Level:</strong> {{ $employee->gradeLevel->name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Step:</strong> {{ $employee->step->name ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Rank:</strong> {{ $employee->rank->title ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Department:</strong> {{ $employee->department->department_name }}</p></div>
+                        <div class="col-md-6"><p><strong>Expected Next Promotion:</strong> {{ $employee->expected_next_promotion ? \Carbon\Carbon::parse($employee->expected_next_promotion)->format('j M Y') : 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Expected Retirement Date:</strong> {{ $employee->expected_retirement_date ? \Carbon\Carbon::parse($employee->expected_retirement_date)->format('j M Y') : '—' }}</p></div>
+                    </div>
+                </div>
 
-    {{-- NEW – years of service --}}
-    <li class="list-group-item">
-        <strong>Years of Service:</strong>
-        {{ $employee->years_of_service !== null
-            ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service)
-            : '—' }}
-    </li>
+                <!-- Other Details Step -->
+                <div class="tab-pane fade" id="other" role="tabpanel">
+                    <h5 class="text-primary mb-3">Other Details</h5>
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>Status:</strong> {{ $employee->status }}</p></div>
+                        <div class="col-md-6"><p><strong>Highest Certificate:</strong> {{ $employee->highest_certificate ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Appointment Type:</strong> {{ $employee->appointmentType->name ?? 'N/A' }}</p></div>
+                    </div>
+                </div>
 
-    <li class="list-group-item"><strong>Department:</strong> {{ $employee->department->department_name }}</li>
-    <li class="list-group-item">
-        <strong>Expected Next Promotion:</strong>
-        @php
-            $enp = $employee->expected_next_promotion;
-        @endphp
-        {{ $enp ? \Carbon\Carbon::parse($enp)->format('j M Y') : 'N/A' }}
-    </li>
-    <li class="list-group-item">
-        <strong>Expected Retirement Date:</strong>
-        @php
-            $erd = $employee->expected_retirement_date;
-        @endphp
-        {{ $erd ? \Carbon\Carbon::parse($erd)->format('j M Y') : '—' }}
-    </li>
-    <li class="list-group-item"><strong>Grade Level Limit:</strong> {{ $employee->grade_level_limit ?? 'N/A' }}</li>
-    <li class="list-group-item"><strong>Highest Certificate:</strong> {{ $employee->highest_certificate ?? 'N/A' }}</li>
-    
-    <!-- Updated to show salary scale and grade level information -->
-    @if($employee->gradeLevel)
-        @if($employee->gradeLevel->salaryScale)
-            <li class="list-group-item"><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym }} - {{ $employee->gradeLevel->salaryScale->full_name }}</li>
-        @endif
-        <li class="list-group-item"><strong>Grade Level:</strong> {{ $employee->gradeLevel->name }}</li>
-    @else
-        <li class="list-group-item"><strong>Salary Scale:</strong> N/A</li>
-        <li class="list-group-item"><strong>Grade Level:</strong> N/A</li>
-    @endif
-    
-    <li class="list-group-item"><strong>Status:</strong> {{ $employee->status }}</li>
-</ul>
-                    {{-- New Individual Export Button --}}
-                    <a href="{{ route('employee.export', $employee->employee_id) }}" class="btn btn-success btn-sm rounded-pill me-1 font-weight-bold shadow-sm">Export</a>
+                <!-- Next of Kin Step -->
+                <div class="tab-pane fade" id="kin" role="tabpanel">
+                    @if ($employee->nextOfKin)
+                        <h5 class="text-primary">Next of Kin Details</h5>
+                        <div class="row">
+                            <div class="col-md-6"><p><strong>Name:</strong> {{ $employee->nextOfKin->name }}</p></div>
+                            <div class="col-md-6"><p><strong>Relationship:</strong> {{ $employee->nextOfKin->relationship }}</p></div>
+                            <div class="col-md-6"><p><strong>Phone:</strong> {{ $employee->nextOfKin->mobile_no }}</p></div>
+                            <div class="col-md-6"><p><strong>Address:</strong> {{ $employee->nextOfKin->address }}</p></div>
+                            <div class="col-md-6"><p><strong>Occupation:</strong> {{ $employee->nextOfKin->occupation ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Place of Work:</strong> {{ $employee->nextOfKin->place_of_work ?? 'N/A' }}</p></div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning mt-4">No next of kin details available.</div>
+                    @endif
+                </div>
+
+                <!-- Bank Details Step -->
+                <div class="tab-pane fade" id="bank" role="tabpanel">
+                    @if ($employee->bank)
+                        <h5 class="text-primary">Bank Information</h5>
+                        <div class="row">
+                            <div class="col-md-6"><p><strong>Bank Name:</strong> {{ $employee->bank->bank_name }}</p></div>
+                            <div class="col-md-6"><p><strong>Bank Code:</strong> {{ $employee->bank->bank_code }}</p></div>
+                            <div class="col-md-6"><p><strong>Account Name:</strong> {{ $employee->bank->account_name }}</p></div>
+                            <div class="col-md-6"><p><strong>Account Number:</strong> {{ $employee->bank->account_no }}</p></div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning mt-4">No bank information available.</div>
+                    @endif
+                </div>
+                
+                <!-- History Information Step -->
+                <div class="tab-pane fade" id="history" role="tabpanel">
+                    <!-- Additions History -->
+                    <div class="mt-2">
+                        <h5 class="text-primary">Additions History</h5>
+                        @if($employee->additions->count() > 0)
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Period</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($employee->additions as $addition)
+                                        <tr>
+                                            <td>{{ $addition->addition_type }}</td>
+                                            <td>{{ $addition->formatted_amount }}</td>
+                                            <td>{{ $addition->addition_period }}</td>
+                                            <td>{{ $addition->start_date }}</td>
+                                            <td>{{ $addition->end_date ?? 'N/A' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <div class="alert alert-info">No additions history available.</div>
+                        @endif
+                    </div>
+
+                    <!-- Deductions History -->
+                    <div class="mt-4">
+                        <h5 class="text-primary">Deductions History</h5>
+                        @if($employee->deductions->count() > 0)
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Period</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($employee->deductions as $deduction)
+                                        <tr>
+                                            <td>{{ $deduction->deduction_type }}</td>
+                                            <td>{{ $deduction->formatted_amount }}</td>
+                                            <td>{{ $deduction->deduction_period }}</td>
+                                            <td>{{ $deduction->start_date }}</td>
+                                            <td>{{ $deduction->end_date ?? 'N/A' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <div class="alert alert-info">No deductions history available.</div>
+                        @endif
+                    </div>
                 </div>
             </div>
-            {{-- Bank Details --}}
-            @if ($employee->bank)
-                <h5 class="mt-4 text-primary">Bank Information</h5>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>Bank Name:</strong> {{ $employee->bank->bank_name }}</li>
-                    <li class="list-group-item"><strong>Bank Code:</strong> {{ $employee->bank->bank_code }}</li>
-                    <li class="list-group-item"><strong>Account Name:</strong> {{ $employee->bank->account_name }}</li>
-                    <li class="list-group-item"><strong>Account Number:</strong> {{ $employee->bank->account_no }}</li>
-                </ul>
-            @else
-                <div class="alert alert-warning mt-4">No bank information available.</div>
-            @endif
-            {{-- Next of Kin Details --}}
-            @if ($employee->nextOfKin)
-                <h5 class="mt-4 text-primary">Next of Kin Details</h5>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>Name:</strong> {{ $employee->nextOfKin->name }}</li>
-                    <li class="list-group-item"><strong>Relationship:</strong> {{ $employee->nextOfKin->relationship }}</li>
-                    <li class="list-group-item"><strong>Phone:</strong> {{ $employee->nextOfKin->mobile_no }}</li>
-                    <li class="list-group-item"><strong>Address:</strong> {{ $employee->nextOfKin->address }}</li>
-                    <li class="list-group-item"><strong>Occupation:</strong> {{ $employee->nextOfKin->occupation ?? 'N/A' }}</li>
-                    <li class="list-group-item"><strong>Place of Work:</strong> {{ $employee->nextOfKin->place_of_work ?? 'N/A' }}</li>
-                </ul>
-            @else
-                <div class="alert alert-warning mt-4">No next of kin details available.</div>
-            @endif
-
+            
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('employees.index') }}" class="btn btn-secondary rounded-pill px-4">Back</a>
-                <a href="{{ route('employees.edit', $employee) }}" class="btn btn-warning rounded-pill px-4">Edit</a>
+                <div>
+                    <a href="{{ route('employee.export', $employee->employee_id) }}" class="btn btn-success btn-sm rounded-pill me-1 font-weight-bold shadow-sm">Export</a>
+                    <a href="{{ route('employees.edit', $employee) }}" class="btn btn-warning rounded-pill px-4">Edit</a>
+                </div>
             </div>
         </div>
     </div>

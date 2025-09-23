@@ -3,7 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Ward;
+use App\Models\Lga;
 
 class WardSeeder extends Seeder
 {
@@ -14,24 +15,25 @@ class WardSeeder extends Seeder
      */
     public function run()
     {
-        $lgas = DB::table('lgas')->pluck('id');
+        // Load the ward data from the JSON file
+        $jsonPath = database_path('seeders/states-and-lgas-and-wards.json');
+        $wardsData = json_decode(file_get_contents($jsonPath), true);
 
-        if ($lgas->isEmpty()) {
-            return;
-        }
-
-        $wards = [];
-        foreach ($lgas as $lgaId) {
-            for ($i = 1; $i <= 5; $i++) {
-                $wards[] = [
-                    'ward_name' => 'Ward ' . $i,
-                    'lga_id' => $lgaId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+        foreach ($wardsData as $stateData) {
+            foreach ($stateData['lgas'] as $lgaData) {
+                // Find the LGA by name
+                $lga = Lga::where('name', $lgaData['lga'])->first();
+                
+                // If LGA exists, create the wards
+                if ($lga) {
+                    foreach ($lgaData['wards'] as $wardName) {
+                        Ward::firstOrCreate([
+                            'ward_name' => $wardName,
+                            'lga_id' => $lga->id  // Using $lga->id since Lga model uses default primary key
+                        ]);
+                    }
+                }
             }
         }
-
-        DB::table('wards')->insert($wards);
     }
 }

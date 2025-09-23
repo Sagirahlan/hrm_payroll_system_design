@@ -11,7 +11,7 @@ class Employee extends Model
     protected $fillable = [
         'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'ward_id',
         'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
-        'grade_level_id', 'department_id', 'expected_next_promotion',
+        'grade_level_id', 'step_id', 'rank_id', 'department_id', 'expected_next_promotion',
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
         'photo_path', 'years_of_service',
     ];
@@ -28,7 +28,7 @@ class Employee extends Model
 
     public function ward()
     {
-        return $this->belongsTo(Ward::class, 'ward_id');
+        return $this->belongsTo(Ward::class, 'ward_id', 'ward_id');
     }
 
     public function department()
@@ -44,9 +44,18 @@ class Employee extends Model
     // App.Models.Employee.php
     public function gradeLevel()
     {
-        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
+        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id')->with('steps');
     }
 
+    public function step()
+    {
+        return $this->belongsTo(Step::class, 'step_id', 'id');
+    }
+
+    public function rank()
+    {
+        return $this->belongsTo(Rank::class, 'rank_id');
+    }
 
     public function biometricData()
     {

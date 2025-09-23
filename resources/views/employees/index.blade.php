@@ -4,11 +4,11 @@
 <div class="container-fluid">
     <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);">
         <!-- Header Section -->
-        <div class="card-header d-flex justify-content-between align-items-center" style="background: #00bcd4;">
-            <h4 class="mb-0 text-white font-weight-bold">
+        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="background: #00bcd4;">
+            <h4 class="mb-0 text-white font-weight-bold text-center text-md-start">
                 <i class="fas fa-users me-2"></i>Employees Management
             </h4>
-            <div>
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
                 <a href="{{ route('employees.create') }}" class="btn btn-light btn-sm rounded-pill me-2 font-weight-bold shadow-sm">
                     <i class="fas fa-plus me-1"></i>Add Employee
                 </a>
@@ -51,16 +51,16 @@
                         <div class="card-body">
                             <form action="{{ route('employees.import') }}" method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
                                 @csrf
-                                <div class="col-auto">
+                                <div class="col-12 col-md-auto">
                                     <label for="import_file" class="form-label mb-0 fw-bold">
                                         <i class="fas fa-upload me-2"></i>Import Employees
                                     </label>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-12 col-md-6">
                                     <input type="file" class="form-control" name="import_file" id="import_file" accept=".xlsx,.xls" required>
                                 </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm">
+                                <div class="col-12 col-md-auto">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm w-100">
                                         <i class="fas fa-cloud-upload-alt me-1"></i>Import
                                     </button>
                                 </div>
@@ -86,7 +86,7 @@
                             <form method="GET" action="{{ route('employees.index') }}" id="filterForm">
                                 <!-- Quick Search Row -->
                                 <div class="row mb-3">
-                                    <div class="col-md-6">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-search"></i></span>
                                             <input type="text" name="search" class="form-control" 
@@ -94,8 +94,8 @@
                                                    value="{{ request('search') }}">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex gap-2">
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex flex-wrap gap-2">
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-search me-1"></i>Search
                                             </button>
@@ -110,7 +110,7 @@
                                 <div class="collapse {{ request()->hasAny(['department', 'cadre', 'status', 'gender', 'appointment_type_id', 'state_of_origin', 'age_from', 'age_to']) ? 'show' : '' }}" id="advancedFilters">
                                     <div class="row g-3">
                                         <!-- Row 1 -->
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Department</label>
                                             <select name="department" class="form-select">
                                                 <option value="">All Departments</option>
@@ -122,7 +122,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Cadre</label>
                                             <select name="cadre" class="form-select">
                                                 <option value="">All Cadres</option>
@@ -134,7 +134,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Status</label>
                                             <select name="status" class="form-select">
                                                 <option value="">All Statuses</option>
@@ -146,7 +146,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Gender</label>
                                             <select name="gender" class="form-select">
                                                 <option value="">All Genders</option>
@@ -162,7 +162,7 @@
 
                                     <div class="row g-3 mt-2">
                                         <!-- Row 2 -->
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Appointment Type</label>
                                             <select name="appointment_type_id" class="form-select">
                                                 <option value="">All Types</option>
@@ -174,7 +174,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">State of Origin</label>
                                             <select name="state_of_origin" class="form-select">
                                                 <option value="">All States</option>
@@ -186,19 +186,19 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Grade Level</label>
                                             <select name="grade_level_id" class="form-select">
                                                 <option value="">All Grade Levels</option>
                                                 @foreach($gradeLevels as $level)
                                                     <option value="{{ $level->id }}" 
                                                             {{ request('grade_level_id') == $level->id ? 'selected' : '' }}>
-                                                        {{ $level->name }} / {{ $level->step_level }}
+                                                        {{ $level->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 col-12">
                                             <label class="form-label fw-bold">Results Per Page</label>
                                             <select name="per_page" class="form-select">
                                                 <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10</option>
@@ -211,7 +211,7 @@
 
                                     <div class="row g-3 mt-2">
                                         <!-- Row 3 - Date Ranges -->
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 col-12">
                                             <label class="form-label fw-bold">Age Range</label>
                                             <div class="row">
                                                 <div class="col-6">
@@ -226,7 +226,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 col-12">
                                             <label class="form-label fw-bold">Appointment Date Range</label>
                                             <div class="row">
                                                 <div class="col-6">
@@ -242,7 +242,7 @@
                                     </div>
 
                                     <div class="row mt-3">
-                                        <div class="col-12 d-flex gap-2">
+                                        <div class="col-12 d-flex flex-wrap gap-2">
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-filter me-1"></i>Apply Filters
                                             </button>
@@ -260,7 +260,7 @@
 
             <!-- Results Summary and Sorting -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6 mb-3 mb-md-0">
                     <p class="mb-0 text-muted">
                         <i class="fas fa-info-circle me-1"></i>
                         Showing {{ $employees->firstItem() ?? 0 }} to {{ $employees->lastItem() ?? 0 }} 
@@ -270,8 +270,8 @@
                         @endif
                     </p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <div class="d-flex justify-content-end align-items-center gap-2">
+                <div class="col-12 col-md-6">
+                    <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2">
                         <label class="form-label mb-0 fw-bold">Sort by:</label>
                         <select class="form-select" style="width: auto;" onchange="changeSorting(this.value)">
                             <option value="created_at|desc" {{ request('sort_by') == 'created_at' && request('sort_order') == 'desc' ? 'selected' : '' }}>
@@ -408,11 +408,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-4 d-flex justify-content-between align-items-center">
+            <div class="mt-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div>
                     {{ $employees->withQueryString()->links('pagination::bootstrap-5') }}
                 </div>
-                <div class="text-muted">
+                <div class="text-muted text-center text-md-end">
                     <small>
                         Total: {{ $employees->total() }} employees
                         @if(request()->hasAny(['search', 'department', 'cadre', 'status']))

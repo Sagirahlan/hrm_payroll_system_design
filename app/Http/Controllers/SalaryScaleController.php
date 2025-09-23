@@ -14,6 +14,7 @@ class SalaryScaleController extends Controller
         $this->middleware(['auth', 'permission:manage_payroll']);
     }
 
+
     public function index(Request $request)
     {
         $query = SalaryScale::query();
@@ -133,7 +134,7 @@ class SalaryScaleController extends Controller
         if ($gradeLevel) {
             $steps = Step::where('grade_level_id', $gradeLevel->id)
                          ->orderBy('name', 'asc')
-                         ->pluck('name');
+                         ->get();
             return response()->json($steps);
         }
 

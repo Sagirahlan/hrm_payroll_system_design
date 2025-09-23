@@ -30,7 +30,7 @@ Route::get('/', function () {
 Auth::routes();
 
 // Simple test route
-Route::get('/test-page', [TestController::class, 'index'])->name('test.page');
+// Route::get('/test-page', [TestController::class, 'index'])->name('test.page');
 
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible to all authenticated users

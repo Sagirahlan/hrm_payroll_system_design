@@ -8,6 +8,7 @@ class Ward extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'ward_id';
     protected $fillable = ['lga_id', 'ward_name'];
 
     public function lga()

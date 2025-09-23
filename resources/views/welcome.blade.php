@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="container text-center mt-5">
-        <h1>Welcome to HRM Payroll System</h1>
+        <h1>Welcome to  Kundi Human Resources Management and Payroll</h1>
         <p>A comprehensive solution for managing human resources and payroll.</p>
         <a href="{{ route('login') }}" class="btn btn-primary">Login</a>
     </div>

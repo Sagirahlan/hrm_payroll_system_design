@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             DeductionTypesSeeder::class,
             NonStatutoryItemsSeeder::class,
             AppointmentTypeSeeder::class,
+            RankSeeder::class,
         ]);
     }
 }

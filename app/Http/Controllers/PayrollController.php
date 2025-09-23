@@ -300,15 +300,27 @@ class PayrollController extends Controller
 
     public function storeDeduction(Request $request, $employeeId)
     {
+        $employee = Employee::with('gradeLevel.steps')->findOrFail($employeeId);
         $deductionType = DeductionType::find($request->deduction_type_id);
         
-        // Validation rules
+        // Prevent creating statutory deductions individually - they should be created via bulk process
+        if ($deductionType && $deductionType->is_statutory) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Statutory deductions must be created via the bulk deduction process.'])
+                ->withInput();
+        }
+        
+        // Validation rules for non-statutory deductions
         $rules = [
             'deduction_type_id' => 'required|exists:deduction_types,id',
+            'amount_type' => 'required|in:fixed,percentage',
+            'amount' => 'required|numeric|min:0',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ];
+
+        $request->validate($rules);
         
         // For non-statutory deductions, we need amount_type and amount
         if ($deductionType && !$deductionType->is_statutory) {
@@ -319,8 +331,25 @@ class PayrollController extends Controller
         $request->validate($rules);
 
         if ($deductionType) {
-            // Update the deduction type with the provided amount/percentage for non-statutory deductions
+            $amount = 0;
+            
+            // Calculate the deduction amount for non-statutory deductions
             if (!$deductionType->is_statutory) {
+                if ($request->amount_type === 'percentage') {
+                    // Check if employee has a grade level with steps
+                    if ($employee->gradeLevel && $employee->gradeLevel->steps->isNotEmpty()) {
+                        // Use the specific step if assigned, otherwise use the first step
+                        $basicSalary = $employee->step ? $employee->step->basic_salary : $employee->gradeLevel->steps->first()->basic_salary;
+                        if ($basicSalary > 0 && $request->amount > 0) {
+                            $amount = ($request->amount / 100) * $basicSalary;
+                        }
+                    }
+                } else {
+                    // Fixed amount
+                    $amount = $request->amount;
+                }
+                
+                // Update the deduction type with the provided amount/percentage for non-statutory deductions
                 $deductionType->rate_or_amount = $request->amount;
                 $deductionType->calculation_type = $request->amount_type === 'percentage' ? 'percentage' : 'fixed_amount';
                 $deductionType->save();
@@ -329,6 +358,7 @@ class PayrollController extends Controller
             Deduction::create([
                 'employee_id' => $employeeId,
                 'deduction_type' => $deductionType->name,
+                'amount' => $amount,
                 'amount_type' => $request->amount_type ?? null,
                 'deduction_period' => $request->period,
                 'start_date' => $request->start_date,
@@ -884,6 +914,7 @@ class PayrollController extends Controller
             'deduction_types' => 'sometimes|array',
             'deduction_types.*' => 'integer|exists:deduction_types,id',
             'type_id' => 'sometimes|integer|exists:deduction_types,id',
+            'statutory_deduction_month' => 'required_with:deduction_types|date_format:Y-m',
             'period' => 'required_with:type_id|nullable|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -932,15 +963,24 @@ class PayrollController extends Controller
         
         $deductionTypes = DeductionType::findMany($deductionTypeIds);
 
-        $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type']);
+        $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type', 'statutory_deduction_month']);
 
         foreach ($employees as $employee) {
             foreach ($deductionTypes as $deductionType) {
                 $amount = 0;
                 if ($deductionType->is_statutory) {
                     if ($deductionType->calculation_type === 'percentage') {
-                        $amount = ($deductionType->rate_or_amount / 100) * $employee->gradeLevel->basic_salary;
+                        // Check if employee has a grade level with steps for statutory deductions
+                        if ($employee->gradeLevel && $employee->gradeLevel->steps->isNotEmpty()) {
+                            // Use the specific step if assigned, otherwise use the first step
+                            $basicSalary = $employee->step ? $employee->step->basic_salary : $employee->gradeLevel->steps->first()->basic_salary;
+                            if ($basicSalary > 0) {
+                                $amount = ($deductionType->rate_or_amount / 100) * $basicSalary;
+                            }
+                        }
+                        // If we can't calculate the amount, $amount remains 0
                     } else {
+                        // For fixed amount statutory deductions
                         $amount = $deductionType->rate_or_amount;
                     }
                 } else {
@@ -958,9 +998,20 @@ class PayrollController extends Controller
                 Deduction::create([
                     'employee_id' => $employee->employee_id,
                     'deduction_type' => $deductionType->name,
+                    'amount' => $amount,
                     'deduction_period' => $deductionType->is_statutory ? 'Monthly' : $data['period'],
-                    'start_date' => $data['start_date'],
-                    'end_date' => $deductionType->is_statutory ? null : $data['end_date'],
+                    'start_date' => $deductionType->is_statutory ? 
+                        (isset($data['statutory_deduction_month']) && $data['statutory_deduction_month'] ? 
+                            $data['statutory_deduction_month'] . '-01' : 
+                            date('Y-m') . '-01') : 
+                        $data['start_date'],
+                    'end_date' => $deductionType->is_statutory ? 
+                        date('Y-m-t', strtotime(
+                            (isset($data['statutory_deduction_month']) && $data['statutory_deduction_month'] ? 
+                                $data['statutory_deduction_month'] : 
+                                date('Y-m')) . '-01'
+                        )) : 
+                        $data['end_date'],
                     'deduction_type_id' => $deductionType->id,
                 ]);
             }

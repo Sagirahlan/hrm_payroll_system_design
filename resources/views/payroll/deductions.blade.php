@@ -50,6 +50,11 @@
                                     </label>
                                 </div>
                             @endforeach
+                            
+                            <div class="mt-3">
+                                <label for="statutory_deduction_month" class="form-label">Deduction Month</label>
+                                <input type="month" name="statutory_deduction_month" id="statutory_deduction_month" class="form-control" required>
+                            </div>
                         </div>
 
                         <hr>
@@ -334,4 +339,55 @@
     });
 </script>
 @endpush
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default value for statutory deduction month
+    const statutoryMonthInput = document.getElementById('statutory_deduction_month');
+    if (statutoryMonthInput && !statutoryMonthInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        statutoryMonthInput.value = `${year}-${month}`;
+    }
+    
+    // Set default value for start date
+    const startDateInput = document.getElementById('start_date');
+    if (startDateInput && !startDateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.value = today;
+    }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default value for statutory deduction month
+    const statutoryMonthInput = document.getElementById('statutory_deduction_month');
+    if (statutoryMonthInput && !statutoryMonthInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        statutoryMonthInput.value = `${year}-${month}`;
+    }
+    
+    // Set default value for start date
+    const startDateInput = document.getElementById('start_date');
+    if (startDateInput && !startDateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.value = today;
+    }
+    
+    // Show/hide sections based on selection
+    const typeIdSelect = document.getElementById('type_id');
+    const nonStatutoryFields = document.querySelectorAll('#amount, #amount_type, #period, #start_date, #end_date');
+    
+    if (typeIdSelect) {
+        typeIdSelect.addEventListener('change', function() {
+            const showNonStatutory = this.value !== '';
+            nonStatutoryFields.forEach(input => {
+                input.closest('.mb-3, .row').style.display = showNonStatutory ? 'block' : 'none';
+            });
+        });
+    }
+});
+</script>
 @endsection

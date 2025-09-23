@@ -86,9 +86,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($pendingChange->data as $key => $newValue)
+                                        @foreach($displayableNewData as $key => $newValue)
                                             @php
-                                                $previousValue = $pendingChange->previous_data[$key] ?? null;
+                                                $previousValue = $displayableOldData[$key] ?? null;
                                                 $hasChanged = App\Helpers\ComparisonHelper::isDifferent($previousValue, $newValue);
                                             @endphp
                                             @if($hasChanged)
@@ -120,7 +120,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($pendingChange->data as $key => $value)
+                                        @foreach($displayableNewData as $key => $value)
                                         <tr>
                                             <td>
                                                 <p class="text-xs font-weight-bold mb-0">{{ ucfirst(str_replace('_', ' ', $key)) }}</p>

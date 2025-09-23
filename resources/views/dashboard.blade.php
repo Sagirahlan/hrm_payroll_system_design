@@ -205,7 +205,7 @@
 
                 {{-- Employee Stats Cards --}}
                 <div class="row mb-4">
-                    <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 col-12 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -223,7 +223,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 col-12 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -241,7 +241,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 col-12 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -259,7 +259,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 col-12 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -280,7 +280,7 @@
 
                 <div class="row">
                     {{-- My Recent Activities --}}
-                    <div class="col-lg-8 mb-4">
+                    <div class="col-lg-8 col-12 mb-4">
                         <div class="dashboard-card h-100">
                             <div class="card-header bg-success text-white">
                                 <h6 class="mb-0 d-flex align-items-center">
@@ -327,7 +327,7 @@
                     </div>
 
                     {{-- Quick Actions --}}
-                    <div class="col-lg-4 mb-4">
+                    <div class="col-lg-4 col-12 mb-4">
                         <div class="dashboard-card quick-action-card">
                             <div class="card-header bg-success text-white">
                                 <h6 class="mb-0 d-flex align-items-center">
@@ -367,7 +367,7 @@
             <div class="card-body">
                 {{-- Stats Summary --}}
                 <div class="row mb-4">
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -383,7 +383,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -399,7 +399,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -415,7 +415,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -431,7 +431,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -447,7 +447,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-2 col-md-4 col-6 mb-4">
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
                         <div class="stat-card h-100">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -466,7 +466,7 @@
 
                 <div class="row">
                     {{-- Employee Status Chart --}}
-                    <div class="col-xl-8 mb-4">
+                    <div class="col-xl-8 col-12 mb-4">
                         <div class="chart-card">
                             <div class="chart-header">
                                 <h6 class="mb-0 d-flex align-items-center">
@@ -539,7 +539,7 @@
                     </div>
 
                     {{-- Department Pie Chart --}}
-                    <div class="col-xl-4 mb-4">
+                    <div class="col-xl-4 col-12 mb-4">
                         <div class="chart-card h-100">
                             <div class="chart-header">
                                 <h6 class="mb-0 d-flex align-items-center">

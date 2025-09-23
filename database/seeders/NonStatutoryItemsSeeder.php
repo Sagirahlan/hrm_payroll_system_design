@@ -45,35 +45,6 @@ class NonStatutoryItemsSeeder extends Seeder
             );
         }
 
-        // Non-statutory deductions
-        $deductionTypes = [
-            [
-                'name' => 'Staff Loan',
-                'code' => 'SL',
-                'description' => 'Deduction for staff loan.',
-                'is_statutory' => false,
-                'calculation_type' => 'fixed_amount',
-                'rate_or_amount' => 2000,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Cooperative Contribution',
-                'code' => 'CC',
-                'description' => 'Deduction for cooperative contribution.',
-                'is_statutory' => false,
-                'calculation_type' => 'fixed_amount',
-                'rate_or_amount' => 3000,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ];
-
-        foreach ($deductionTypes as $type) {
-            DB::table('deduction_types')->updateOrInsert(
-                ['code' => $type['code']], // Unique identifier
-                $type
-            );
-        }
+       
     }
 }

@@ -7,6 +7,15 @@ use App\Models\Employee;
 use App\Models\NextOfKin;
 use App\Models\Bank;
 use App\Models\AuditTrail;
+use App\Models\State;
+use App\Models\Lga;
+use App\Models\Ward;
+use App\Models\Cadre;
+use App\Models\Department;
+use App\Models\GradeLevel;
+use App\Models\Rank;
+use App\Models\Step;
+use App\Models\AppointmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -39,7 +48,50 @@ class PendingEmployeeChangeController extends Controller
     public function show(PendingEmployeeChange $pendingChange)
     {
         $pendingChange->load(['employee', 'requestedBy', 'approvedBy']);
-        return view('pending-changes.show', compact('pendingChange'));
+
+        $displayableNewData = $this->getDisplayableData($pendingChange->data);
+        $displayableOldData = $this->getDisplayableData($pendingChange->previous_data);
+
+        return view('pending-changes.show', compact('pendingChange', 'displayableNewData', 'displayableOldData'));
+    }
+
+    private function getDisplayableData(array $data): array
+    {
+        $displayableData = [];
+        foreach ($data as $key => $value) {
+            $displayableData[$key] = $this->getDisplayValue($key, $value);
+        }
+        return $displayableData;
+    }
+
+    private function getDisplayValue($key, $value)
+    {
+        if (is_null($value)) {
+            return 'N/A';
+        }
+
+        switch ($key) {
+            case 'state_id':
+                return State::find($value)->name ?? $value;
+            case 'lga_id':
+                return Lga::find($value)->name ?? $value;
+            case 'ward_id':
+                return Ward::find($value)->ward_name ?? $value;
+            case 'cadre_id':
+                return Cadre::find($value)->name ?? $value;
+            case 'department_id':
+                return Department::find($value)->department_name ?? $value;
+            case 'grade_level_id':
+                return GradeLevel::find($value)->name ?? $value;
+            case 'step_id':
+                return Step::find($value)->name ?? $value;
+            case 'rank_id':
+                return Rank::find($value)->title ?? $value;
+            case 'appointment_type_id':
+                return AppointmentType::find($value)->name ?? $value;
+            default:
+                return $value;
+        }
     }
     
     public function approve(PendingEmployeeChange $pendingChange, Request $request)
