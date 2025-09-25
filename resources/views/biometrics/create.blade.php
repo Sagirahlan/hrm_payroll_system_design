@@ -18,10 +18,20 @@
                                 @csrf
                                 <div class="mb-3">
                                     <label for="employee_id" class="form-label">Employee</label>
-                                    <select name="employee_id" class="form-control" required>
-                                        @foreach ($employees as $employee)
-                                            <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->surname }}</option>
-                                        @endforeach
+                                    <select name="employee_id" class="form-control" required {{ request('employee_id') ? 'readonly' : '' }}>
+                                        @if(request('employee_id'))
+                                            @php
+                                                $selectedEmployee = $employees->firstWhere('employee_id', request('employee_id'));
+                                            @endphp
+                                            @if($selectedEmployee)
+                                                <option value="{{ $selectedEmployee->employee_id }}" selected>{{ $selectedEmployee->first_name }} {{ $selectedEmployee->middle_name }} {{ $selectedEmployee->surname }}</option>
+                                            @endif
+                                        @else
+                                            <option value="">Select an Employee</option>
+                                            @foreach ($employees as $employee)
+                                                <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->surname }}</option>
+                                            @endforeach
+                                        @endif
                                     </select>
                                     @error('employee_id') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
@@ -39,6 +49,7 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Save Biometric Data</button>
+                                <a href="{{ route('biometrics.index') }}" class="btn btn-secondary">Cancel</a>
                             </form>
                         </div>
                     </div>

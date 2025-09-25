@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DeductionType;
 use Illuminate\Http\Request;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class DeductionTypeController extends Controller
 {
@@ -29,7 +31,15 @@ class DeductionTypeController extends Controller
             'rate_or_amount' => 'nullable|numeric',
         ]);
 
-        DeductionType::create($request->all());
+        $deductionType = DeductionType::create($request->all());
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'created',
+            'description' => "Created deduction type: {$deductionType->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'DeductionType', 'entity_id' => $deductionType->id]),
+        ]);
 
         return redirect()->route('deduction-types.index')
             ->with('success', 'Deduction type created successfully.');
@@ -53,12 +63,28 @@ class DeductionTypeController extends Controller
 
         $deductionType->update($request->all());
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'updated',
+            'description' => "Updated deduction type: {$deductionType->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'DeductionType', 'entity_id' => $deductionType->id]),
+        ]);
+
         return redirect()->route('deduction-types.index')
             ->with('success', 'Deduction type updated successfully.');
     }
 
     public function destroy(DeductionType $deductionType)
     {
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted',
+            'description' => "Deleted deduction type: {$deductionType->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'DeductionType', 'entity_id' => $deductionType->id]),
+        ]);
+
         $deductionType->delete();
 
         return redirect()->route('deduction-types.index')

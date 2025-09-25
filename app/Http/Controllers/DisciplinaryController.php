@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class DisciplinaryController extends Controller
 {
@@ -23,8 +24,8 @@ class DisciplinaryController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->whereHas('employee', function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('surname', 'like', "%{$search}%");
+                    $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
+                      ->orWhere('reg_no', 'like', "%{$search}%");
                 })
                 ->orWhere('action_type', 'like', "%{$search}%")
                 ->orWhere('status', 'like', "%{$search}%");
@@ -47,6 +48,14 @@ class DisciplinaryController extends Controller
         $departments = Employee::select('department_id')->distinct()->pluck('department_id');
         $statuses = ['Open', 'Resolved', 'Pending'];
 
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'viewed_disciplinary_actions',
+            'description' => "Viewed disciplinary actions with query: search='{$request->input('search')}', filter='{$request->input('filter')}'",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => null]),
+        ]);
+
         return view('disciplinary.index', compact('actions', 'departments', 'statuses'));
     }
 
@@ -62,8 +71,7 @@ class DisciplinaryController extends Controller
             'action' => 'viewed',
             'description' => "Viewed disciplinary action ID: {$disciplinary->action_id}",
             'action_timestamp' => now(),
-            'entity_type' => 'DisciplinaryAction',
-            'entity_id' => $disciplinary->action_id,
+            'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $disciplinary->action_id]),
         ]);
     
         return view('disciplinary.show', [
@@ -72,10 +80,35 @@ class DisciplinaryController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $employees = Employee::with('department')->where('status', '!=', 'Retired')->get();
-        return view('disciplinary.create', compact('employees'));
+        $query = Employee::with('department')->where('status', 'Active');
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
+                  ->orWhere('reg_no', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+        
+        // Filter by status (though we're already filtering by Active)
+        if ($request->filled('employee_status')) {
+            $query->where('status', $request->employee_status);
+        }
+        
+        $employees = $query->paginate(10);
+        
+        // Get departments for filter dropdown
+        $departments = \App\Models\Department::all();
+        
+        return view('disciplinary.create', compact('employees', 'departments'));
     }
 
     public function edit(DisciplinaryAction $disciplinary)
@@ -91,8 +124,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Suspended due to disciplinary action ID: {$disciplinary->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             if ($disciplinary->action_type === 'active' && strtolower($employee->status) === 'suspended') {
@@ -104,8 +136,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$disciplinary->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             if (strtolower($disciplinary->status) === 'resolved' && strtolower($employee->status) === 'suspended') {
@@ -117,8 +148,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$disciplinary->action_id} being resolved",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
         }
@@ -154,8 +184,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Suspended due to disciplinary action ID: {$action->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             if ($actionType === 'active' && strtolower($employee->status) === 'suspended') {
@@ -167,8 +196,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$action->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended'
@@ -181,8 +209,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$action->action_id} being resolved",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
         }
@@ -192,8 +219,7 @@ class DisciplinaryController extends Controller
             'action' => 'created',
             'description' => "Added disciplinary action for employee ID: {$validated['employee_id']}",
             'action_timestamp' => now(),
-            'entity_type' => 'DisciplinaryAction',
-            'entity_id' => $action->action_id,
+            'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $action->action_id]),
         ]);
         
 
@@ -223,8 +249,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Suspended due to disciplinary action ID: {$disciplinary->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             if ($disciplinary->action_type === 'active' && strtolower($employee->status) === 'suspended') {
@@ -236,8 +261,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$disciplinary->action_id}",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
             // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended'
@@ -250,8 +274,7 @@ class DisciplinaryController extends Controller
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Active due to disciplinary action ID: {$disciplinary->action_id} being resolved",
                     'action_timestamp' => now(),
-                    'entity_type' => 'Employee',
-                    'entity_id' => $employee->employee_id,
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
         }
@@ -261,8 +284,7 @@ class DisciplinaryController extends Controller
             'action' => 'updated',
             'description' => "Updated disciplinary action ID: {$disciplinary->action_id}",
             'action_timestamp' => now(),
-            'entity_type' => 'DisciplinaryAction',
-            'entity_id' => $disciplinary->action_id,
+            'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $disciplinary->action_id]),
         ]);
     
         return redirect()->route('disciplinary.index')->with('success', 'Disciplinary action updated.');
@@ -276,8 +298,7 @@ class DisciplinaryController extends Controller
             'action' => 'deleted',
             'description' => "Deleted disciplinary action ID: {$disciplinary->action_id}",
             'action_timestamp' => now(),
-            'entity_type' => 'DisciplinaryAction',
-            'entity_id' => $disciplinary->action_id,
+            'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $disciplinary->action_id]),
         ]);
 
         return redirect()->route('disciplinary.index')->with('success', 'Disciplinary action deleted.');
@@ -288,13 +309,23 @@ class DisciplinaryController extends Controller
         $search = $request->input('search');
         $employees = Employee::with('department')
             ->where(function ($query) use ($search) {
-                $query->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('surname', 'like', "%{$search}%")
-                      ->orWhere('staff_id', 'like', "%{$search}%");
+                $query->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
+                      ->orWhere('reg_no', 'like', "%{$search}%");
             })
             ->where('status', '!=', 'Retired')
             ->get();
 
         return response()->json($employees);
+    }
+
+    public function storeSelectedEmployee(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,employee_id'
+        ]);
+
+        session(['selected_employee_id' => $request->employee_id]);
+
+        return response()->json(['status' => 'success']);
     }
 }

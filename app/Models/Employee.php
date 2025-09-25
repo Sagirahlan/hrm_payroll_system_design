@@ -13,8 +13,28 @@ class Employee extends Model
         'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
         'grade_level_id', 'step_id', 'rank_id', 'department_id', 'expected_next_promotion',
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
-        'photo_path', 'years_of_service',
+        'photo_path', 'years_of_service', 'contract_start_date', 'contract_end_date', 'amount',
     ];
+
+    public function setDateOfBirthAttribute($value)
+    {
+        $this->attributes['date_of_birth'] = Carbon::parse($value)->format('Y-m-d');
+    }
+
+    public function setDateOfFirstAppointmentAttribute($value)
+    {
+        $this->attributes['date_of_first_appointment'] = Carbon::parse($value)->format('Y-m-d');
+    }
+
+    public function setContractStartDateAttribute($value)
+    {
+        $this->attributes['contract_start_date'] = Carbon::parse($value)->format('Y-m-d');
+    }
+
+    public function setContractEndDateAttribute($value)
+    {
+        $this->attributes['contract_end_date'] = Carbon::parse($value)->format('Y-m-d');
+    }
 
     public function state()
     {

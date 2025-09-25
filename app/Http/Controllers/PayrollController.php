@@ -19,6 +19,7 @@ use App\Models\GradeLevel;
 use App\Models\DeductionType;
 use App\Models\AdditionType;
 use App\Models\Department;
+use App\Models\AuditTrail;
 
 class PayrollController extends Controller
 {
@@ -74,6 +75,14 @@ class PayrollController extends Controller
                 'account_number' => $employee->bank->account_no ?? '0000000000',
             ]);
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'generated_payroll',
+            'description' => "Generated payroll for month: {$month} for " . count($employees) . " employees.",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Payroll', 'entity_id' => null, 'month' => $month, 'employee_count' => count($employees)]),
+        ]);
 
         return redirect()->route('payroll.index')
             ->with('success', 'Payroll generated successfully for ' . $month);
@@ -177,6 +186,15 @@ class PayrollController extends Controller
         $deductions = Deduction::where('employee_id', $payroll->employee_id)->get();
         $additions = Addition::where('employee_id', $payroll->employee_id)->get();
         $pdf = Pdf::loadView('payroll.payslip', compact('payroll', 'deductions', 'additions'));
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'generated_payslip',
+            'description' => "Generated payslip for employee: {$payroll->employee->first_name} {$payroll->employee->surname} for payroll ID: {$payroll->payroll_id}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payroll->payroll_id, 'employee_id' => $payroll->employee->employee_id]),
+        ]);
+
         return $pdf->download('payslip_' . $payroll->employee->first_name . '_' . $payroll->employee->surname . '_' . $payroll->payroll_id . '.pdf');
     }
 
@@ -272,6 +290,14 @@ class PayrollController extends Controller
         }
         $filename .= '.xlsx';
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'exported_payroll',
+            'description' => "Exported payroll records with filters. Format: " . ($request->get('detailed', false) ? 'Detailed Excel' : 'Excel'),
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Payroll', 'entity_id' => null, 'format' => ($request->get('detailed', false) ? 'Detailed Excel' : 'Excel'), 'filters' => $request->all()]),
+        ]);
+
         // Check if detailed export is requested
         if ($request->get('detailed', false)) {
             return Excel::download(new \App\Exports\PayrollRecordsDetailedExport($payrolls), $filename);
@@ -355,7 +381,7 @@ class PayrollController extends Controller
                 $deductionType->save();
             }
             
-            Deduction::create([
+            $deduction = Deduction::create([
                 'employee_id' => $employeeId,
                 'deduction_type' => $deductionType->name,
                 'amount' => $amount,
@@ -364,6 +390,14 @@ class PayrollController extends Controller
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'deduction_type_id' => $deductionType->id,
+            ]);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'created_deduction',
+                'description' => "Created deduction '{$deductionType->name}' for employee ID: {$employeeId}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => $deduction->id, 'employee_id' => $employeeId, 'deduction_type' => $deductionType->name]),
             ]);
         }
 
@@ -388,7 +422,7 @@ class PayrollController extends Controller
             $amount = $request->input('amount');
             \Illuminate\Support\Facades\Log::info('Addition Amount: ' . $amount);
 
-            Addition::create([
+            $addition = Addition::create([
                 'employee_id' => $employeeId,
                 'addition_type' => $additionType->name,
                 'amount_type' => $request->amount_type,
@@ -396,6 +430,14 @@ class PayrollController extends Controller
                 'addition_period' => $request->period,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
+            ]);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'created_addition',
+                'description' => "Created addition '{$additionType->name}' for employee ID: {$employeeId}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Addition', 'entity_id' => $addition->id, 'employee_id' => $employeeId, 'addition_type' => $additionType->name]),
             ]);
         }
 
@@ -628,6 +670,14 @@ class PayrollController extends Controller
             'remarks' => $request->remarks,
         ]);
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'updated_payroll',
+            'description' => "Updated payroll record ID: {$payrollId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId, 'status' => $request->status]),
+        ]);
+
         return redirect()->route('payroll.show', $payrollId)
             ->with('success', 'Payroll record updated successfully.');
     }
@@ -642,6 +692,14 @@ class PayrollController extends Controller
             $payroll->transaction->delete();
         }
         
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted_payroll',
+            'description' => "Deleted payroll record ID: {$payrollId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
         $payroll->delete();
 
         return redirect()->route('payroll.index')
@@ -662,6 +720,14 @@ class PayrollController extends Controller
                                     'status' => $request->status,
                                     'updated_at' => now()
                                 ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_updated_payroll_status',
+            'description' => "Bulk updated status to '{$request->status}' for " . count($request->payroll_ids) . " payroll records.",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $request->payroll_ids, 'status' => $request->status]),
+        ]);
 
         return redirect()->back()->with('success', "Updated {$updated} payroll records to {$request->status} status.");
     }
@@ -692,6 +758,14 @@ class PayrollController extends Controller
             'remarks' => ($payroll->remarks ?? '') . ' | Recalculated on ' . now()->format('Y-m-d H:i:s'),
         ]);
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'recalculated_payroll',
+            'description' => "Recalculated payroll for record ID: {$payrollId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
         // Update associated transaction amount if exists
         if ($payroll->transaction) {
             $payroll->transaction->update([
@@ -713,6 +787,14 @@ class PayrollController extends Controller
             'updated_at' => now()
         ]);
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'approved_payroll',
+            'description' => "Approved payroll record ID: {$payrollId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
         return redirect()->back()
             ->with('success', 'Payroll record approved successfully.');
     }
@@ -730,6 +812,14 @@ class PayrollController extends Controller
             'status' => 'Rejected',
             'remarks' => ($payroll->remarks ?? '') . ' | Rejected: ' . $request->reason,
             'updated_at' => now()
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'rejected_payroll',
+            'description' => "Rejected payroll record ID: {$payrollId} with reason: {$request->reason}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId, 'reason' => $request->reason]),
         ]);
 
         return redirect()->back()
@@ -863,6 +953,14 @@ class PayrollController extends Controller
                 ]);
             }
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_created_additions',
+            'description' => "Bulk created additions for " . $employees->count() . " employees.",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Addition', 'entity_id' => null, 'employee_count' => $employees->count(), 'addition_types' => $additionTypeIds]),
+        ]);
 
         return redirect()->route('payroll.additions')
             ->with('success', 'Bulk addition assignment completed successfully for ' . $employees->count() . ' employees.');
@@ -1016,6 +1114,14 @@ class PayrollController extends Controller
                 ]);
             }
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_created_deductions',
+            'description' => "Bulk created deductions for " . $employees->count() . " employees.",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => null, 'employee_count' => $employees->count(), 'deduction_types' => $deductionTypeIds]),
+        ]);
 
         return redirect()->route('payroll.deductions')
             ->with('success', 'Bulk deduction assignment completed successfully for ' . $employees->count() . ' employees.');

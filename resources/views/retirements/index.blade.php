@@ -55,6 +55,10 @@
                             <th>Employee ID</th>
                             <th>Name</th>
                             <th>{{ isset($retiredEmployees) ? 'Retirement Date' : 'Calculated Retirement Date' }}</th>
+                            <th>Expected Date of Retirement</th>
+                            <th>Years of Service</th>
+                            <th>Age</th>
+                            <th>Retirement Reason</th>
                             <th>Status</th>
                             @if(isset($retiredEmployees))
                                 <th>Gratuity Amount</th>
@@ -82,6 +86,34 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if(!isset($retiredEmployees))
+                                        {{ $employee->expected_retirement_date }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!isset($retiredEmployees))
+                                        {{ $employee->years_of_service }} years
+                                    @else
+                                        {{ \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now()) }} years
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!isset($retiredEmployees))
+                                        {{ $employee->age }}
+                                    @else
+                                        {{ \Carbon\Carbon::parse($employee->date_of_birth)->age }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(!isset($retiredEmployees))
+                                        {{ $employee->retirement_reason }}
+                                    @else
+                                        {{ $item->status ?? 'N/A' }}
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="badge bg-{{ $employee->status == 'Retired' ? 'success' : 'warning' }}">
                                         {{ $employee->status }}
                                     </span>
@@ -97,7 +129,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ isset($retiredEmployees) ? 7 : 5 }}" class="text-center">No records found.</td>
+                                <td colspan="{{ isset($retiredEmployees) ? 9 : 10 }}" class="text-center">No records found.</td>
                             </tr>
                         @endforelse
                     </tbody>

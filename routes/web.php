@@ -99,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     // Disciplinary Management - HR and Admin only
     Route::middleware('permission:manage_disciplinary')->group(function () {
         Route::get('/disciplinary/employees/search', [DisciplinaryController::class, 'searchEmployees'])->name('disciplinary.employees.search');
+        Route::post('/session/store-selected-employee', [DisciplinaryController::class, 'storeSelectedEmployee'])->name('disciplinary.store.selected.employee');
         Route::resource('disciplinary', DisciplinaryController::class);
     });
 

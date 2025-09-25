@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class PaymentController extends Controller
 {
@@ -62,6 +64,14 @@ class PaymentController extends Controller
                     'payment_code' => $decoded['PaymentCode'] ?? null,
                     'payment_url' => $decoded['PaymentUrl'] ?? null,
                     'payment_date' => now()
+                ]);
+
+                AuditTrail::create([
+                    'user_id' => Auth::id(),
+                    'action' => 'initiated_payment',
+                    'description' => "Initiated payment for employee ID: {$tx->employee_id} with amount: {$tx->amount}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'PaymentTransaction', 'entity_id' => $tx->transaction_id, 'employee_id' => $tx->employee_id, 'amount' => $tx->amount]),
                 ]);
             } else {
                 Log::error("NABRoll batch failed for Employee ID {$tx->employee_id}", [
@@ -123,6 +133,15 @@ class PaymentController extends Controller
                 'payment_url' => $decoded['PaymentUrl'] ?? null,
                 'payment_date' => now()
             ]);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'initiated_payment',
+                'description' => "Initiated single payment for employee ID: {$tx->employee_id} with amount: {$tx->amount}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'PaymentTransaction', 'entity_id' => $tx->transaction_id, 'employee_id' => $tx->employee_id, 'amount' => $tx->amount]),
+            ]);
+
             return back()->with('success', 'Payment initiated successfully.');
         } else {
             Log::error("NABRoll single payment failed for Transaction ID {$tx->transaction_id}", [

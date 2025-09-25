@@ -6,6 +6,8 @@ use App\Models\SalaryScale;
 use App\Models\GradeLevel;
 use App\Models\Step;
 use Illuminate\Http\Request;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class SalaryScaleController extends Controller
 {
@@ -58,7 +60,15 @@ class SalaryScaleController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        SalaryScale::create($request->all());
+        $salaryScale = SalaryScale::create($request->all());
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'created_salary_scale',
+            'description' => "Created salary scale: {$salaryScale->full_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'SalaryScale', 'entity_id' => $salaryScale->id, 'full_name' => $salaryScale->full_name]),
+        ]);
 
         return redirect()->route('salary-scales.index')
             ->with('success', 'Salary scale added successfully.');
@@ -84,6 +94,14 @@ class SalaryScaleController extends Controller
         $salaryScale = SalaryScale::findOrFail($id);
         $salaryScale->update($request->all());
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'updated_salary_scale',
+            'description' => "Updated salary scale: {$salaryScale->full_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'SalaryScale', 'entity_id' => $salaryScale->id, 'full_name' => $salaryScale->full_name]),
+        ]);
+
         return redirect()->route('salary-scales.index')
             ->with('success', 'Salary scale updated successfully.');
     }
@@ -95,6 +113,15 @@ class SalaryScaleController extends Controller
             return redirect()->route('salary-scales.index')
                 ->with('error', 'Cannot delete salary scale with assigned grade levels.');
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted_salary_scale',
+            'description' => "Deleted salary scale: {$salaryScale->full_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'SalaryScale', 'entity_id' => $salaryScale->id, 'full_name' => $salaryScale->full_name]),
+        ]);
+
         $salaryScale->delete();
 
         return redirect()->route('salary-scales.index')

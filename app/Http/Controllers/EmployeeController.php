@@ -130,8 +130,6 @@ class EmployeeController extends Controller
         $allowedSorts = ['first_name', 'surname', 'employee_id', 'date_of_first_appointment', 'expected_retirement_date', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
-        } else {
-            $query->orderBy('created_at', 'desc');
         }
 
         // Pagination with filters
@@ -154,8 +152,7 @@ class EmployeeController extends Controller
             'action' => 'viewed',
             'description' => 'Viewed employee list with filters: ' . json_encode($request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type_id'])),
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'filters' => $request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type_id'])]),
         ]);
 
         return view('employees.index', compact(
@@ -183,6 +180,7 @@ class EmployeeController extends Controller
                   ->orWhere('reg_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
+                  ->orWhere('nin', 'like', "%{$search}%")
                   ->orWhere(DB::raw("CONCAT_WS(' ', first_name, middle_name, surname)"), 'like', "%{$search}%")
                   ->orWhere(DB::raw("CONCAT_WS(' ', first_name, surname)"), 'like', "%{$search}%");
             });
@@ -320,8 +318,7 @@ class EmployeeController extends Controller
             'action' => 'exported',
             'description' => 'Exported filtered employee list as Excel with ' . $employees->count() . ' records',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'format' => 'Excel', 'count' => $employees->count(), 'filters' => $request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type_id'])]),
         ]);
 
         return Excel::download(new EmployeesExport($employees), "filtered_employees_{$timestamp}.xlsx");
@@ -331,8 +328,7 @@ class EmployeeController extends Controller
             'action' => 'exported',
             'description' => 'Exported filtered employee list as PDF with ' . $employees->count() . ' records',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'format' => 'PDF', 'count' => $employees->count(), 'filters' => $request->only(['search', 'department', 'cadre', 'status', 'gender', 'appointment_type_id'])]),
         ]);
 
         $pdf = Pdf::loadView('employees.pdf', compact('employees'));
@@ -351,35 +347,31 @@ class EmployeeController extends Controller
         $wards = Ward::all();
         $appointmentTypes = AppointmentType::all();
         $ranks = Rank::all();
+        $banks = \App\Models\BankList::where('is_active', true)->orderBy('bank_name')->get(); // Get all active banks
 
         AuditTrail::create([
             'user_id' => auth()->id(),
             'action' => 'accessed',
             'description' => 'Accessed create employee form',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null]),
         ]);
 
-        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks'));
+        return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks', 'banks'));
     }
 
     
     public function store(Request $request)
     {
-        // Log the values
-        \Illuminate\Support\Facades\Log::info('Submitted grade_level_id: ' . $request->input('grade_level_id'));
-        \Illuminate\Support\Facades\Log::info('Submitted step_id: ' . $request->input('step_id'));
-        \Illuminate\Support\Facades\Log::info('Submitted step_level: ' . $request->input('step_level'));
-        \Illuminate\Support\Facades\Log::info('All request data: ' . json_encode($request->all()));
-
         try {
-            $validated = $request->validate([
+            $appointmentType = AppointmentType::find($request->input('appointment_type_id'));
+
+            $validationRules = [
                 'first_name' => 'required|string|max:50',
                 'surname' => 'required|string|max:50',
                 'middle_name' => 'nullable|string|max:50',
                 'gender' => 'required|string|max:50',
-                'date_of_birth' => 'required|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
+                'date_of_birth' => 'required|date',
                 'state_id' => 'required|exists:states,state_id',
                 'lga_id' => 'required|exists:lgas,id',
                 'ward_id' => 'nullable|exists:wards,ward_id',
@@ -390,18 +382,9 @@ class EmployeeController extends Controller
                 'email' => 'nullable|email|max:100',
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
-                'cadre_id' => 'required|exists:cadres,cadre_id',
-                'salary_scale_id' => 'required|exists:salary_scales,id',
-                'grade_level_id' => 'required|exists:grade_levels,id',
-                'step_id' => 'required|exists:steps,id',
-                'step_level' => 'required|string|max:50',
-                'department_id' => 'required|exists:departments,department_id',
-                'expected_next_promotion' => 'nullable|date',
-                'expected_retirement_date' => 'required|date',
+                'appointment_type_id' => 'required|exists:appointment_types,id',
                 'status' => 'required|in:Active,Suspended,Retired,Deceased',
                 'highest_certificate' => 'nullable|string|max:100',
-                'appointment_type_id' => 'required|exists:appointment_types,id',
-                'rank_id' => 'required|exists:ranks,id',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
                 'kin_relationship' => 'required|string|max:50',
@@ -413,73 +396,44 @@ class EmployeeController extends Controller
                 'bank_code' => 'required|string|max:20',
                 'account_name' => 'required|string|max:100',
                 'account_no' => 'required|string|max:20',
+            ];
+
+            if ($appointmentType && $appointmentType->name === 'Contract') {
+                $validationRules['contract_start_date'] = 'required|date';
+                $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
+                $validationRules['amount'] = 'required|numeric';
+                $validationRules['department_id'] = 'required|exists:departments,department_id';
+            } else {
+                $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
+                $validationRules['step_id'] = 'required|exists:steps,id';
+                $validationRules['step_level'] = 'required|string|max:50';
+                $validationRules['department_id'] = 'required|exists:departments,department_id';
+                $validationRules['expected_next_promotion'] = 'nullable|date';
+                $validationRules['expected_retirement_date'] = 'required|date';
+                $validationRules['rank_id'] = 'required|exists:ranks,id';
+            }
+
+            $validated = $request->validate($validationRules);
+
+            $pendingChange = \App\Models\PendingEmployeeChange::create([
+                'employee_id' => null,
+                'requested_by' => auth()->id(),
+                'change_type' => 'create',
+                'data' => $validated,
+                'reason' => 'New employee creation'
             ]);
-
-            // Additional validation to ensure grade_level belongs to the selected salary_scale
-            $gradeLevel = GradeLevel::find($validated['grade_level_id']);
-            if (!$gradeLevel) {
-                return redirect()->back()->withErrors(['grade_level_id' => 'Please select a valid grade level.'])->withInput();
-            }
-            
-            if ($gradeLevel->salary_scale_id != $validated['salary_scale_id']) {
-                return redirect()->back()->withErrors(['grade_level_id' => 'The selected grade level is not valid for the chosen salary scale.'])->withInput();
-            }
-            
-            // Additional validation to ensure step belongs to the selected grade_level
-            $step = \App\Models\Step::find($validated['step_id']);
-            if (!$step) {
-                return redirect()->back()->withErrors(['step_level' => 'Please select a valid step level.'])->withInput();
-            }
-            
-            if ($step->grade_level_id != $validated['grade_level_id']) {
-                return redirect()->back()->withErrors(['step_level' => 'The selected step level is not valid for the chosen grade level.'])->withInput();
-            }
-
-            if ($request->hasFile('photo')) {
-                $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
-            } elseif ($request->filled('captured_image')) {
-                $imageData = $request->input('captured_image');
-                $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
-                $imageData = str_replace(' ', '+', $imageData);
-                $imageBinary = base64_decode($imageData);
-                $filename = 'captured_' . time() . '_' . uniqid() . '.jpg';
-                $path = 'photos/' . $filename;
-                \Storage::disk('public')->put($path, $imageBinary);
-                $validated['photo_path'] = $path;
-            }
-
-            $employee = Employee::create($validated);
-
-            if (isset($validated['kin_name'])) {
-                $employee->nextOfKin()->create([
-                    'name' => $validated['kin_name'],
-                    'relationship' => $validated['kin_relationship'],
-                    'mobile_no' => $validated['kin_mobile_no'],
-                    'address' => $validated['kin_address'],
-                    'occupation' => $validated['kin_occupation'] ?? null,
-                    'place_of_work' => $validated['kin_place_of_work'] ?? null,
-                ]);
-            }
-
-            if (isset($validated['bank_name'])) {
-                $employee->bank()->create([
-                    'bank_name' => $validated['bank_name'],
-                    'bank_code' => $validated['bank_code'],
-                    'account_name' => $validated['account_name'],
-                    'account_no' => $validated['account_no'],
-                ]);
-            }
 
             AuditTrail::create([
                 'user_id' => auth()->id(),
-                'action' => 'created',
-                'description' => "Created new employee: {$employee->first_name} {$employee->surname}",
+                'action' => 'requested_creation',
+                'description' => "Requested creation of new employee: {$validated['first_name']} {$validated['surname']}",
                 'action_timestamp' => now(),
-                'entity_type' => 'Employee',
-                'entity_id' => $employee->employee_id,
+                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'requested_data' => $validated]),
             ]);
 
-            return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+            return redirect()->route('employees.index')->with('success', 'Employee creation request submitted for approval.');
         } catch (ValidationException $e) {
             $errors = $e->validator->errors()->keys();
             \Illuminate\Support\Facades\Log::error('Validation errors: ' . json_encode($errors));
@@ -487,7 +441,7 @@ class EmployeeController extends Controller
 
             $step1_fields = ['first_name', 'surname', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'nationality', 'reg_no', 'mobile_no'];
             $step2_fields = ['address'];
-            $step3_fields = ['date_of_first_appointment', 'cadre_id', 'salary_scale_id', 'grade_level_id', 'step_level', 'department_id', 'rank_id', 'expected_retirement_date'];
+            $step3_fields = ['date_of_first_appointment', 'cadre_id', 'salary_scale_id', 'grade_level_id', 'step_id', 'step_level', 'department_id', 'rank_id', 'expected_retirement_date', 'contract_start_date', 'contract_end_date', 'amount'];
             $step4_fields = ['status', 'appointment_type_id'];
             $step5_fields = ['kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address'];
             $step6_fields = ['bank_name', 'bank_code', 'account_name', 'account_no'];
@@ -530,8 +484,7 @@ class EmployeeController extends Controller
             'action' => 'viewed',
             'description' => "Viewed employee: {$employee->first_name} {$employee->surname}",
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => $employee->employee_id,
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
         ]);
 
         return view('employees.show', compact('employee'));
@@ -540,128 +493,118 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         // Load relationships for the employee
-        $employee->load(['state', 'lga', 'ward']);
+        $employee->load(['state', 'lga', 'ward', 'bank']);
         
         $departments = Department::all();
         $cadres = Cadre::all();
         $gradeLevels = GradeLevel::all();
-        $salaryScales = \App\Models\SalaryScale::all();
+        $salaryScales = \App\Models\SalaryScale::all(); // Get all salary scales
         $states = State::all();
         $lgas = Lga::all();
         $wards = Ward::all();
         $appointmentTypes = AppointmentType::all();
         $ranks = Rank::all();
+        $banks = \App\Models\BankList::where('is_active', true)->orderBy('bank_name')->get(); // Get all active banks
 
         AuditTrail::create([
             'user_id' => auth()->id(),
             'action' => 'accessed',
             'description' => "Accessed edit form for employee: {$employee->first_name} {$employee->surname}",
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => $employee->employee_id,
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
         ]);
 
-        return view('employees.edit', compact('employee', 'departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks'));
+        return view('employees.edit', compact('employee', 'departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks', 'banks'));
     }
 
     public function update(Request $request, Employee $employee)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:50',
-            'surname' => 'required|string|max:50',
-            'middle_name' => 'nullable|string|max:50',
-            'gender' => 'required|string|max:50',
-            'date_of_birth' => 'required|date',
-            'state_id' => 'required|exists:states,state_id',
-            'lga_id' => 'required|exists:lgas,id',
-            'ward_id' => 'nullable|exists:wards,ward_id',
-            'nationality' => 'required|string|max:50',
-            'nin' => 'nullable|string|max:50',
-            'mobile_no' => 'required|string|max:15',
-            'email' => 'nullable|email|max:100',
-            'address' => 'required|string',
-            'date_of_first_appointment' => 'required|date',
-            'cadre_id' => 'required|exists:cadres,cadre_id',
-            'salary_scale_id' => 'required|exists:salary_scales,id', // New validation for salary scale
-            'grade_level_id' => 'required|exists:grade_levels,id', // Will be validated further below
-            'step_id' => 'required|exists:steps,id',
-            'department_id' => 'required|exists:departments,department_id',
-            'expected_next_promotion' => 'nullable|date',
-            'expected_retirement_date' => 'required|date',
-            'status' => 'required|in:Active,Suspended,Retired,Deceased',
-            'highest_certificate' => 'nullable|string|max:100',
-            'grade_level_limit' => 'nullable|integer',
-            'appointment_type_id' => 'required|exists:appointment_types,id',
-            'rank_id' => 'required|exists:ranks,id',
-            'photo' => 'nullable|image|max:2048',
+        try {
+            $appointmentType = AppointmentType::find($request->input('appointment_type_id'));
 
-            'kin_name' => 'required|string|max:100',
-            'kin_relationship' => 'required|string|max:50',
-            'kin_mobile_no' => 'required|string|max:20',
-            'kin_address' => 'required|string',
-            'kin_occupation'     => 'nullable|string|max:100',
-            'kin_place_of_work'  => 'nullable|string|max:150',
+            $validationRules = [
+                'first_name' => 'required|string|max:50',
+                'surname' => 'required|string|max:50',
+                'middle_name' => 'nullable|string|max:50',
+                'gender' => 'required|string|max:50',
+                'date_of_birth' => 'required|date',
+                'state_id' => 'required|exists:states,state_id',
+                'lga_id' => 'required|exists:lgas,id',
+                'ward_id' => 'nullable|exists:wards,ward_id',
+                'nationality' => 'required|string|max:50',
+                'nin' => 'nullable|string|max:50',
+                'mobile_no' => 'required|string|max:15',
+                'email' => 'nullable|email|max:100',
+                'address' => 'required|string',
+                'date_of_first_appointment' => 'required|date',
+                'appointment_type_id' => 'required|exists:appointment_types,id',
+                'status' => 'required|in:Active,Suspended,Retired,Deceased',
+                'highest_certificate' => 'nullable|string|max:100',
+                'photo' => 'nullable|image|max:2048',
+                'kin_name' => 'required|string|max:100',
+                'kin_relationship' => 'required|string|max:50',
+                'kin_mobile_no' => 'required|string|max:20',
+                'kin_address' => 'required|string',
+                'kin_occupation'     => 'nullable|string|max:100',
+                'kin_place_of_work'  => 'nullable|string|max:150',
+                'bank_name' => 'required|string|max:100',
+                'bank_code' => 'required|string|max:20',
+                'account_name' => 'required|string|max:100',
+                'account_no' => 'required|string|max:20',
+            ];
 
-            'bank_name' => 'required|string|max:100',
-            'bank_code' => 'required|string|max:20',
-            'account_name' => 'required|string|max:100',
-            'account_no' => 'required|string|max:20',
-        ]);
-        
-        // Additional validation to ensure grade_level belongs to the selected salary_scale
-        $gradeLevel = GradeLevel::find($validated['grade_level_id']);
-        if (!$gradeLevel || $gradeLevel->salary_scale_id != $validated['salary_scale_id']) {
-            return redirect()->back()->withErrors(['grade_level_id' => 'The selected grade level is not valid for the chosen salary scale.']);
+            if ($appointmentType && $appointmentType->name === 'Contract') {
+                $validationRules['contract_start_date'] = 'required|date';
+                $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
+                $validationRules['amount'] = 'required|numeric';
+                $validationRules['department_id'] = 'required|exists:departments,department_id';
+            } else {
+                $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
+                $validationRules['step_id'] = 'required|exists:steps,id';
+                $validationRules['step_level'] = 'required|string|max:50';
+                $validationRules['department_id'] = 'required|exists:departments,department_id';
+                $validationRules['expected_next_promotion'] = 'nullable|date';
+                $validationRules['expected_retirement_date'] = 'required|date';
+                $validationRules['rank_id'] = 'required|exists:ranks,id';
+            }
+
+            $validated = $request->validate($validationRules);
+
+            $currentData = $employee->toArray();
+            $currentData['kin_name'] = $employee->nextOfKin->name ?? null;
+            $currentData['kin_relationship'] = $employee->nextOfKin->relationship ?? null;
+            $currentData['kin_mobile_no'] = $employee->nextOfKin->mobile_no ?? null;
+            $currentData['kin_address'] = $employee->nextOfKin->address ?? null;
+            $currentData['kin_occupation'] = $employee->nextOfKin->occupation ?? null;
+            $currentData['kin_place_of_work'] = $employee->nextOfKin->place_of_work ?? null;
+            $currentData['bank_name'] = $employee->bank->bank_name ?? null;
+            $currentData['bank_code'] = $employee->bank->bank_code ?? null;
+            $currentData['account_name'] = $employee->bank->account_name ?? null;
+            $currentData['account_no'] = $employee->bank->account_no ?? null;
+
+            $pendingChange = \App\Models\PendingEmployeeChange::create([
+                'employee_id' => $employee->employee_id,
+                'requested_by' => auth()->id(),
+                'change_type' => 'update',
+                'data' => $validated,
+                'previous_data' => $currentData,
+                'reason' => $request->input('change_reason', 'Employee update')
+            ]);
+
+            AuditTrail::create([
+                'user_id' => auth()->id(),
+                'action' => 'requested_update',
+                'description' => "Requested update for employee: {$employee->first_name} {$employee->surname}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id, 'requested_data' => $validated, 'previous_data' => $currentData]),
+            ]);
+
+            return redirect()->route('employees.index')->with('success', 'Employee update request submitted for approval.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
         }
-
-        if ($request->hasFile('photo')) {
-            $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
-        } elseif ($request->filled('captured_image')) {
-            // Handle captured image from camera
-            $imageData = $request->input('captured_image');
-            $imageData = str_replace('data:image/jpeg;base64,', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageBinary = base64_decode($imageData);
-            
-            // Generate a unique filename
-            $filename = 'captured_' . time() . '_' . uniqid() . '.jpg';
-            $path = 'photos/' . $filename;
-            
-            // Store the image
-            \Storage::disk('public')->put($path, $imageBinary);
-            $validated['photo_path'] = $path;
-        }
-
-        // Get current employee data for comparison
-        $currentData = $employee->toArray();
-        
-        // Get current related data
-        $currentKin = $employee->nextOfKin ? $employee->nextOfKin->toArray() : [];
-        $currentBank = $employee->bank ? $employee->bank->toArray() : [];
-        
-        // Merge all current data
-        $previousData = array_merge($currentData, $currentKin, $currentBank);
-        
-        // Instead of applying changes directly, save them as pending
-        $pendingChange = \App\Models\PendingEmployeeChange::create([
-            'employee_id' => $employee->employee_id,
-            'requested_by' => auth()->id(),
-            'change_type' => 'update',
-            'data' => $validated,
-            'previous_data' => $previousData,
-            'reason' => $request->input('change_reason', 'Employee update')
-        ]);
-
-        AuditTrail::create([
-            'user_id' => auth()->id(),
-            'action' => 'requested_update',
-            'description' => "Requested update for employee: {$employee->first_name} {$employee->surname}. Changes: " . $pendingChange->change_description,
-            'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => $employee->employee_id,
-        ]);
-
-        return redirect()->route('employees.index')->with('success', 'Employee update requested. Changes are pending approval.');
     }
 
     public function destroy(Employee $employee)
@@ -680,8 +623,7 @@ class EmployeeController extends Controller
             'action' => 'requested_delete',
             'description' => "Requested deletion of employee: {$employee->first_name} {$employee->surname}. Changes: " . $pendingChange->change_description,
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => $employee->employee_id,
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id, 'reason' => request()->input('delete_reason')]),
         ]);
 
         return redirect()->route('employees.index')->with('success', 'Employee deletion requested. Changes are pending approval.');
@@ -697,8 +639,7 @@ class EmployeeController extends Controller
             'action' => 'exported',
             'description' => 'Exported employee list as PDF',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'format' => 'PDF']),
         ]);
 
         return $pdf->download('employees_report.pdf');
@@ -711,8 +652,7 @@ class EmployeeController extends Controller
             'action' => 'exported',
             'description' => 'Exported employee list as Excel',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'format' => 'Excel']),
         ]);
 
         return Excel::download(new EmployeesExport, 'employees_report.xlsx');
@@ -720,6 +660,14 @@ class EmployeeController extends Controller
 
     public function exportSingle($employeeId)
     {
+        $employee = Employee::findOrFail($employeeId);
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'exported',
+            'description' => "Exported single employee details for: {$employee->first_name} {$employee->surname}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id, 'format' => 'Excel']),
+        ]);
         return Excel::download(new SingleEmployeeExport($employeeId), 'employee_' . $employeeId . '_details.xlsx');
     }
 
@@ -733,8 +681,7 @@ class EmployeeController extends Controller
             'action' => 'imported',
             'description' => 'Imported employee data from Excel',
             'action_timestamp' => now(),
-            'entity_type' => 'Employee',
-            'entity_id' => auth()->id(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
         ]);
 
         return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');

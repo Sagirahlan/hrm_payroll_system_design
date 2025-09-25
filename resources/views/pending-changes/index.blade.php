@@ -11,6 +11,40 @@
                     </div>
                 </div>
                 <div class="card-body px-0 pt-0 pb-2">
+                    <!-- Search and Filter Form -->
+                    <div class="px-4 py-3 bg-light">
+                        <form method="GET" action="{{ route('pending-changes.index') }}" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Search by employee name or ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="change_type" class="form-label">Change Type</label>
+                                <select class="form-select" id="change_type" name="change_type">
+                                    <option value="">All Types</option>
+                                    <option value="create" {{ request('change_type') == 'create' ? 'selected' : '' }}>Create</option>
+                                    <option value="update" {{ request('change_type') == 'update' ? 'selected' : '' }}>Update</option>
+                                    <option value="delete" {{ request('change_type') == 'delete' ? 'selected' : '' }}>Delete</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div>
+                                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                                    <a href="{{ route('pending-changes.index') }}" class="btn btn-secondary">Clear</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
                     <div class="table-responsive p-0">
                         <table class="table align-items-center mb-0">
                             <thead>

@@ -20,14 +20,14 @@
                             <dl class="row">
                                 <dt class="col-sm-4">Change Type:</dt>
                                 <dd class="col-sm-8">
-                                    <span class="badge badge-sm bg-gradient-{{ $pendingChange->change_type == 'create' ? 'success' : ($pendingChange->change_type == 'update' ? 'warning' : 'danger') }}">
+                                    <span class="badge badge-sm bg-gradient-{{ $pendingChange->change_type == 'create' ? 'success' : ($pendingChange->change_type == 'update' ? 'warning' : 'danger') }} text-dark">
                                         {{ ucfirst($pendingChange->change_type) }}
                                     </span>
                                 </dd>
                                 
                                 <dt class="col-sm-4">Status:</dt>
                                 <dd class="col-sm-8">
-                                    <span class="badge badge-sm bg-gradient-{{ $pendingChange->status == 'pending' ? 'secondary' : ($pendingChange->status == 'approved' ? 'success' : 'danger') }}">
+                                    <span class="badge badge-sm bg-gradient-{{ $pendingChange->status == 'pending' ? 'secondary' : ($pendingChange->status == 'approved' ? 'success' : 'danger') }} text-dark">
                                         {{ ucfirst($pendingChange->status) }}
                                     </span>
                                 </dd>

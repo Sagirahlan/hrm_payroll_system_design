@@ -343,27 +343,9 @@
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
                                     <select name="bank_name" class="form-select" required>
                                         <option value="">Select Bank</option>
-                                        <option value="Access Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Access Bank' ? 'selected' : '' }}>Access Bank</option>
-                                        <option value="Citibank Nigeria" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Citibank Nigeria' ? 'selected' : '' }}>Citibank Nigeria</option>
-                                        <option value="Ecobank Nigeria" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Ecobank Nigeria' ? 'selected' : '' }}>Ecobank Nigeria</option>
-                                        <option value="Fidelity Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Fidelity Bank' ? 'selected' : '' }}>Fidelity Bank</option>
-                                        <option value="First Bank of Nigeria" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'First Bank of Nigeria' ? 'selected' : '' }}>First Bank of Nigeria</option>
-                                        <option value="First City Monument Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'First City Monument Bank' ? 'selected' : '' }}>First City Monument Bank</option>
-                                        <option value="Globus Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Globus Bank' ? 'selected' : '' }}>Globus Bank</option>
-                                        <option value="Guaranty Trust Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Guaranty Trust Bank' ? 'selected' : '' }}>Guaranty Trust Bank</option>
-                                        <option value="Heritage Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Heritage Bank' ? 'selected' : '' }}>Heritage Bank</option>
-                                        <option value="Keystone Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Keystone Bank' ? 'selected' : '' }}>Keystone Bank</option>
-                                        <option value="Polaris Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Polaris Bank' ? 'selected' : '' }}>Polaris Bank</option>
-                                        <option value="Providus Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Providus Bank' ? 'selected' : '' }}>Providus Bank</option>
-                                        <option value="Stanbic IBTC Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Stanbic IBTC Bank' ? 'selected' : '' }}>Stanbic IBTC Bank</option>
-                                        <option value="Standard Chartered Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Standard Chartered Bank' ? 'selected' : '' }}>Standard Chartered Bank</option>
-                                        <option value="Sterling Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Sterling Bank' ? 'selected' : '' }}>Sterling Bank</option>
-                                        <option value="Titan Trust Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Titan Trust Bank' ? 'selected' : '' }}>Titan Trust Bank</option>
-                                        <option value="Union Bank of Nigeria" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Union Bank of Nigeria' ? 'selected' : '' }}>Union Bank of Nigeria</option>
-                                        <option value="United Bank for Africa" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'United Bank for Africa' ? 'selected' : '' }}>United Bank for Africa</option>
-                                        <option value="Unity Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Unity Bank' ? 'selected' : '' }}>Unity Bank</option>
-                                        <option value="Wema Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Wema Bank' ? 'selected' : '' }}>Wema Bank</option>
-                                        <option value="Zenith Bank" {{ old('bank_name', $employee->bank->bank_name ?? '') == 'Zenith Bank' ? 'selected' : '' }}>Zenith Bank</option>
+                                        @foreach($banks as $bank)
+                                            <option value="{{ $bank->bank_name }}" data-code="{{ $bank->bank_code }}" {{ old('bank_name', $employee->bank->bank_name ?? '') == $bank->bank_name ? 'selected' : '' }}>{{ $bank->bank_name }}</option>
+                                        @endforeach
                                     </select>
                                     @error('bank_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>

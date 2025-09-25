@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use Illuminate\Http\Request;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
@@ -29,7 +31,15 @@ class DepartmentController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Department::create($validated);
+        $department = Department::create($validated);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'created',
+            'description' => "Created department: {$department->department_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Department', 'entity_id' => $department->department_id]),
+        ]);
 
         return redirect()->route('departments.index')->with('success', 'Department created successfully.');
     }
@@ -48,6 +58,14 @@ class DepartmentController extends Controller
 
         $department->update($validated);
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'updated',
+            'description' => "Updated department: {$department->department_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Department', 'entity_id' => $department->department_id]),
+        ]);
+
         return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
     }
 
@@ -56,6 +74,14 @@ class DepartmentController extends Controller
         if ($department->employees()->count() > 0) {
             return redirect()->route('departments.index')->with('error', 'Cannot delete department with assigned employees.');
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted',
+            'description' => "Deleted department: {$department->department_name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Department', 'entity_id' => $department->department_id]),
+        ]);
 
         $department->delete();
         return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');

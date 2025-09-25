@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\GradeLevel;
 use Illuminate\Http\Request;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class GradeLevelController extends Controller
 {
@@ -81,12 +83,20 @@ class GradeLevelController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        GradeLevel::create([
+        $gradeLevel = GradeLevel::create([
             'name' => $request->name,
             'basic_salary' => $request->basic_salary,
             'grade_level' => $request->grade_level,
             'step_level' => $request->step_level,
             'description' => $request->description,
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'created',
+            'description' => "Created grade level: {$gradeLevel->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'GradeLevel', 'entity_id' => $gradeLevel->id]),
         ]);
 
         return redirect()->route('grade-levels.index')
@@ -122,6 +132,14 @@ class GradeLevelController extends Controller
             'description' => $request->description,
         ]);
 
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'updated',
+            'description' => "Updated grade level: {$gradeLevel->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'GradeLevel', 'entity_id' => $gradeLevel->id]),
+        ]);
+
         return redirect()->route('grade-levels.index')
             ->with('success', 'Grade level updated successfully.');
     }
@@ -133,6 +151,15 @@ class GradeLevelController extends Controller
             return redirect()->route('grade-levels.index')
                 ->with('error', 'Cannot delete grade level with assigned employees.');
         }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted',
+            'description' => "Deleted grade level: {$gradeLevel->name}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'GradeLevel', 'entity_id' => $gradeLevel->id]),
+        ]);
+
         $gradeLevel->delete();
 
         return redirect()->route('grade-levels.index')

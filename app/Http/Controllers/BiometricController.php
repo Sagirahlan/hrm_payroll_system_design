@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BiometricData;
 use App\Models\Employee;
-use App\Events\AuditTrailLogged;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -15,15 +15,46 @@ class BiometricController extends Controller
         $this->middleware(['auth', 'permission:manage_biometrics']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $biometrics = BiometricData::with('employee')->paginate(10);
-        return view('biometrics.index', compact('biometrics'));
+        $query = Employee::with('biometricData');
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('surname', 'like', "%{$searchTerm}%")
+                  ->orWhere('middle_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"])
+                  ->orWhereRaw("CONCAT(first_name, ' ', middle_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"]);
+            });
+        }
+        
+        // Filter by biometric status
+        if ($request->filled('status')) {
+            if ($request->status === 'registered') {
+                $query->whereHas('biometricData');
+            } elseif ($request->status === 'unregistered') {
+                $query->whereDoesntHave('biometricData');
+            }
+        }
+        
+        $employees = $query->paginate(10)->appends($request->except('page'));
+        return view('biometrics.index', compact('employees'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $employees = Employee::whereDoesntHave('biometricData')->get();
+        $employees = Employee::whereDoesntHave('biometricData');
+        
+        // If an employee is pre-selected, filter to just that employee
+        if ($request->filled('employee_id')) {
+            $employees->where('employee_id', $request->employee_id);
+        }
+        
+        $employees = $employees->get();
         return view('biometrics.create', compact('employees'));
     }
 
@@ -53,13 +84,13 @@ class BiometricController extends Controller
             'verification_date' => now(),
         ]);
 
-        event(new AuditTrailLogged(
-            Auth::id(),
-            'Create Biometric',
-            "Added biometric data for employee ID: {$validated['employee_id']}",
-            'BiometricData',
-            $biometric->biometric_id
-        ));
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'created',
+            'description' => "Added biometric data for employee ID: {$validated['employee_id']}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'BiometricData', 'entity_id' => $biometric->biometric_id]),
+        ]);
 
         return redirect()->route('biometrics.index')->with('success', 'Biometric data added successfully.');
     }

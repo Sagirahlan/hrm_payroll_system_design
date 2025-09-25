@@ -1,11 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\Pensioner;
-use App\Models\Employee;
-use App\Models\Retirement;
-use App\Models\AuditTrail;
+use App\Models\{Retirement, Pensioner, Employee, PayrollRecord, AuditTrail};
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -62,11 +60,10 @@ class PensionerController extends Controller
 
         AuditTrail::create([
             'user_id' => Auth::id(),
-            'action' => 'Search Pensioners',
+            'action' => 'searched_pensioners',
             'description' => "Searched pensioners with query: search='{$request->input('search')}', filter='{$request->input('filter')}'",
             'action_timestamp' => now(),
-            'entity_type' => 'Pensioner',
-            'entity_id' => null,
+            'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => null, 'search_query' => $request->input('search'), 'filter' => $request->input('filter')]),
         ]);
 
         return view('pensioners.index', compact('pensioners', 'filterOptions'));
@@ -99,11 +96,10 @@ class PensionerController extends Controller
 
             AuditTrail::create([
                 'user_id' => Auth::id(),
-                'action' => 'Create Pensioner',
+                'action' => 'created_pensioner',
                 'description' => "Created pensioner for employee ID: {$validated['employee_id']}, amount: {$validated['pension_amount']}",
                 'action_timestamp' => now(),
-                'entity_type' => 'Pensioner',
-                'entity_id' => $pensioner->pensioner_id,
+                'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => $pensioner->pensioner_id, 'employee_id' => $validated['employee_id'], 'amount' => $validated['pension_amount']]),
             ]);
 
             return redirect()->route('pensioners.index')->with('success', 'Pensioner record created successfully.');
@@ -126,11 +122,10 @@ class PensionerController extends Controller
 
             AuditTrail::create([
                 'user_id' => Auth::id(),
-                'action' => 'Update Pensioner Status',
+                'action' => 'updated_pensioner_status',
                 'description' => "Updated pensioner status to {$validated['status']} for employee ID: {$pensioner->employee_id}",
                 'action_timestamp' => now(),
-                'entity_type' => 'Pensioner',
-                'entity_id' => $pensioner->pensioner_id,
+                'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => $pensioner->pensioner_id, 'employee_id' => $pensioner->employee_id, 'new_status' => $validated['status']]),
             ]);
 
             return redirect()->route('pensioners.index')->with('success', 'Pensioner status updated successfully.');

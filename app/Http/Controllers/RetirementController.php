@@ -57,6 +57,50 @@ class RetirementController extends Controller
             return $actualRetirementDate->isBetween(now(), $sixMonthsFromNow);
         });
 
+        // Add calculated properties to each employee for use in the view
+        $approachingRetirement = $approachingRetirement->map(function ($employee) {
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            // Add calculated properties
+            $employee->calculated_retirement_date = $actualRetirementDate;
+            $employee->age = Carbon::parse($employee->date_of_birth)->age;
+            $employee->expected_retirement_date = $actualRetirementDate->format('Y-m-d');
+
+            // Determine retirement reason
+            $age = Carbon::parse($employee->date_of_birth)->age;
+            $serviceDuration = Carbon::parse($employee->date_of_first_appointment)->diffInYears(Carbon::now());
+            
+            // Check if the employee has reached the maximum years of service first
+            if ($serviceDuration >= $yearsOfService) {
+                $employee->retirement_reason = 'By Years of Service';
+            } elseif ($age >= $retirementAge) {
+                $employee->retirement_reason = 'By Old Age';
+            } else {
+                // If neither condition is met, determine by which will happen first
+                $actualRetirementDate = Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
+                if ($actualRetirementDate->eq(Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                    $employee->retirement_reason = 'By Old Age';
+                } else {
+                    $employee->retirement_reason = 'By Years of Service';
+                }
+            }
+
+            // Calculate years of service
+            $employee->years_of_service = round($serviceDuration, 1);
+
+            return $employee;
+        });
+
         // Manually paginate the filtered collection
         $page = $request->get('page', 1);
         $perPage = 10;
@@ -82,9 +126,10 @@ class RetirementController extends Controller
 
     public function retiredList(Request $request)
     {
-        // Get all employees with status "Retired" from the employees table
-        $query = \App\Models\Employee::with(['gradeLevel', 'department', 'retirement'])
-            ->where('status', 'Retired');
+        // Get all employees who have retirement records
+        $query = \App\Models\Employee::with(['gradeLevel', 'department', 'retirement', 'rank', 'step'])
+            ->where('status', 'Retired')
+            ->whereHas('retirement'); // Only include employees who have retirement records
 
         // Apply search filter
         if ($request->filled('search')) {
@@ -105,6 +150,15 @@ class RetirementController extends Controller
 
         $retiredEmployees = $query->orderBy('surname', 'asc')->paginate(10);
 
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'viewed_retired_list',
+            'description' => 'Viewed list of retired employees.',
+            'action_timestamp' => now(),
+            'entity_type' => 'Employee',
+            'entity_id' => null,
+        ]);
+
         return view('retirements.retired', compact('retiredEmployees'));
     }
 
@@ -121,6 +175,15 @@ class RetirementController extends Controller
             ->whereRaw('LOWER(status) LIKE ?', ['%retired%'])
             ->pluck('status');
 
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'viewed_all_retired_statuses',
+            'description' => 'Viewed all retired statuses.',
+            'action_timestamp' => now(),
+            'entity_type' => 'Retirement',
+            'entity_id' => null,
+        ]);
+
         return response()->json([
             'retired_records' => $retiredRecords,
             'distinct_statuses' => $distinctStatuses,
@@ -130,7 +193,7 @@ class RetirementController extends Controller
 
     public function create()
     {
-        $employees = Employee::with(['gradeLevel.salaryScale', 'department'])
+        $employees = Employee::with(['gradeLevel.salaryScale', 'department', 'rank', 'step'])
             ->where('status', 'Active')
             ->get();
 
@@ -160,9 +223,10 @@ class RetirementController extends Controller
                 'notification_date' => 'nullable|date',
                 'gratuity_amount' => 'nullable|numeric|min:0',
                 'status' => 'nullable|string|in:pending,complete',
+                'retire_reason' => 'nullable|string|max:500',
             ]);
 
-            $employee = Employee::where('employee_id', $validated['employee_id'])->firstOrFail();
+            $employee = Employee::with('gradeLevel.salaryScale')->where('employee_id', $validated['employee_id'])->firstOrFail();
 
             if (Retirement::where('employee_id', $employee->employee_id)->exists()) {
                 if ($request->wantsJson()) {
@@ -174,12 +238,38 @@ class RetirementController extends Controller
                 return redirect()->back()->with('error', 'Employee already processed for retirement.');
             }
 
+            // Determine the actual retirement reason based on which condition was met
+            $retireReason = $validated['retire_reason'] ?? null;
+            if (!$retireReason && $employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+                $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+
+                // Check if the employee has reached the maximum years of service first
+                if ($serviceDuration >= $yearsOfService) {
+                    $retireReason = 'By Years of Service';
+                } elseif ($age >= $retirementAge) {
+                    $retireReason = 'By Old Age';
+                } else {
+                    // If neither condition is met, determine by which will happen first
+                    $actualRetirementDate = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(\Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
+                    if ($actualRetirementDate->eq(\Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                        $retireReason = 'By Old Age';
+                    } else {
+                        $retireReason = 'By Years of Service';
+                    }
+                }
+            }
+
             $retirement = Retirement::create([
                 'employee_id' => $employee->employee_id,
                 'retirement_date' => $validated['retirement_date'],
                 'status' => 'Completed',
                 'notification_date' => $validated['notification_date'] ?? now(),
                 'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
+                'retire_reason' => $retireReason,
             ]);
 
             $employee->update(['status' => 'Retired']);
@@ -207,6 +297,7 @@ class RetirementController extends Controller
                     'data' => [
                         'employee_id' => $employee->employee_id,
                         'retirement_id' => $retirement->id,
+                        'retire_reason' => $retireReason,
                         'gratuity_amount' => $retirement->gratuity_amount,
                         'pension_amount' => $this->calculatePension($employee)
                     ]
@@ -266,7 +357,7 @@ class RetirementController extends Controller
         }
 
         // Use gross_salary if available, otherwise fallback to basic_salary
-        $salary = $lastPayroll->basic_salary;
+        $salary = $lastPayroll->basic_salary ?? 0;
 
         // Gratuity formula: 10% of last salary per year of service
         $gratuity = $salary * 0.1 * $yearsOfService;

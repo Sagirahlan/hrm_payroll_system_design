@@ -35,11 +35,16 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Employee ID</th>
+                            <th>Staff ID</th>
                             <th>Name</th>
+                            <th>Date of Birth</th>
+                            <th>Age</th>
+                            <th>Years of Service</th>
+                            <th>Rank</th>
+                            <th>Grade Level/Step</th>
                             <th>Department</th>
-                            <th>Grade Level</th>
                             <th>Retirement Date</th>
+                            <th>Retire Reason</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -47,13 +52,24 @@
                         @forelse($retiredEmployees as $employee)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>{{ $employee->employee_id }}</td>
+                                <td>{{ $employee->reg_no }}</td>
                                 <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
+                                <td>{{ $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : 'N/A' }}</td>
+                                <td>{{ $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->age : 'N/A' }}</td>
+                                <td>{{ $employee->date_of_first_appointment ? round(\Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::parse($employee->retirement->retirement_date ?? now()))) : 'N/A' }}</td>
+                                <td>{{ $employee->rank ? $employee->rank->name : 'N/A' }}</td>
+                                <td>{{ $employee->gradeLevel ? $employee->gradeLevel->name : 'N/A' }}-{{ $employee->step ? $employee->step->name : 'N/A' }}</td>
                                 <td>{{ $employee->department ? $employee->department->department_name : 'N/A' }}</td>
-                                <td>{{ $employee->gradeLevel ? $employee->gradeLevel->name : 'N/A' }}</td>
                                 <td>
                                     @if($employee->retirement && $employee->retirement->retirement_date)
                                         {{ \Carbon\Carbon::parse($employee->retirement->retirement_date)->format('Y-m-d') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($employee->retirement && $employee->retirement->retire_reason)
+                                        {{ $employee->retirement->retire_reason }}
                                     @else
                                         N/A
                                     @endif
@@ -66,7 +82,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No retired employees found.</td>
+                                <td colspan="12" class="text-center">No retired employees found.</td>
                             </tr>
                         @endforelse
                     </tbody>

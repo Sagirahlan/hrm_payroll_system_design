@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class AuditTrailController extends Controller
 {
@@ -26,8 +27,30 @@ class AuditTrailController extends Controller
             });
         }
 
+        // Date range filter
+        if ($request->filled('start_date')) {
+            $query->where('action_timestamp', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->where('action_timestamp', '<=', $request->end_date);
+        }
+
+        // User filter
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Action filter
+        if ($request->filled('action_filter')) {
+            $query->where('action', $request->action_filter);
+        }
+
         $auditLogs = $query->paginate(20)->withQueryString();
 
-        return view('audit_trails.index', compact('auditLogs'));
+        // For filter dropdowns
+        $users = User::orderBy('username')->get();
+        $actions = AuditTrail::distinct()->pluck('action');
+
+        return view('audit_trails.index', compact('auditLogs', 'users', 'actions'));
     }
 }

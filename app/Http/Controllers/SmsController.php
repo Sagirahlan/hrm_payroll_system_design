@@ -5,10 +5,10 @@ use App\Models\SmsNotification;
 use App\Models\Employee;
 use App\Models\Department;
 use App\Models\GradeLevel;
-use App\Events\AuditTrailLogged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Twilio\Rest\Client;
+use App\Models\AuditTrail;
 
 class SmsController extends Controller
 {
@@ -79,13 +79,14 @@ class SmsController extends Controller
             }
         }
 
-        event(new AuditTrailLogged(
-            Auth::id(),
-            'Send SMS',
-            "Sent SMS notification ID: {$sms->sms_id}",
-            'SmsNotification',
-            $sms->sms_id
-        ));
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'sent_sms',
+            'description' => "Sent SMS notification ID: {$sms->sms_id}",
+            'action_timestamp' => now(),
+            'entity_type' => 'SmsNotification',
+            'entity_id' => $sms->sms_id,
+        ]);
 
         return redirect()->route('sms.index')->with('success', 'SMS notification sent.');
     }

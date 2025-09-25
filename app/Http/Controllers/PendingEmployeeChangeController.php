@@ -40,7 +40,52 @@ class PendingEmployeeChangeController extends Controller
             $query->where('change_type', $request->change_type);
         }
         
-        $pendingChanges = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Search by employee name
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                // Split search term into words
+                $words = explode(' ', trim($searchTerm));
+                
+                // Search in existing employee records
+                $q->whereHas('employee', function ($subQuery) use ($searchTerm, $words) {
+                    $subQuery->where('first_name', 'like', "%{$searchTerm}%")
+                             ->orWhere('surname', 'like', "%{$searchTerm}%")
+                             ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                             ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"]);
+                             
+                    // If we have multiple words, search each word separately
+                    if (count($words) > 1) {
+                        foreach ($words as $word) {
+                            if (!empty($word)) {
+                                $subQuery->orWhere('first_name', 'like', "%{$word}%")
+                                         ->orWhere('surname', 'like', "%{$word}%");
+                            }
+                        }
+                    }
+                })
+                // Also search in pending change data for create requests
+                ->orWhere(function ($subQuery) use ($searchTerm, $words) {
+                    $subQuery->where('change_type', 'create')
+                             ->whereRaw("JSON_EXTRACT(data, '$.first_name') LIKE ?", ["%{$searchTerm}%"])
+                             ->orWhereRaw("JSON_EXTRACT(data, '$.surname') LIKE ?", ["%{$searchTerm}%"])
+                             ->orWhereRaw("JSON_EXTRACT(data, '$.employee_id') LIKE ?", ["%{$searchTerm}%"])
+                             ->orWhereRaw("CONCAT(JSON_EXTRACT(data, '$.first_name'), ' ', JSON_EXTRACT(data, '$.surname')) LIKE ?", ["%{$searchTerm}%"]);
+                             
+                    // If we have multiple words, search each word separately
+                    if (count($words) > 1) {
+                        foreach ($words as $word) {
+                            if (!empty($word)) {
+                                $subQuery->orWhereRaw("JSON_EXTRACT(data, '$.first_name') LIKE ?", ["%{$word}%"])
+                                         ->orWhereRaw("JSON_EXTRACT(data, '$.surname') LIKE ?", ["%{$word}%"]);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        
+        $pendingChanges = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->except('page'));
         
         return view('pending-changes.index', compact('pendingChanges'));
     }
@@ -49,8 +94,8 @@ class PendingEmployeeChangeController extends Controller
     {
         $pendingChange->load(['employee', 'requestedBy', 'approvedBy']);
 
-        $displayableNewData = $this->getDisplayableData($pendingChange->data);
-        $displayableOldData = $this->getDisplayableData($pendingChange->previous_data);
+        $displayableNewData = $this->getDisplayableData($pendingChange->data ?? []);
+        $displayableOldData = $this->getDisplayableData($pendingChange->previous_data ?? []);
 
         return view('pending-changes.show', compact('pendingChange', 'displayableNewData', 'displayableOldData'));
     }
@@ -181,6 +226,8 @@ class PendingEmployeeChangeController extends Controller
         ])->toArray();
         
         $employee = Employee::create($employeeData);
+
+        $pendingChange->update(['employee_id' => $employee->employee_id]);
         
         // Create next of kin
         NextOfKin::create([

@@ -15,6 +15,7 @@ class Retirement extends Model
         'notification_date',
         'gratuity_amount',
         'status',
+        'retire_reason',
     ];
 
     public function employee()

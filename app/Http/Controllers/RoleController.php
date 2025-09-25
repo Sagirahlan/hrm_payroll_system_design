@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Log;
+use App\Models\AuditTrail;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
@@ -53,6 +55,14 @@ class RoleController extends Controller
                 \Illuminate\Support\Facades\Log::info('Permissions synced for role:', ['role_id' => $role->id]);
             }
 
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'created_role',
+                'description' => "Created role: {$role->name}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Role', 'entity_id' => $role->id, 'role_name' => $role->name]),
+            ]);
+
             return redirect()->route('roles.index')->with('success', 'Role created successfully.');
         } catch (\Exception $e) {
             Log::error('Role creation failed', ['error' => $e->getMessage()]);
@@ -99,6 +109,13 @@ class RoleController extends Controller
                 \Illuminate\Support\Facades\Log::info('No permissions to sync, cleared all permissions for role:', ['role_id' => $role->id]);
             }
 
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'updated_role',
+                'description' => "Updated role: {$role->name}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Role', 'entity_id' => $role->id, 'role_name' => $role->name]),
+            ]);
 
             return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
@@ -111,6 +128,15 @@ class RoleController extends Controller
     {
         try {
             $role = Role::findOrFail($id);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'deleted_role',
+                'description' => "Deleted role: {$role->name}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Role', 'entity_id' => $role->id, 'role_name' => $role->name]),
+            ]);
+
             $role->delete();
 
             return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');

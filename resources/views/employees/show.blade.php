@@ -33,9 +33,7 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">Bank</button>
                 </li>
-                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">History</button>
-                </li>
+                 
             </ul>
             
             <!-- Step Content -->
@@ -73,16 +71,23 @@
                 <div class="tab-pane fade" id="work" role="tabpanel">
                     <h5 class="text-primary mb-3">Work Information</h5>
                     <div class="row">
-                        <div class="col-md-6"><p><strong>Date of First Appointment:</strong> {{ $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('j M Y') : '—' }}</p></div>
-                        <div class="col-md-6"><p><strong>Years of Service:</strong> {{ $employee->years_of_service !== null ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service) : '—' }}</p></div>
-                        <div class="col-md-6"><p><strong>Cadre:</strong> {{ $employee->cadre->name }}</p></div>
-                        <div class="col-md-6"><p><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym ?? 'N/A' }} - {{ $employee->gradeLevel->salaryScale->full_name ?? 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Grade Level:</strong> {{ $employee->gradeLevel->name ?? 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Step:</strong> {{ $employee->step->name ?? 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Rank:</strong> {{ $employee->rank->title ?? 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Department:</strong> {{ $employee->department->department_name }}</p></div>
-                        <div class="col-md-6"><p><strong>Expected Next Promotion:</strong> {{ $employee->expected_next_promotion ? \Carbon\Carbon::parse($employee->expected_next_promotion)->format('j M Y') : 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Expected Retirement Date:</strong> {{ $employee->expected_retirement_date ? \Carbon\Carbon::parse($employee->expected_retirement_date)->format('j M Y') : '—' }}</p></div>
+                        @if ($employee->appointmentType->name !== 'Contract')
+                            <div class="col-md-6"><p><strong>Date of First Appointment:</strong> {{ $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('j M Y') : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Years of Service:</strong> {{ $employee->years_of_service !== null ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service) : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Cadre:</strong> {{ $employee->cadre->name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym ?? 'N/A' }} - {{ $employee->gradeLevel->salaryScale->full_name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Grade Level:</strong> {{ $employee->gradeLevel->name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Step:</strong> {{ $employee->step->name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Rank:</strong> {{ $employee->rank->title ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Department:</strong> {{ $employee->department->department_name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Expected Next Promotion:</strong> {{ $employee->expected_next_promotion ? \Carbon\Carbon::parse($employee->expected_next_promotion)->format('j M Y') : 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Expected Retirement Date:</strong> {{ $employee->expected_retirement_date ? \Carbon\Carbon::parse($employee->expected_retirement_date)->format('j M Y') : '—' }}</p></div>
+                        @else
+                            <div class="col-md-6"><p><strong>Contract Start Date:</strong> {{ $employee->contract_start_date ? \Carbon\Carbon::parse($employee->contract_start_date)->format('j M Y') : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Contract End Date:</strong> {{ $employee->contract_end_date ? \Carbon\Carbon::parse($employee->contract_end_date)->format('j M Y') : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Amount:</strong> {{ $employee->amount ? number_format($employee->amount, 2) : 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Department:</strong> {{ $employee->department->department_name ?? 'N/A' }}</p></div>
+                        @endif
                     </div>
                 </div>
 
@@ -128,76 +133,12 @@
                     @endif
                 </div>
                 
-                <!-- History Information Step -->
-                <div class="tab-pane fade" id="history" role="tabpanel">
-                    <!-- Additions History -->
-                    <div class="mt-2">
-                        <h5 class="text-primary">Additions History</h5>
-                        @if($employee->additions->count() > 0)
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Period</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($employee->additions as $addition)
-                                        <tr>
-                                            <td>{{ $addition->addition_type }}</td>
-                                            <td>{{ $addition->formatted_amount }}</td>
-                                            <td>{{ $addition->addition_period }}</td>
-                                            <td>{{ $addition->start_date }}</td>
-                                            <td>{{ $addition->end_date ?? 'N/A' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <div class="alert alert-info">No additions history available.</div>
-                        @endif
-                    </div>
-
-                    <!-- Deductions History -->
-                    <div class="mt-4">
-                        <h5 class="text-primary">Deductions History</h5>
-                        @if($employee->deductions->count() > 0)
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Period</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($employee->deductions as $deduction)
-                                        <tr>
-                                            <td>{{ $deduction->deduction_type }}</td>
-                                            <td>{{ $deduction->formatted_amount }}</td>
-                                            <td>{{ $deduction->deduction_period }}</td>
-                                            <td>{{ $deduction->start_date }}</td>
-                                            <td>{{ $deduction->end_date ?? 'N/A' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <div class="alert alert-info">No deductions history available.</div>
-                        @endif
-                    </div>
-                </div>
-            </div>
+                
             
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('employees.index') }}" class="btn btn-secondary rounded-pill px-4">Back</a>
                 <div>
-                    <a href="{{ route('employee.export', $employee->employee_id) }}" class="btn btn-success btn-sm rounded-pill me-1 font-weight-bold shadow-sm">Export</a>
+                    
                     <a href="{{ route('employees.edit', $employee) }}" class="btn btn-warning rounded-pill px-4">Edit</a>
                 </div>
             </div>
