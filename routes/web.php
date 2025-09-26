@@ -145,93 +145,105 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Payroll Management - Bursary and Admin only (ENHANCED WITH SEARCH & FILTERS)
-    Route::middleware('permission:manage_payroll')->group(function () {
-        
-        // IMPORTANT: Place specific routes BEFORE dynamic routes to avoid conflicts
-        
-        // Payroll generation and export (with filters) - MUST BE FIRST
-        Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
-        Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
-        
-        // AJAX and Search routes - MUST BE BEFORE DYNAMIC ROUTES
-        Route::get('/payroll/api/search', [PayrollController::class, 'search'])->name('payroll.search');
-        Route::get('/payroll/api/statistics', [PayrollController::class, 'getStatistics'])->name('payroll.statistics');
-        
-        // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
-        Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
-        
-        // Detailed payroll information route
-        Route::get('/payroll/{payrollId}/detailed', [PayrollController::class, 'getDetailedPayroll'])->name('payroll.detailed');
-        
-        // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
-        Route::get('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'showDeductions'])->name('payroll.deductions.show');
-        Route::get('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'showAdditions'])->name('payroll.additions.show');
-        Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
-        Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
+        Route::middleware('permission:manage_payroll')->group(function () {
+            
+            // IMPORTANT: Place specific routes BEFORE dynamic routes to avoid conflicts
+            
+            // Payroll generation and export (with filters) - MUST BE FIRST
+            Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
+            Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
+            
+            // AJAX and Search routes - MUST BE BEFORE DYNAMIC ROUTES
+            Route::get('/payroll/api/search', [PayrollController::class, 'search'])->name('payroll.search');
+            Route::get('/payroll/api/statistics', [PayrollController::class, 'getStatistics'])->name('payroll.statistics');
+            
+            // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
+            Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
+            
+            // Bulk workflow operations
+            Route::post('/payroll/bulk/send-for-review', [PayrollController::class, 'bulkSendForReview'])->name('payroll.bulk_send_for_review');
+            Route::post('/payroll/bulk/mark-as-reviewed', [PayrollController::class, 'bulkMarkAsReviewed'])->name('payroll.bulk_mark_as_reviewed');
+            Route::post('/payroll/bulk/send-for-approval', [PayrollController::class, 'bulkSendForApproval'])->name('payroll.bulk_send_for_approval');
+            Route::post('/payroll/bulk/final-approve', [PayrollController::class, 'bulkFinalApprove'])->name('payroll.bulk_final_approve');
+            
+            // Individual workflow operations
+            Route::post('/payroll/{payrollId}/send-for-review', [PayrollController::class, 'sendForReview'])->name('payroll.send-for-review');
+            Route::post('/payroll/{payrollId}/mark-as-reviewed', [PayrollController::class, 'markAsReviewed'])->name('payroll.mark-as-reviewed');
+            Route::post('/payroll/{payrollId}/send-for-approval', [PayrollController::class, 'sendForApproval'])->name('payroll.send-for-approval');
+            Route::post('/payroll/{payrollId}/final-approve', [PayrollController::class, 'finalApprove'])->name('payroll.final-approve');
+            
+            // Detailed payroll information route
+            Route::get('/payroll/{payrollId}/detailed', [PayrollController::class, 'getDetailedPayroll'])->name('payroll.detailed');
+            
+            // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
+            Route::get('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'showDeductions'])->name('payroll.deductions.show');
+            Route::get('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'showAdditions'])->name('payroll.additions.show');
+            Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
+            Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
 
-        // Manage All Adjustments
-        Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
-        
-        Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
-        Route::get('/payroll/test', function() {
-            return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
-        })->name('payroll.test');
-        Route::post('/payroll/additions/bulk', [PayrollController::class, 'storeBulkAdditions'])->name('payroll.additions.bulk.store');
-        Route::get('/payroll/deductions', [PayrollController::class, 'deductions'])->name('payroll.deductions');
-        Route::post('/payroll/deductions/bulk', [PayrollController::class, 'storeBulkDeductions'])->name('payroll.deductions.bulk.store');
+            // Manage All Adjustments
+            Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
+            
+            Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
+            Route::get('/payroll/test', function() {
+                return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
+            })->name('payroll.test');
+            Route::post('/payroll/additions/bulk', [PayrollController::class, 'storeBulkAdditions'])->name('payroll.additions.bulk.store');
+            Route::get('/payroll/deductions', [PayrollController::class, 'deductions'])->name('payroll.deductions');
+            Route::post('/payroll/deductions/bulk', [PayrollController::class, 'storeBulkDeductions'])->name('payroll.deductions.bulk.store');
 
-        // Main payroll resource routes - DYNAMIC ROUTES COME LAST
-        Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
-        Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
-        Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
-        Route::get('/payroll/{payrollId}', [PayrollController::class, 'show'])->name('payroll.show');
-        Route::get('/payroll/{payrollId}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
-        Route::put('/payroll/{payrollId}', [PayrollController::class, 'update'])->name('payroll.update');
-        Route::delete('/payroll/{payrollId}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
-        
-        
-        // Individual payroll actions - AFTER MAIN ROUTES
-        Route::get('/payroll/{payrollId}/payslip', [PayrollController::class, 'generatePaySlip'])->name('payroll.payslip');
-        Route::post('/payroll/{payrollId}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
-        Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
-        Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
+            // Main payroll resource routes - DYNAMIC ROUTES COME LAST
+            Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+            Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
+            Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
+            Route::get('/payroll/{payrollId}', [PayrollController::class, 'show'])->name('payroll.show');
+            Route::get('/payroll/{payrollId}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
+            Route::put('/payroll/{payrollId}', [PayrollController::class, 'update'])->name('payroll.update');
+            Route::delete('/payroll/{payrollId}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+            
+            
+            // Individual payroll actions - AFTER MAIN ROUTES
+            Route::get('/payroll/{payrollId}/payslip', [PayrollController::class, 'generatePaySlip'])->name('payroll.payslip');
+            Route::post('/payroll/{payrollId}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
+            Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
+            Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
 
-        
-        
-        // Salary Scales
-        Route::resource('salary-scales', \App\Http\Controllers\SalaryScaleController::class);
-        Route::get('/salary-scales/{salaryScale}/grade-levels', [\App\Http\Controllers\SalaryScaleController::class, 'showGradeLevels'])->name('salary-scales.grade-levels');
-        
-        // Grade Levels within Salary Scales
-        Route::prefix('salary-scales/{salaryScale}')->group(function () {
-            Route::get('/grade-levels/create', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'create'])->name('salary-scales.grade-levels.create');
-            Route::post('/grade-levels', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'store'])->name('salary-scales.grade-levels.store');
-            Route::get('/grade-levels/{gradeLevel}/edit', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'edit'])->name('salary-scales.grade-levels.edit');
-            Route::put('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'update'])->name('salary-scales.grade-levels.update');
-            Route::delete('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'destroy'])->name('salary-scales.grade-levels.destroy');
+            
+            
+            // Salary Scales
+            Route::resource('salary-scales', \App\Http\Controllers\SalaryScaleController::class);
+            Route::get('/salary-scales/{salaryScale}/grade-levels', [\App\Http\Controllers\SalaryScaleController::class, 'showGradeLevels'])->name('salary-scales.grade-levels');
+            
+            // Grade Levels within Salary Scales
+            Route::prefix('salary-scales/{salaryScale}')->group(function () {
+                Route::get('/grade-levels/create', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'create'])->name('salary-scales.grade-levels.create');
+                Route::post('/grade-levels', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'store'])->name('salary-scales.grade-levels.store');
+                Route::get('/grade-levels/{gradeLevel}/edit', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'edit'])->name('salary-scales.grade-levels.edit');
+                Route::put('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'update'])->name('salary-scales.grade-levels.update');
+                Route::delete('/grade-levels/{gradeLevel}', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'destroy'])->name('salary-scales.grade-levels.destroy');
+            });
+
+            // Deduction Types
+            Route::resource('deduction-types', \App\Http\Controllers\DeductionTypeController::class);
+
+            // Addition Types
+            Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
+
+            // Grade Level Adjustments
+            Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
+            Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
+            Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
+            
+            // Step Management Routes
+            Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
+                // Steps
+                Route::get('/steps/create', [\App\Http\Controllers\SalaryScale\StepController::class, 'create'])->name('salary-scales.grade-levels.steps.create');
+                Route::post('/steps', [\App\Http\Controllers\SalaryScale\StepController::class, 'store'])->name('salary-scales.grade-levels.steps.store');
+                Route::get('/steps/{step}/edit', [\App\Http\Controllers\SalaryScale\StepController::class, 'edit'])->name('salary-scales.grade-levels.steps.edit');
+                Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
+                Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
+            });
         });
-
-        // Deduction Types
-        Route::resource('deduction-types', \App\Http\Controllers\DeductionTypeController::class);
-
-        // Addition Types
-        Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
-
-        // Grade Level Adjustments
-        Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
-        Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
-        Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
-        
-        // Step Management Routes
-        Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
-            // Steps
-            Route::get('/steps/create', [\App\Http\Controllers\SalaryScale\StepController::class, 'create'])->name('salary-scales.grade-levels.steps.create');
-            Route::post('/steps', [\App\Http\Controllers\SalaryScale\StepController::class, 'store'])->name('salary-scales.grade-levels.steps.store');
-            Route::get('/steps/{step}/edit', [\App\Http\Controllers\SalaryScale\StepController::class, 'edit'])->name('salary-scales.grade-levels.steps.edit');
-            Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
-            Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
-        });
-    });
 
     // Pending Employee Changes - Admin only
     Route::middleware('permission:approve_employee_changes')->group(function () {

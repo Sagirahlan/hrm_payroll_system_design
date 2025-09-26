@@ -54,7 +54,7 @@ class PayrollController extends Controller
                 // Use the same employee model but indicate that it's suspended for calculation
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, true);
 
-                // Create the payroll record for suspended employee
+                // Create the payroll record for suspended employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
                     'grade_level_id' => $employee->gradeLevel->id,
@@ -63,7 +63,7 @@ class PayrollController extends Controller
                     'total_additions' => $calculation['total_additions'], // Additions still apply
                     'total_deductions' => $calculation['total_deductions'], // Deductions still apply
                     'net_salary' => $calculation['net_salary'], // Net salary with special calculation for suspended
-                    'status' => 'Pending',
+                    'status' => 'Pending Review',
                     'payment_date' => null,
                     'remarks' => 'Generated for ' . $month . ' (Suspended - Special Calculation Applied)',
                 ]);
@@ -82,7 +82,7 @@ class PayrollController extends Controller
                 // For active employees, use normal calculation
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, false);
 
-                // Create the payroll record for active employee
+                // Create the payroll record for active employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
                     'grade_level_id' => $employee->gradeLevel->id,
@@ -91,7 +91,7 @@ class PayrollController extends Controller
                     'total_additions' => $calculation['total_additions'],
                     'total_deductions' => $calculation['total_deductions'],
                     'net_salary' => $calculation['net_salary'],
-                    'status' => 'Pending',
+                    'status' => 'Pending Review',
                     'payment_date' => null,
                     'remarks' => 'Generated for ' . $month,
                 ]);
@@ -1194,4 +1194,342 @@ class PayrollController extends Controller
     {
         return view('payroll.bulk_deductions');
     }
+
+    // Bulk send all payroll records for review
+    public function bulkSendForReview(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            // Apply the same filters used in the index method to get all matching records
+            $query = PayrollRecord::query();
+
+            // Apply filters similar to index method
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Only payroll records with 'Pending Review' status can be sent for review
+            $query->where('status', 'Pending Review');
+
+            $updated = $query->update([
+                'status' => 'Under Review',
+                'updated_at' => now()
+            ]);
+
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            // Only payroll records with 'Pending Review' status can be sent for review
+            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                                    ->where('status', 'Pending Review')
+                                    ->update([
+                                        'status' => 'Under Review',
+                                        'updated_at' => now()
+                                    ]);
+
+            $payrollIds = $request->payroll_ids;
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_sent_for_review',
+            'description' => "Bulk sent {$updated} payroll records for review",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $payrollIds, 'updated_count' => $updated]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully sent {$updated} payroll records for review.");
+    }
+
+    // Bulk mark all payroll records as reviewed
+    public function bulkMarkAsReviewed(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            // Apply the same filters used in the index method to get all matching records
+            $query = PayrollRecord::query();
+
+            // Apply filters similar to index method
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Only payroll records with 'Under Review' status can be marked as reviewed
+            $query->where('status', 'Under Review');
+
+            $updated = $query->update([
+                'status' => 'Reviewed',
+                'updated_at' => now()
+            ]);
+
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            // Only payroll records with 'Under Review' status can be marked as reviewed
+            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                                    ->where('status', 'Under Review')
+                                    ->update([
+                                        'status' => 'Reviewed',
+                                        'updated_at' => now()
+                                    ]);
+
+            $payrollIds = $request->payroll_ids;
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_marked_as_reviewed',
+            'description' => "Bulk marked {$updated} payroll records as reviewed",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $payrollIds, 'updated_count' => $updated]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully marked {$updated} payroll records as reviewed.");
+    }
+
+    // Bulk send all payroll records for final approval
+    public function bulkSendForApproval(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            // Apply the same filters used in the index method to get all matching records
+            $query = PayrollRecord::query();
+
+            // Apply filters similar to index method
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Only payroll records with 'Reviewed' status can be sent for final approval
+            $query->where('status', 'Reviewed');
+
+            $updated = $query->update([
+                'status' => 'Pending Final Approval',
+                'updated_at' => now()
+            ]);
+
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            // Only payroll records with 'Reviewed' status can be sent for final approval
+            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                                    ->where('status', 'Reviewed')
+                                    ->update([
+                                        'status' => 'Pending Final Approval',
+                                        'updated_at' => now()
+                                    ]);
+
+            $payrollIds = $request->payroll_ids;
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_sent_for_final_approval',
+            'description' => "Bulk sent {$updated} payroll records for final approval",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $payrollIds, 'updated_count' => $updated]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully sent {$updated} payroll records for final approval.");
+    }
+
+    // Bulk final approve all payroll records
+    public function bulkFinalApprove(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            // Apply the same filters used in the index method to get all matching records
+            $query = PayrollRecord::query();
+
+            // Apply filters similar to index method
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Only payroll records with 'Pending Final Approval' status can be finally approved
+            $query->where('status', 'Pending Final Approval');
+
+            $updated = $query->update([
+                'status' => 'Approved',
+                'updated_at' => now()
+            ]);
+
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            // Only payroll records with 'Pending Final Approval' status can be finally approved
+            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                                    ->where('status', 'Pending Final Approval')
+                                    ->update([
+                                        'status' => 'Approved',
+                                        'updated_at' => now()
+                                    ]);
+
+            $payrollIds = $request->payroll_ids;
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_final_approved_payroll',
+            'description' => "Bulk finally approved {$updated} payroll records",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $payrollIds, 'updated_count' => $updated]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully finally approved {$updated} payroll records.");
+    }
+
+    // Individual send payroll for review
+    public function sendForReview($payrollId)
+    {
+        $payroll = PayrollRecord::findOrFail($payrollId);
+        
+        // Only payroll records with 'Pending Review' status can be sent for review
+        if ($payroll->status !== 'Pending Review') {
+            return redirect()->back()
+                ->with('error', 'Payroll record is not in Pending Review status.');
+        }
+
+        $payroll->update([
+            'status' => 'Under Review',
+            'updated_at' => now()
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'sent_payroll_for_review',
+            'description' => "Sent payroll record ID: {$payrollId} for review",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Payroll record sent for review successfully.');
+    }
+
+    // Individual mark payroll as reviewed
+    public function markAsReviewed($payrollId)
+    {
+        $payroll = PayrollRecord::findOrFail($payrollId);
+        
+        // Only payroll records with 'Under Review' status can be marked as reviewed
+        if ($payroll->status !== 'Under Review') {
+            return redirect()->back()
+                ->with('error', 'Payroll record is not in Under Review status.');
+        }
+
+        $payroll->update([
+            'status' => 'Reviewed',
+            'updated_at' => now()
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'marked_payroll_as_reviewed',
+            'description' => "Marked payroll record ID: {$payrollId} as reviewed",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Payroll record marked as reviewed successfully.');
+    }
+
+    // Individual send payroll for approval
+    public function sendForApproval($payrollId)
+    {
+        $payroll = PayrollRecord::findOrFail($payrollId);
+        
+        // Only payroll records with 'Reviewed' status can be sent for final approval
+        if ($payroll->status !== 'Reviewed') {
+            return redirect()->back()
+                ->with('error', 'Payroll record is not in Reviewed status.');
+        }
+
+        $payroll->update([
+            'status' => 'Pending Final Approval',
+            'updated_at' => now()
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'sent_payroll_for_final_approval',
+            'description' => "Sent payroll record ID: {$payrollId} for final approval",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Payroll record sent for final approval successfully.');
+    }
+
+    // Individual final approve payroll
+    public function finalApprove($payrollId)
+    {
+        $payroll = PayrollRecord::findOrFail($payrollId);
+        
+        // Only payroll records with 'Pending Final Approval' status can be finally approved
+        if ($payroll->status !== 'Pending Final Approval') {
+            return redirect()->back()
+                ->with('error', 'Payroll record is not in Pending Final Approval status.');
+        }
+
+        $payroll->update([
+            'status' => 'Approved',
+            'updated_at' => now()
+        ]);
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'finally_approved_payroll',
+            'description' => "Finally approved payroll record ID: {$payrollId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Payroll record finally approved successfully.');
+    }
+
+    
 }
