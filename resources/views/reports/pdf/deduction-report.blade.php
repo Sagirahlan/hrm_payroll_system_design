@@ -75,42 +75,85 @@
         <p>Generated on {{ date('F j, Y') }}</p>
     </div>
 
-    @foreach($data as $deductionGroup)
-    <div class="section">
-        <div class="section-title">{{ $deductionGroup['deduction_type'] }}</div>
-        
-        @if(count($deductionGroup['deductions']) > 0)
-        <table>
-            <thead>
-                <tr>
-                    <th>Employee ID</th>
-                    <th>Employee Name</th>
-                    <th>Amount</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($deductionGroup['deductions'] as $deduction)
-                <tr>
-                    <td>{{ $deduction['employee']['employee_id'] ?? 'N/A' }}</td>
-                    <td>{{ ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? '') }}</td>
-                    <td class="text-right">₦{{ number_format($deduction['amount'], 2) }}</td>
-                    <td class="text-center">{{ $deduction['start_date'] ? date('Y-m-d', strtotime($deduction['start_date'])) : 'N/A' }}</td>
-                    <td class="text-center">{{ $deduction['end_date'] ? date('Y-m-d', strtotime($deduction['end_date'])) : 'N/A' }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @else
-        <p>No deductions found for this type.</p>
-        @endif
-    </div>
-    
-    @if(!$loop->last)
-    <div class="page-break"></div>
+    @if(is_string($data))
+        @php
+            $decodedData = json_decode($data, true);
+        @endphp
+    @else
+        @php
+            $decodedData = $data;
+        @endphp
     @endif
-    @endforeach
+    
+    @if(isset($decodedData['deduction_type']) && isset($decodedData['deductions']))
+        <div class="section">
+            <div class="section-title">{{ $decodedData['deduction_type'] }}</div>
+            
+            @if(count($decodedData['deductions']) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Amount</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($decodedData['deductions'] as $deduction)
+                    <tr>
+                        <td>{{ $deduction['employee']['employee_id'] ?? 'N/A' }}</td>
+                        <td>{{ ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? '') }}</td>
+                        <td class="text-right">₦{{ number_format($deduction['amount'] ?? 0, 2) }}</td>
+                        <td class="text-center">{{ $deduction['start_date'] ? date('Y-m-d', strtotime($deduction['start_date'])) : 'N/A' }}</td>
+                        <td class="text-center">{{ $deduction['end_date'] ? date('Y-m-d', strtotime($deduction['end_date'])) : 'N/A' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+            <p>No deductions found for this type.</p>
+            @endif
+        </div>
+    @else
+        @foreach($decodedData as $deductionGroup)
+        <div class="section">
+            <div class="section-title">{{ $deductionGroup['deduction_type'] }}</div>
+            
+            @if(count($deductionGroup['deductions']) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Amount</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($deductionGroup['deductions'] as $deduction)
+                    <tr>
+                        <td>{{ $deduction['employee']['employee_id'] ?? 'N/A' }}</td>
+                        <td>{{ ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? '') }}</td>
+                        <td class="text-right">₦{{ number_format($deduction['amount'] ?? 0, 2) }}</td>
+                        <td class="text-center">{{ $deduction['start_date'] ? date('Y-m-d', strtotime($deduction['start_date'])) : 'N/A' }}</td>
+                        <td class="text-center">{{ $deduction['end_date'] ? date('Y-m-d', strtotime($deduction['end_date'])) : 'N/A' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+            <p>No deductions found for this type.</p>
+            @endif
+        </div>
+        
+        @if(!$loop->last)
+        <div class="page-break"></div>
+        @endif
+        @endforeach
+    @endif
 
     <div class="footer">
         <p>Report generated by {{ $report->generatedBy->name ?? 'System' }} on {{ date('F j, Y g:i A') }}</p>

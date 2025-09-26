@@ -20,7 +20,7 @@
                         <form method="GET" action="{{ route('payroll.adjustments.manage') }}" class="mb-3">
                             <div class="row g-3">
                                 <!-- Search -->
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="search" class="form-label">Search</label>
                                     <input type="text" name="search" id="search" class="form-control" 
                                            placeholder="Search by name, ID, or reg no..." 
@@ -28,7 +28,7 @@
                                 </div>
                                 
                                 <!-- Department Filter -->
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="department_id" class="form-label">Department</label>
                                     <select name="department_id" id="department_id" class="form-select">
                                         <option value="">All Departments</option>
@@ -41,8 +41,18 @@
                                     </select>
                                 </div>
                                 
+                                <!-- Status Filter -->
+                                <div class="col-md-3">
+                                    <label for="employee_status" class="form-label">Status</label>
+                                    <select name="employee_status" id="employee_status" class="form-select">
+                                        <option value="">All Statuses</option>
+                                        <option value="Active" {{ request()->get('employee_status') == 'Active' ? 'selected' : '' }}>Active</option>
+                                        <option value="Suspended" {{ request()->get('employee_status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
+                                    </select>
+                                </div>
+                                
                                 <!-- Sort By -->
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <label for="sort_by" class="form-label">Sort By</label>
                                     <select name="sort_by" id="sort_by" class="form-select">
                                         <option value="employee_id" {{ request()->get('sort_by') == 'employee_id' ? 'selected' : '' }}>Employee ID</option>
@@ -52,15 +62,6 @@
                                 </div>
                                 
                                 <!-- Sort Direction -->
-                                <div class="col-md-2">
-                                    <label for="sort_direction" class="form-label">Order</label>
-                                    <select name="sort_direction" id="sort_direction" class="form-select">
-                                        <option value="asc" {{ request()->get('sort_direction') == 'asc' ? 'selected' : '' }}>Ascending</option>
-                                        <option value="desc" {{ request()->get('sort_direction') == 'desc' ? 'selected' : '' }}>Descending</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Submit Button -->
                                 <div class="col-md-12">
                                     <div class="d-flex justify-content-end">
                                         <button type="submit" class="btn btn-primary me-2">
@@ -93,6 +94,7 @@
                             <th>Name</th>
                             <th>Department</th>
                             <th>Grade Level</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -103,6 +105,14 @@
                                 <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
+                                <td>
+                                    <span class="badge 
+                                        @if($employee->status === 'Active') bg-success
+                                        @elseif($employee->status === 'Suspended') bg-warning text-dark
+                                        @else bg-secondary @endif">
+                                        {{ $employee->status }}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="actionsDropdown{{ $employee->employee_id }}" data-bs-toggle="dropdown" aria-expanded="false">
@@ -125,7 +135,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No active employees found</td>
+                                <td colspan="6" class="text-center">No employees found</td>
                             </tr>
                         @endforelse
                     </tbody>

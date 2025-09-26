@@ -196,10 +196,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
         Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
 
-        // Payment integration routes
-        Route::post('/payments/nabroll/batch', [PaymentController::class, 'initiateBatchNabroll'])->name('payments.nabroll.batch');
-        Route::post('/payments/nabroll/initiate/{transactionId}', [PaymentController::class, 'initiateSingleNabroll'])->name('payments.nabroll.initiate');
-        Route::post('/nabroll-response', [PaymentController::class, 'handleNabrollResponse'])->name('nabroll.response');
+        
         
         // Salary Scales
         Route::resource('salary-scales', \App\Http\Controllers\SalaryScaleController::class);

@@ -188,8 +188,8 @@ class EmployeeReportService
     }   
     private function getStatistics(Employee $employee): array
     {
-        // Only consider employee if status is 'active'
-        if ($employee->status !== 'active') {
+        // Consider employee if status is 'Active' or 'Suspended'
+        if (!in_array($employee->status, ['Active', 'Suspended'])) {
             return [];
         }
 

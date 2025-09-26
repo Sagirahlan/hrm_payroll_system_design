@@ -45,7 +45,7 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-info text-dark">
-                                                {{ ucfirst($report->report_type) }}
+                                                {{ ucfirst($report->display_type ?? $report->report_type) }}
                                             </span>
                                         </td>
                                         <td>

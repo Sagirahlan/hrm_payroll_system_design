@@ -30,6 +30,3 @@
 <a class="nav-link" href="{{ route('payroll.export') }}">
     <i class="fas fa-file-export"></i> Export Payroll
 </a>
-<a class="nav-link" href="{{ route('payments.nabroll.batch') }}">
-    <i class="fas fa-credit-card"></i> ePayment (NABRoll)
-</a>

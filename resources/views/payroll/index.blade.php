@@ -267,6 +267,12 @@
                                                         @if($payroll->employee->employee_id)
                                                             <br><small class="text-muted">ID: {{ $payroll->employee->employee_id }}</small>
                                                         @endif
+                                                        @if($payroll->employee->gradeLevel)
+                                                            <br><small class="text-muted">GL: {{ $payroll->employee->gradeLevel->name }}@if($payroll->employee->step) - Step {{ $payroll->employee->step->name }}@endif</small>
+                                                        @endif
+                                                        @if($payroll->employee->status === 'Suspended')
+                                                            <br><span class="badge bg-warning text-dark">Suspended</span>
+                                                        @endif
                                                     @else
                                                         <strong class="text-danger">Employee Not Found</strong>
                                                     @endif
@@ -415,16 +421,7 @@
                                                         </a>
                                                     </li>
                                                     @php $tx = optional($payroll->transaction); @endphp
-                                                    @if($tx && $tx->status === 'pending')
-                                                        <li>
-                                                            <form action="{{ route('payments.nabroll.initiate', $tx->transaction_id) }}" method="POST" class="dropdown-item m-0 p-0">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-link dropdown-item">
-                                                                    <i class="fas fa-credit-card"></i> Proceed to NABRoll
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    @elseif($tx && $tx->payment_url)
+                                                    @if($tx && $tx->payment_url)
                                                         <li>
                                                             <a class="dropdown-item" href="{{ $tx->payment_url }}" target="_blank">
                                                                 <i class="fas fa-external-link-alt"></i> Pay Now

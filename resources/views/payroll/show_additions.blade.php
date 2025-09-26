@@ -95,6 +95,10 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    <!-- Pagination -->
+                                    <div class="card-footer bg-white">
+                                        {{ $additions->withQueryString()->links() }}
+                                    </div>
                                 </div>
                             </div>
                         </div>

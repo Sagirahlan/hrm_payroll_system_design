@@ -50,24 +50,29 @@
                             <td>{{ $employee->rank ? $employee->rank->name : 'N/A' }}</td>
                             <td>
                                 @php
-                                    $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
-                                    $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
-                                    $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
-                                    $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
-                                    
-                                    // Check if the employee has reached the maximum years of service first
-                                    if ($serviceDuration >= $yearsOfService) {
-                                        $retireReason = 'By Years of Service';
-                                    } elseif ($age >= $retirementAge) {
-                                        $retireReason = 'By Old Age';
-                                    } else {
-                                        // If neither condition is met, determine by which will happen first
-                                        $actualRetirementDate = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(\Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
-                                        if ($actualRetirementDate->eq(\Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                                    $retireReason = 'N/A';
+                                    if ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                                        $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                                        $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+                                        $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                                        $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+                                        
+                                        // Check if the employee has reached the maximum years of service first
+                                        if ($serviceDuration >= $yearsOfService) {
+                                            $retireReason = 'By Years of Service';
+                                        } elseif ($age >= $retirementAge) {
                                             $retireReason = 'By Old Age';
                                         } else {
-                                            $retireReason = 'By Years of Service';
+                                            // If neither condition is met, determine by which will happen first
+                                            $actualRetirementDate = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(\Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
+                                            if ($actualRetirementDate->eq(\Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                                                $retireReason = 'By Old Age';
+                                            } else {
+                                                $retireReason = 'By Years of Service';
+                                            }
                                         }
+                                    } else {
+                                        $retireReason = 'Missing grade/salary scale information';
                                     }
                                 @endphp
                                 {{ $retireReason }}
@@ -92,28 +97,33 @@
                                             @csrf
                                             <input type="hidden" name="employee_id" value="{{ $employee->employee_id }}">
                                             <input type="hidden" name="retirement_date" value="{{ now()->toDateString() }}">
-                                            <input type="hidden" name="status" value="Completed">
+                                            <input type="hidden" name="status" value="complete">
                                             <div class="mb-3">
                                                 <label for="retire_reason_{{ $employee->employee_id }}" class="form-label">Retire Reason</label>
                                                 @php
-                                                    $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
-                                                    $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
-                                                    $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
-                                                    $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
-                                                    
-                                                    // Check if the employee has reached the maximum years of service first
-                                                    if ($serviceDuration >= $yearsOfService) {
-                                                        $retireReason = 'By Years of Service';
-                                                    } elseif ($age >= $retirementAge) {
-                                                        $retireReason = 'By Old Age';
-                                                    } else {
-                                                        // If neither condition is met, determine by which will happen first
-                                                        $actualRetirementDate = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(\Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
-                                                        if ($actualRetirementDate->eq(\Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                                                    $retireReason = 'N/A';
+                                                    if ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                                                        $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                                                        $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+                                                        $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                                                        $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+                                                        
+                                                        // Check if the employee has reached the maximum years of service first
+                                                        if ($serviceDuration >= $yearsOfService) {
+                                                            $retireReason = 'By Years of Service';
+                                                        } elseif ($age >= $retirementAge) {
                                                             $retireReason = 'By Old Age';
                                                         } else {
-                                                            $retireReason = 'By Years of Service';
+                                                            // If neither condition is met, determine by which will happen first
+                                                            $actualRetirementDate = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge)->min(\Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService));
+                                                            if ($actualRetirementDate->eq(\Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge))) {
+                                                                $retireReason = 'By Old Age';
+                                                            } else {
+                                                                $retireReason = 'By Years of Service';
+                                                            }
                                                         }
+                                                    } else {
+                                                        $retireReason = 'Missing grade/salary scale information';
                                                     }
                                                 @endphp
                                                 <input type="text" name="retire_reason" id="retire_reason_{{ $employee->employee_id }}" class="form-control" value="{{ $retireReason }}" readonly>

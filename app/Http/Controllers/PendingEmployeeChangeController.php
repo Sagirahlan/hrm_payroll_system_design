@@ -218,6 +218,12 @@ class PendingEmployeeChangeController extends Controller
     private function applyCreate(PendingEmployeeChange $pendingChange)
     {
         $data = $pendingChange->data;
+        \Illuminate\Support\Facades\Log::info('Data in applyCreate:', $data);
+
+        // Sanitize years_of_service
+        if (isset($data['years_of_service'])) {
+            $data['years_of_service'] = intval($data['years_of_service']);
+        }
         
         // Create employee
         $employeeData = collect($data)->except([
@@ -229,31 +235,40 @@ class PendingEmployeeChangeController extends Controller
 
         $pendingChange->update(['employee_id' => $employee->employee_id]);
         
-        // Create next of kin
-        NextOfKin::create([
-            'employee_id' => $employee->employee_id,
-            'name' => $data['kin_name'],
-            'relationship' => $data['kin_relationship'],
-            'mobile_no' => $data['kin_mobile_no'],
-            'address' => $data['kin_address'],
-            'occupation' => $data['kin_occupation'] ?? null,
-            'place_of_work' => $data['kin_place_of_work'] ?? null,
-        ]);
+        // Create next of kin if kin data exists
+        if (isset($data['kin_name'])) {
+            NextOfKin::create([
+                'employee_id' => $employee->employee_id,
+                'name' => $data['kin_name'],
+                'relationship' => $data['kin_relationship'] ?? null,
+                'mobile_no' => $data['kin_mobile_no'] ?? null,
+                'address' => $data['kin_address'] ?? null,
+                'occupation' => $data['kin_occupation'] ?? null,
+                'place_of_work' => $data['kin_place_of_work'] ?? null,
+            ]);
+        }
         
-        // Create bank details
-        Bank::create([
-            'employee_id' => $employee->employee_id,
-            'bank_name' => $data['bank_name'],
-            'bank_code' => $data['bank_code'],
-            'account_name' => $data['account_name'],
-            'account_no' => $data['account_no'],
-        ]);
+        // Create bank details if bank data exists
+        if (isset($data['bank_name'])) {
+            Bank::create([
+                'employee_id' => $employee->employee_id,
+                'bank_name' => $data['bank_name'],
+                'bank_code' => $data['bank_code'],
+                'account_name' => $data['account_name'],
+                'account_no' => $data['account_no'],
+            ]);
+        }
     }
     
     private function applyUpdate(PendingEmployeeChange $pendingChange)
     {
         $employee = $pendingChange->employee;
         $data = $pendingChange->data;
+
+        // Sanitize years_of_service
+        if (isset($data['years_of_service'])) {
+            $data['years_of_service'] = intval($data['years_of_service']);
+        }
         
         // Update employee
         $employeeData = collect($data)->except([
@@ -263,29 +278,76 @@ class PendingEmployeeChangeController extends Controller
         
         $employee->update($employeeData);
         
-        // Update or create next of kin
-        NextOfKin::updateOrCreate(
-            ['employee_id' => $employee->employee_id],
-            [
-                'name' => $data['kin_name'],
-                'relationship' => $data['kin_relationship'],
-                'mobile_no' => $data['kin_mobile_no'],
-                'address' => $data['kin_address'],
-                'occupation' => $data['kin_occupation'] ?? null,
-                'place_of_work' => $data['kin_place_of_work'] ?? null,
-            ]
-        );
+        // Update or create next of kin if any kin-related data is provided
+        $hasKinData = isset($data['kin_name']) || isset($data['kin_relationship']) || 
+                     isset($data['kin_mobile_no']) || isset($data['kin_address']) || 
+                     isset($data['kin_occupation']) || isset($data['kin_place_of_work']);
         
-        // Update or create bank details
-        Bank::updateOrCreate(
-            ['employee_id' => $employee->employee_id],
-            [
-                'bank_name' => $data['bank_name'],
-                'bank_code' => $data['bank_code'],
-                'account_name' => $data['account_name'],
-                'account_no' => $data['account_no'],
-            ]
-        );
+        if ($hasKinData) {
+            // Get existing next of kin to preserve required fields that are not being updated
+            $existingKin = NextOfKin::where('employee_id', $employee->employee_id)->first();
+            
+            $kinData = $existingKin ? $existingKin->toArray() : [];
+            
+            if (isset($data['kin_name'])) {
+                $kinData['name'] = $data['kin_name'];
+            }
+            if (isset($data['kin_relationship'])) {
+                $kinData['relationship'] = $data['kin_relationship'];
+            }
+            if (isset($data['kin_mobile_no'])) {
+                $kinData['mobile_no'] = $data['kin_mobile_no'];
+            }
+            if (isset($data['kin_address'])) {
+                $kinData['address'] = $data['kin_address'];
+            }
+            if (isset($data['kin_occupation'])) {
+                $kinData['occupation'] = $data['kin_occupation'];
+            }
+            if (isset($data['kin_place_of_work'])) {
+                $kinData['place_of_work'] = $data['kin_place_of_work'];
+            }
+            
+            // Make sure required fields are not null
+            if (isset($kinData['name']) && isset($kinData['mobile_no'])) {
+                NextOfKin::updateOrCreate(
+                    ['employee_id' => $employee->employee_id],
+                    $kinData
+                );
+            }
+        }
+        
+        // Update or create bank details if any bank-related data is provided
+        $hasBankData = isset($data['bank_name']) || isset($data['bank_code']) || 
+                      isset($data['account_name']) || isset($data['account_no']);
+        
+        if ($hasBankData) {
+            // Get existing bank details to preserve required fields that are not being updated
+            $existingBank = Bank::where('employee_id', $employee->employee_id)->first();
+            
+            $bankData = $existingBank ? $existingBank->toArray() : [];
+            
+            if (isset($data['bank_name'])) {
+                $bankData['bank_name'] = $data['bank_name'];
+            }
+            if (isset($data['bank_code'])) {
+                $bankData['bank_code'] = $data['bank_code'];
+            }
+            if (isset($data['account_name'])) {
+                $bankData['account_name'] = $data['account_name'];
+            }
+            if (isset($data['account_no'])) {
+                $bankData['account_no'] = $data['account_no'];
+            }
+            
+            // Make sure required fields are not null
+            if (isset($bankData['account_name']) && isset($bankData['account_no'])) {
+                Bank::updateOrCreate(
+                    ['employee_id' => $employee->employee_id],
+                    $bankData
+                );
+            }
+        }
     }
     
     private function applyDelete(PendingEmployeeChange $pendingChange)

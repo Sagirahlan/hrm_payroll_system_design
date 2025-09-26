@@ -205,6 +205,11 @@ class RetirementController extends Controller
             $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
             $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
 
+            // Check if required dates exist before parsing
+            if (!$employee->date_of_birth || !$employee->date_of_first_appointment) {
+                return false;
+            }
+
             $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
             $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
 
@@ -217,6 +222,8 @@ class RetirementController extends Controller
     public function store(Request $request)
     {
         try {
+            \Log::info('Retirement store method called with data:', $request->all());
+            
             $validated = $request->validate([
                 'employee_id' => 'required|exists:employees,employee_id',
                 'retirement_date' => 'required|date',
@@ -226,7 +233,10 @@ class RetirementController extends Controller
                 'retire_reason' => 'nullable|string|max:500',
             ]);
 
+            \Log::info('Validation passed, validated data:', $validated);
+
             $employee = Employee::with('gradeLevel.salaryScale')->where('employee_id', $validated['employee_id'])->firstOrFail();
+            \Log::info('Found employee:', ['employee_data' => $employee->toArray()]);
 
             if (Retirement::where('employee_id', $employee->employee_id)->exists()) {
                 if ($request->wantsJson()) {
@@ -263,10 +273,19 @@ class RetirementController extends Controller
                 }
             }
 
-            $retirement = Retirement::create([
+            \Log::info('Retirement data to be created:', [
                 'employee_id' => $employee->employee_id,
                 'retirement_date' => $validated['retirement_date'],
                 'status' => 'Completed',
+                'notification_date' => $validated['notification_date'] ?? now(),
+                'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
+                'retire_reason' => $retireReason,
+            ]);
+
+            $retirement = Retirement::create([
+                'employee_id' => $employee->employee_id,
+                'retirement_date' => $validated['retirement_date'],
+                'status' => 'complete',
                 'notification_date' => $validated['notification_date'] ?? now(),
                 'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
                 'retire_reason' => $retireReason,
@@ -310,16 +329,19 @@ class RetirementController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Retirement processing error: ' . $e->getMessage());
+            \Log::error('Retirement processing error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'An error occurred while processing retirement.'
+                    'message' => 'An error occurred while processing retirement: ' . $e->getMessage()
                 ], 500);
             }
 
-            return redirect()->back()->with('error', 'An error occurred while processing retirement.');
+            return redirect()->back()->with('error', 'An error occurred while processing retirement: ' . $e->getMessage());
         }
     }
 

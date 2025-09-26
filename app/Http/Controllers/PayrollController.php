@@ -37,8 +37,8 @@ class PayrollController extends Controller
         set_time_limit(0); // Set no time limit for this script
         $month = $request->input('month', now()->format('Y-m'));
         
-        // Fetch only employees with valid grade level assigned
-        $employees = Employee::where('status', 'Active')
+        // Fetch employees with valid grade level assigned (both Active and Suspended)
+        $employees = Employee::whereIn('status', ['Active', 'Suspended'])
             ->whereNotNull('grade_level_id') // Ensures grade level exists
             ->with('gradeLevel')      // Load related grade level
             ->get();
@@ -49,49 +49,82 @@ class PayrollController extends Controller
                 continue;
             }
 
-            $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month);
+            // For suspended employees, calculate payroll with special logic
+            if ($employee->status === 'Suspended') {
+                // Use the same employee model but indicate that it's suspended for calculation
+                $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, true);
 
-            // Create the payroll record
-            $payroll = PayrollRecord::create([
-                'employee_id' => $employee->employee_id,
-                'grade_level_id' => $employee->gradeLevel->id,
-                'payroll_month' => $month . '-01',
-                'basic_salary' => $calculation['basic_salary'],
-                'total_additions' => $calculation['total_additions'],
-                'total_deductions' => $calculation['total_deductions'],
-                'net_salary' => $calculation['net_salary'],
-                'status' => 'Pending',
-                'payment_date' => null,
-                'remarks' => 'Generated for ' . $month,
-            ]);
-            // ✅ Create a PaymentTransaction for this payroll record
-            \App\Models\PaymentTransaction::create([
-                'payroll_id' =>  $payroll->payroll_id,
-                'employee_id' => $employee->employee_id,
-                'amount' => $calculation['net_salary'],
-                'payment_date' => null,
-                'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                'account_number' => $employee->bank->account_no ?? '0000000000',
-            ]);
+                // Create the payroll record for suspended employee
+                $payroll = PayrollRecord::create([
+                    'employee_id' => $employee->employee_id,
+                    'grade_level_id' => $employee->gradeLevel->id,
+                    'payroll_month' => $month . '-01',
+                    'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
+                    'total_additions' => $calculation['total_additions'], // Additions still apply
+                    'total_deductions' => $calculation['total_deductions'], // Deductions still apply
+                    'net_salary' => $calculation['net_salary'], // Net salary with special calculation for suspended
+                    'status' => 'Pending',
+                    'payment_date' => null,
+                    'remarks' => 'Generated for ' . $month . ' (Suspended - Special Calculation Applied)',
+                ]);
+                
+                // ✅ Create a PaymentTransaction for this payroll record
+                \App\Models\PaymentTransaction::create([
+                    'payroll_id' =>  $payroll->payroll_id,
+                    'employee_id' => $employee->employee_id,
+                    'amount' => $calculation['net_salary'],
+                    'payment_date' => null,
+                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
+                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
+                    'account_number' => $employee->bank->account_no ?? '0000000000',
+                ]);
+            } else {
+                // For active employees, use normal calculation
+                $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, false);
+
+                // Create the payroll record for active employee
+                $payroll = PayrollRecord::create([
+                    'employee_id' => $employee->employee_id,
+                    'grade_level_id' => $employee->gradeLevel->id,
+                    'payroll_month' => $month . '-01',
+                    'basic_salary' => $calculation['basic_salary'],
+                    'total_additions' => $calculation['total_additions'],
+                    'total_deductions' => $calculation['total_deductions'],
+                    'net_salary' => $calculation['net_salary'],
+                    'status' => 'Pending',
+                    'payment_date' => null,
+                    'remarks' => 'Generated for ' . $month,
+                ]);
+                
+                // ✅ Create a PaymentTransaction for this payroll record
+                \App\Models\PaymentTransaction::create([
+                    'payroll_id' =>  $payroll->payroll_id,
+                    'employee_id' => $employee->employee_id,
+                    'amount' => $calculation['net_salary'],
+                    'payment_date' => null,
+                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
+                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
+                    'account_number' => $employee->bank->account_no ?? '0000000000',
+                ]);
+            }
         }
 
         AuditTrail::create([
             'user_id' => Auth::id(),
             'action' => 'generated_payroll',
-            'description' => "Generated payroll for month: {$month} for " . count($employees) . " employees.",
+            'description' => "Generated payroll for month: {$month} for " . count($employees) . " employees (Active and Suspended).",
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'Payroll', 'entity_id' => null, 'month' => $month, 'employee_count' => count($employees)]),
         ]);
 
         return redirect()->route('payroll.index')
-            ->with('success', 'Payroll generated successfully for ' . $month);
+            ->with('success', 'Payroll generated successfully for ' . $month . ' (Includes both Active and Suspended employees)');
     }
 
     // Display payroll records with search and filter functionality
     public function index(Request $request)
     {
-        $query = PayrollRecord::with(['employee', 'gradeLevel', 'transaction']);
+        $query = PayrollRecord::with(['employee.gradeLevel.steps', 'employee.step', 'gradeLevel', 'transaction']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -306,19 +339,22 @@ class PayrollController extends Controller
         }
     }
 
-    public function showDeductions($employeeId)
+    public function showDeductions(Request $request, $employeeId)
     {
         $employee = \App\Models\Employee::with('gradeLevel.steps')->findOrFail($employeeId);
-        $deductions = \App\Models\Deduction::with(['deductionType', 'employee.gradeLevel.steps'])->where('employee_id', $employeeId)->get();
+        $deductions = \App\Models\Deduction::with(['deductionType', 'employee.gradeLevel.steps'])
+            ->where('employee_id', $employeeId)
+            ->paginate(10, ['*'], 'deductions_page');
         $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
 
         return view('payroll.show_deductions', compact('employee', 'deductions', 'deductionTypes'));
     }
 
-    public function showAdditions($employeeId)
+    public function showAdditions(Request $request, $employeeId)
     {
         $employee = \App\Models\Employee::findOrFail($employeeId);
-        $additions = \App\Models\Addition::where('employee_id', $employeeId)->get();
+        $additions = \App\Models\Addition::where('employee_id', $employeeId)
+            ->paginate(10, ['*'], 'additions_page');
         $additionTypes = \App\Models\AdditionType::where('is_statutory', false)->get();
 
         return view('payroll.show_additions', compact('employee', 'additions', 'additionTypes'));
@@ -367,6 +403,8 @@ class PayrollController extends Controller
                         // Use the specific step if assigned, otherwise use the first step
                         $basicSalary = $employee->step ? $employee->step->basic_salary : $employee->gradeLevel->steps->first()->basic_salary;
                         if ($basicSalary > 0 && $request->amount > 0) {
+                            // For suspended employees, if this is a percentage based deduction, 
+                            // the calculation should still be based on the actual basic salary
                             $amount = ($request->amount / 100) * $basicSalary;
                         }
                     }
@@ -468,6 +506,11 @@ class PayrollController extends Controller
         // Department filter
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
+        }
+        
+        // Status filter
+        if ($request->filled('employee_status')) {
+            $query->where('status', $request->employee_status);
         }
         
         // Sort by
@@ -746,12 +789,15 @@ class PayrollController extends Controller
         // Get the payroll month
         $month = Carbon::parse($payroll->payroll_month)->format('Y-m');
         
+        // Check if the employee is suspended and pass the correct flag
+        $isSuspended = $payroll->employee->status === 'Suspended';
+        
         // Recalculate using the payroll service
-        $calculation = $this->payrollCalculationService->calculatePayroll($payroll->employee, $month);
+        $calculation = $this->payrollCalculationService->calculatePayroll($payroll->employee, $month, $isSuspended);
 
         // Update the payroll record
         $payroll->update([
-            'basic_salary' => $payroll->employee->gradeLevel->basic_salary,
+            'basic_salary' => $calculation['basic_salary'], // Use calculated basic salary (might be halved for suspended)
             'total_additions' => $calculation['total_additions'],
             'total_deductions' => $calculation['total_deductions'],
             'net_salary' => $calculation['net_salary'],
@@ -1073,22 +1119,39 @@ class PayrollController extends Controller
                             // Use the specific step if assigned, otherwise use the first step
                             $basicSalary = $employee->step ? $employee->step->basic_salary : $employee->gradeLevel->steps->first()->basic_salary;
                             if ($basicSalary > 0) {
+                                // Calculate base deduction amount based on employee's basic salary
                                 $amount = ($deductionType->rate_or_amount / 100) * $basicSalary;
+                                
+                                // For suspended employees, halve the calculated percentage-based deduction
+                                if ($employee->status === 'Suspended') {
+                                    $amount = $amount / 2;
+                                }
                             }
                         }
-                        // If we can't calculate the amount, $amount remains 0
                     } else {
                         // For fixed amount statutory deductions
-                        $amount = $deductionType->rate_or_amount;
+                        // For suspended employees, halve the fixed amount
+                        if ($employee->status === 'Suspended') {
+                            $amount = $deductionType->rate_or_amount / 2;
+                        } else {
+                            $amount = $deductionType->rate_or_amount;
+                        }
                     }
                 } else {
                     if ($data['amount_type'] === 'percentage') {
                         if ($employee->gradeLevel && $employee->gradeLevel->basic_salary) {
+                            // Calculate non-statutory percentage based deduction
                             $amount = ($data['amount'] / 100) * $employee->gradeLevel->basic_salary;
+                            
+                            // For suspended employees, also halve non-statutory percentage-based deductions if they are linked to basic salary
+                            if ($employee->status === 'Suspended') {
+                                $amount = $amount / 2;
+                            }
                         } else {
                             continue;
                         }
                     } else {
+                        // Fixed amount non-statutory deduction remains full for suspended employees
                         $amount = $data['amount'];
                     }
                 }

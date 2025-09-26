@@ -55,7 +55,7 @@
                                     <input type="date" name="date_of_birth" class="form-control" required value="{{ old('date_of_birth') }}">
                                     @error('date_of_birth') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                 <div class="col-md-4 col-12">
+                                <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">Nationality <span class="text-danger">*</span></label>
                                     <select name="nationality" class="form-select" required>
                                         <option value="">-- Select Nationality --</option>
@@ -73,7 +73,7 @@
                                     @error('nationality') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4 col-12">
-                                    <label class="form-label font-weight-bold">State of origin <span class="text-danger">*</span></label>
+                                    <label class="form-label font-weight-bold">State of Origin <span class="text-danger">*</span></label>
                                     <select id="state" name="state_id" class="form-select" required>
                                         <option value="">-- Select State --</option>
                                         @foreach($states as $state)
@@ -96,14 +96,11 @@
                                     </select>
                                     @error('ward_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                              
-                               
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">Staff ID <span class="text-danger">*</span></label>
                                     <input type="text" name="reg_no" class="form-control" required value="{{ old('reg_no') }}">
                                     @error('reg_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                               
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">NIN (optional)</label>
                                     <input type="text" name="nin" class="form-control" value="{{ old('nin') }}">
@@ -144,12 +141,15 @@
                         <!-- Step 3: Appointment & Work Details -->
                         <div class="step-card d-none" id="step3">
                             <h5 class="mb-3 text-info text-center font-weight-bold">Appointment & Work Details</h5>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Note:</strong> Fields displayed depend on the selected appointment type. Ensure all required fields (*) are filled.
+                            </div>
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Appointment Type <span class="text-danger">*</span></label>
                                     <select id="appointment_type_id" name="appointment_type_id" class="form-select" required>
                                         @foreach($appointmentTypes as $type)
-                                            <option value="{{ $type->id }}" data-name="{{$type->name}}" {{ old('appointment_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                                            <option value="{{ $type->id }}" data-name="{{ $type->name }}" {{ old('appointment_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('appointment_type_id') <small class="text-danger">{{ $message }}</small> @enderror
@@ -160,14 +160,27 @@
                                     @error('date_of_first_appointment') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
 
+                                <div class="col-md-6 col-12">
+                                    <label class="form-label font-weight-bold">Department <span class="text-danger">*</span></label>
+                                    <select name="department_id" class="form-select">
+                                        @foreach ($departments as $department)
+                                            <option value="{{ $department->department_id }}" {{ old('department_id') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('department_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
 
+                                <!-- Regular Appointment Fields -->
                                 <div class="row g-3" id="regular_appointment_fields">
+                                    <div class="col-12">
+                                        <h6 class="text-muted">Permanent Appointment Details</h6>
+                                    </div>
                                     <div class="col-md-6 col-12">
                                         <label class="form-label font-weight-bold">Years of Service</label>
                                         <input type="text" id="years_of_service" name="years_of_service" class="form-control" readonly>
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Cadre</label>
+                                        <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
                                         <select name="cadre_id" class="form-select">
                                             @foreach ($cadres as $cadre)
                                                 <option value="{{ $cadre->cadre_id }}" {{ old('cadre_id') == $cadre->cadre_id ? 'selected' : '' }}>{{ $cadre->name }}</option>
@@ -175,9 +188,8 @@
                                         </select>
                                         @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
-                                    
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Salary Scale</label>
+                                        <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
                                         <select id="salary_scale_id" name="salary_scale_id" class="form-select">
                                             <option value="">-- Select Salary Scale --</option>
                                             @foreach ($salaryScales as $scale)
@@ -187,21 +199,23 @@
                                         @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-4 col-12">
-                                        <label class="form-label font-weight-bold">Grade Level</label>
+                                        <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
                                         <select id="grade_level_name" name="grade_level_name" class="form-select">
                                             <option value="">-- Select Grade Level --</option>
                                         </select>
+                                        @error('grade_level_name') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-2 col-12">
-                                        <label class="form-label font-weight-bold">Step</label>
+                                        <label class="form-label font-weight-bold">Step <span class="text-danger">*</span></label>
                                         <select id="step_level" name="step_level" class="form-select">
                                             <option value="">-- Step --</option>
                                         </select>
+                                        @error('step_level') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <input type="hidden" id="grade_level_id" name="grade_level_id" value="{{ old('grade_level_id') }}">
                                     <input type="hidden" id="step_id" name="step_id" value="{{ old('step_id') }}">
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Rank</label>
+                                        <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
                                         <select name="rank_id" class="form-select">
                                             @foreach ($ranks as $rank)
                                                 <option value="{{ $rank->id }}" {{ old('rank_id') == $rank->id ? 'selected' : '' }}>{{ $rank->title }}</option>
@@ -210,50 +224,36 @@
                                         @error('rank_id') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Department</label>
-                                        <select name="department_id" class="form-select">
-                                            @foreach ($departments as $department)
-                                                <option value="{{ $department->department_id }}" {{ old('department_id') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('department_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                    </div>
-                                    <div class="col-md-6 col-12">
                                         <label class="form-label font-weight-bold">Expected Next Promotion (optional)</label>
                                         <input type="date" name="expected_next_promotion" class="form-control" value="{{ old('expected_next_promotion') }}">
                                         @error('expected_next_promotion') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Expected Retirement Date</label>
+                                        <label class="form-label font-weight-bold">Expected Retirement Date <span class="text-danger">*</span></label>
                                         <input type="date" name="expected_retirement_date" class="form-control" readonly value="{{ old('expected_retirement_date') }}">
                                         @error('expected_retirement_date') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                 </div>
 
+                                <!-- Contract Appointment Fields -->
                                 <div class="row g-3 d-none" id="contract_appointment_fields">
+                                    <div class="col-12">
+                                        <h6 class="text-muted">Contract Appointment Details</h6>
+                                    </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Contract Start Date</label>
+                                        <label class="form-label font-weight-bold">Contract Start Date <span class="text-danger">*</span></label>
                                         <input type="date" name="contract_start_date" class="form-control" value="{{ old('contract_start_date') }}">
                                         @error('contract_start_date') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Contract End Date</label>
+                                        <label class="form-label font-weight-bold">Contract End Date <span class="text-danger">*</span></label>
                                         <input type="date" name="contract_end_date" class="form-control" value="{{ old('contract_end_date') }}">
                                         @error('contract_end_date') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Amount</label>
+                                        <label class="form-label font-weight-bold">Amount <span class="text-danger">*</span></label>
                                         <input type="number" name="amount" class="form-control" value="{{ old('amount') }}">
                                         @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
-                                    </div>
-                                    <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Department</label>
-                                        <select name="department_id" class="form-select">
-                                            @foreach ($departments as $department)
-                                                <option value="{{ $department->department_id }}" {{ old('department_id') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('department_id') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -278,22 +278,21 @@
                                     @error('status') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4 col-12">
-                                <label class="form-label font-weight-bold">Highest Certificate (optional)</label>
-                                <select name="highest_certificate" class="form-control">
-                                    <option value="">-- Select --</option>
-                                    <option value="No formal education" {{ old('highest_certificate') == 'No formal education' ? 'selected' : '' }}>No formal education</option>
-                                    <option value="Primary education" {{ old('highest_certificate') == 'Primary education' ? 'selected' : '' }}>Primary education</option>
-                                    <option value="Secondary education / High school or equivalent" {{ old('highest_certificate') == 'Secondary education / High school or equivalent' ? 'selected' : '' }}>Secondary education / High school or equivalent (e.g. SSCE, WAEC, NECO)</option>
-                                    <option value="Vocational qualification" {{ old('highest_certificate') == 'Vocational qualification' ? 'selected' : '' }}>Vocational qualification (e.g. NABTEB, trade certificates, NVC)</option>
-                                    <option value="Associate degree / NCE / ND" {{ old('highest_certificate') == 'Associate degree / NCE / ND' ? 'selected' : '' }}>Associate degree / NCE / National Diploma (ND)</option>
-                                    <option value="Bachelor’s degree" {{ old('highest_certificate') == 'Bachelor’s degree' ? 'selected' : '' }}>Bachelor’s degree (B.Sc, B.A, B.Eng, LLB, etc.)</option>
-                                    <option value="Professional degree/license" {{ old('highest_certificate') == 'Professional degree/license' ? 'selected' : '' }}>Professional degree/license (e.g., BL, ICAN, COREN, TRCN, MDCN)</option>
-                                    <option value="Master’s degree" {{ old('highest_certificate') == 'Master’s degree' ? 'selected' : '' }}>Master’s degree (M.Sc, MBA, M.A, etc.)</option>
-                                    <option value="Doctorate / Ph.D. or higher" {{ old('highest_certificate') == 'Doctorate / Ph.D. or higher' ? 'selected' : '' }}>Doctorate / Ph.D. or higher</option>
-                                </select>
-                                @error('highest_certificate') <small class="text-danger">{{ $message }}</small> @enderror
-                            </div>
-
+                                    <label class="form-label font-weight-bold">Highest Certificate (optional)</label>
+                                    <select name="highest_certificate" class="form-control">
+                                        <option value="">-- Select --</option>
+                                        <option value="No formal education" {{ old('highest_certificate') == 'No formal education' ? 'selected' : '' }}>No formal education</option>
+                                        <option value="Primary education" {{ old('highest_certificate') == 'Primary education' ? 'selected' : '' }}>Primary education</option>
+                                        <option value="Secondary education / High school or equivalent" {{ old('highest_certificate') == 'Secondary education / High school or equivalent' ? 'selected' : '' }}>Secondary education / High school or equivalent (e.g. SSCE, WAEC, NECO)</option>
+                                        <option value="Vocational qualification" {{ old('highest_certificate') == 'Vocational qualification' ? 'selected' : '' }}>Vocational qualification (e.g. NABTEB, trade certificates, NVC)</option>
+                                        <option value="Associate degree / NCE / ND" {{ old('highest_certificate') == 'Associate degree / NCE / ND' ? 'selected' : '' }}>Associate degree / NCE / National Diploma (ND)</option>
+                                        <option value="Bachelor’s degree" {{ old('highest_certificate') == 'Bachelor’s degree' ? 'selected' : '' }}>Bachelor’s degree (B.Sc, B.A, B.Eng, LLB, etc.)</option>
+                                        <option value="Professional degree/license" {{ old('highest_certificate') == 'Professional degree/license' ? 'selected' : '' }}>Professional degree/license (e.g., BL, ICAN, COREN, TRCN, MDCN)</option>
+                                        <option value="Master’s degree" {{ old('highest_certificate') == 'Master’s degree' ? 'selected' : '' }}>Master’s degree (M.Sc, MBA, M.A, etc.)</option>
+                                        <option value="Doctorate / Ph.D. or higher" {{ old('highest_certificate') == 'Doctorate / Ph.D. or higher' ? 'selected' : '' }}>Doctorate / Ph.D. or higher</option>
+                                    </select>
+                                    @error('highest_certificate') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
                                 <div class="col-md-12 col-12">
                                     <label class="form-label font-weight-bold">Photo (optional)</label>
                                     <div class="input-group">
@@ -389,7 +388,6 @@
                                     <input type="text" name="account_no" class="form-control" required value="{{ old('account_no') }}">
                                     @error('account_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                
                             </div>
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-secondary px-4" onclick="prevStep(5)">Previous</button>
@@ -427,40 +425,118 @@
             });
         }
 
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-danger alert-dismissible fade show position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '1000';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
         function validateStep(step) {
             let isValid = true;
             const currentStepCard = document.getElementById('step' + step);
-            const inputs = currentStepCard.querySelectorAll('input[required], select[required], textarea[required]');
+            const inputs = currentStepCard.querySelectorAll('input[required]:not([disabled]), select[required]:not([disabled]), textarea[required]:not([disabled])');
+            const phoneRegex = /^(\+234|0)[789]\d{9}$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             inputs.forEach(input => {
-                if (input.offsetParent !== null) {
-                    if (!input.value) {
-                        isValid = false;
-                        console.log('Validation failed for field:', input.name);
-                        const error = document.createElement('small');
-                        error.className = 'text-danger';
-                        error.innerText = 'This field is required.';
+                let errorMessage = '';
+                if (!input.value) {
+                    errorMessage = 'This field is required.';
+                    isValid = false;
+                } else if (input.name === 'mobile_no' && !phoneRegex.test(input.value)) {
+                    errorMessage = 'Invalid phone number format.';
+                    isValid = false;
+                } else if (input.name === 'kin_mobile_no' && !phoneRegex.test(input.value)) {
+                    errorMessage = 'Invalid phone number format.';
+                    isValid = false;
+                } else if (input.name === 'email' && input.value && !emailRegex.test(input.value)) {
+                    errorMessage = 'Invalid email format.';
+                    isValid = false;
+                } else if (input.name === 'account_no' && !/^\d{10}$/.test(input.value)) {
+                    errorMessage = 'Account number must be 10 digits.';
+                    isValid = false;
+                }
 
-                        const existingError = input.nextElementSibling;
-                        if (existingError && existingError.classList.contains('text-danger')) {
-                            existingError.remove();
-                        }
+                const existingError = input.nextElementSibling;
+                if (existingError && existingError.classList.contains('text-danger')) {
+                    existingError.remove();
+                }
 
-                        input.parentNode.appendChild(error);
-                    } else {
-                        const existingError = input.nextElementSibling;
-                        if (existingError && existingError.classList.contains('text-danger')) {
-                            existingError.remove();
-                        }
-                    }
+                if (errorMessage) {
+                    const error = document.createElement('small');
+                    error.className = 'text-danger';
+                    error.innerText = errorMessage;
+                    input.parentNode.appendChild(error);
                 }
             });
+
+            // Validate contract dates
+            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Contract') {
+                const contractStartDate = document.querySelector('input[name="contract_start_date"]');
+                const contractEndDate = document.querySelector('input[name="contract_end_date"]');
+                if (contractStartDate.value && contractEndDate.value) {
+                    const startDate = new Date(contractStartDate.value);
+                    const endDate = new Date(contractEndDate.value);
+                    if (endDate <= startDate) {
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = 'Contract end date must be after start date.';
+                        const existingError = contractEndDate.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        contractEndDate.parentNode.appendChild(error);
+                        isValid = false;
+                    }
+                }
+            }
+            
+            if (step === 3) {
+                const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
+                if (appointmentTypeName !== 'Contract') {
+                    const gradeLevelIdInput = document.getElementById('grade_level_id');
+                    const stepIdInput = document.getElementById('step_id');
+                    if (!gradeLevelIdInput.value) {
+                        isValid = false;
+                        const gradeLevelSelect = document.getElementById('grade_level_name');
+                        let errorMessage = 'Grade Level is required.';
+                        const existingError = gradeLevelSelect.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = errorMessage;
+                        gradeLevelSelect.parentNode.appendChild(error);
+                    }
+                    if (!stepIdInput.value) {
+                        isValid = false;
+                        const stepLevelSelect = document.getElementById('step_level');
+                        let errorMessage = 'Step is required.';
+                        const existingError = stepLevelSelect.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = errorMessage;
+                        stepLevelSelect.parentNode.appendChild(error);
+                    }
+                }
+            }
 
             return isValid;
         }
 
         window.nextStep = function(step) {
             if (!validateStep(currentStep)) {
+                alert('Please fill in all required fields in this section before proceeding.');
                 return;
             }
             showStep(step);
@@ -472,36 +548,52 @@
 
         window.showStep = showStep;
 
-        appointmentTypeSelect.addEventListener('change', function () {
-            const selectedOption = this.options[this.selectedIndex];
+        function toggleAppointmentFields() {
+            const selectedOption = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex];
             const appointmentTypeName = selectedOption.dataset.name;
+
+            regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
+            contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
 
             if (appointmentTypeName === 'Contract') {
                 regularAppointmentFields.classList.add('d-none');
                 contractAppointmentFields.classList.remove('d-none');
+                regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
             } else {
                 regularAppointmentFields.classList.remove('d-none');
                 contractAppointmentFields.classList.add('d-none');
+                contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
             }
-        });
+        }
 
-        appointmentTypeSelect.dispatchEvent(new Event('change'));
+        appointmentTypeSelect.addEventListener('change', toggleAppointmentFields);
+        toggleAppointmentFields();
 
         employeeForm.addEventListener('submit', function(e) {
+            console.log('Form submission triggered');
             let isFormValid = true;
-            for (let i = 1; i <= stepCards.length; i++) {
+            let firstInvalidStep = -1;
+
+            for (let i = 1; i <= 6; i++) {
                 if (!validateStep(i)) {
                     isFormValid = false;
+                    if (firstInvalidStep === -1) {
+                        firstInvalidStep = i;
+                    }
                 }
             }
 
             if (!isFormValid) {
                 e.preventDefault();
-                alert('Please fill in all required fields before submitting.');
+                console.log('Form submission prevented due to validation errors in step ' + firstInvalidStep);
+                showStep(firstInvalidStep);
+                const stepName = document.querySelector(`#stepNav li:nth-child(${firstInvalidStep}) .nav-link`).textContent;
+                alert(`Please fill in all required fields. The first error is in the "${stepName}" section.`);
+            } else {
+                console.log('Form is valid, proceeding with submission');
             }
         });
 
-        // The rest of your JavaScript code (state/lga/ward dropdowns, etc.)
         const states = @json($states);
         const lgas = @json($lgas);
         const wards = @json($wards);
@@ -510,7 +602,6 @@
         const lgaSelect = document.getElementById('lga');
         const wardSelect = document.getElementById('ward');
 
-        // Function to populate LGAs based on selected state
         function populateLgas(stateId, selectedLga = null) {
             lgaSelect.innerHTML = '<option value="">-- Select LGA --</option>';
             wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
@@ -529,7 +620,6 @@
             }
         }
 
-        // Function to populate wards based on selected LGA
         function populateWards(lgaId, selectedWard = null) {
             wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
 
@@ -547,7 +637,6 @@
             }
         }
 
-        // Initial population based on old input or default
         const oldStateId = "{{ old('state_id') }}";
         const oldLgaId = "{{ old('lga_id') }}";
         const oldWardId = "{{ old('ward_id') }}";
@@ -585,7 +674,6 @@
             const firstName = firstNameInput.value.trim();
             const surname = surnameInput.value.trim();
             const middleName = middleNameInput.value.trim();
-            
             let accountName = `${firstName} ${middleName} ${surname}`;
             accountNameInput.value = accountName.replace(/\s+/g, ' ').trim();
         }
@@ -630,7 +718,6 @@
                                 option.text = name;
                                 gradeLevelNameSelect.appendChild(option);
                             });
-                            // Pre-select old grade level if available
                             const oldGradeLevelName = "{{ old('grade_level_name') }}";
                             if (oldGradeLevelName) {
                                 gradeLevelNameSelect.value = oldGradeLevelName;
@@ -673,11 +760,10 @@
                                 option.text = step.name;
                                 stepLevelSelect.appendChild(option);
                             });
-                            // Pre-select old step level if available
                             const oldStepLevel = "{{ old('step_level') }}";
                             if (oldStepLevel) {
                                 stepLevelSelect.value = oldStepLevel;
-                                setGradeAndStep(); // Set hidden fields after pre-selecting
+                                setGradeAndStep();
                             }
                         } else {
                             const option = document.createElement('option');
@@ -702,7 +788,6 @@
             setGradeAndStep();
         });
 
-        // Initial population for salary scale, grade level, and step if old values exist
         const oldSalaryScaleId = "{{ old('salary_scale_id') }}";
         if (oldSalaryScaleId) {
             salaryScaleSelect.value = oldSalaryScaleId;
@@ -721,7 +806,7 @@
                 if (m < 0 || (m === 0 && today.getDate() < appointmentDate.getDate())) {
                     years--;
                 }
-                yearsOfServiceDisplay.value = years + (years === 1 ? ' year' : ' years');
+                yearsOfServiceDisplay.value = years;
             } else {
                 yearsOfServiceDisplay.value = '';
             }
@@ -780,7 +865,6 @@
         dateOfBirthInput.addEventListener('change', calculateRetirementDate);
         dateOfAppointmentInput.addEventListener('change', calculateRetirementDate);
 
-        // Bank name and code auto-fill functionality
         const bankNameSelect = document.getElementById('bank_name');
         const bankCodeInput = document.getElementById('bank_code');
 

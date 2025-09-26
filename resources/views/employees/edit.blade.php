@@ -145,79 +145,120 @@
                         <!-- Step 3: Appointment & Work Details -->
                         <div class="step-card d-none" id="step3">
                             <h5 class="mb-3 text-info text-center font-weight-bold">Appointment & Work Details</h5>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Note:</strong> Fields displayed depend on the selected appointment type. Ensure all required fields (*) are filled.
+                            </div>
                             <div class="row g-3">
+                                <div class="col-md-6 col-12">
+                                    <label class="form-label font-weight-bold">Appointment Type <span class="text-danger">*</span></label>
+                                    <select id="appointment_type_id" name="appointment_type_id" class="form-select" required>
+                                        @foreach($appointmentTypes as $type)
+                                            <option value="{{ $type->id }}" data-name="{{ $type->name }}" {{ old('appointment_type_id', $employee->appointment_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('appointment_type_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Date of First Appointment <span class="text-danger">*</span></label>
                                     <input type="date" name="date_of_first_appointment" class="form-control" required value="{{ old('date_of_first_appointment', $employee->date_of_first_appointment) }}">
                                     @error('date_of_first_appointment') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Years of Service</label>
-                                    <input type="text" id="years_of_service" name="years_of_service" class="form-control" readonly>
-                                </div>
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
-                                    <select name="cadre_id" class="form-select" required>
-                                        @foreach ($cadres as $cadre)
-                                            <option value="{{ $cadre->cadre_id }}" {{ old('cadre_id', $employee->cadre_id) == $cadre->cadre_id ? 'selected' : '' }}>{{ $cadre->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                                
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
-                                    <select id="salary_scale_id" name="salary_scale_id" class="form-select" required>
-                                        <option value="">-- Select Salary Scale --</option>
-                                        @foreach ($salaryScales as $scale)
-                                            <option value="{{ $scale->id }}" {{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') == $scale->id ? 'selected' : '' }}>{{ $scale->acronym }} - {{ $scale->full_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
-                                <div class="col-md-4 col-12">
-                                    <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
-                                    <select id="grade_level_name" name="grade_level_name" class="form-select" required>
-                                        <option value="">-- Select Grade Level --</option>
-                                        <!-- Grade levels will be populated dynamically -->
-                                    </select>
-                                </div>
-                                <div class="col-md-2 col-12">
-                                    <label class="form-label font-weight-bold">Step <span class="text-danger">*</span></label>
-                                    <select id="step_level" name="step_level" class="form-select" required>
-                                        <option value="">-- Step --</option>
-                                        <!-- Steps will be populated dynamically -->
-                                    </select>
-                                </div>
-                                <input type="hidden" id="grade_level_id" name="grade_level_id" value="{{ old('grade_level_id', $employee->grade_level_id) }}">
-                                <input type="hidden" id="step_id" name="step_id" value="{{ old('step_id', $employee->step_id) }}">
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
-                                    <select name="rank_id" class="form-select" required>
-                                        @foreach ($ranks as $rank)
-                                            <option value="{{ $rank->id }}" {{ old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : '' }}>{{ $rank->title }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('rank_id') <small class="text-danger">{{ $message }}</small> @enderror
-                                </div>
+
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Department <span class="text-danger">*</span></label>
-                                    <select name="department_id" class="form-select" required>
+                                    <select name="department_id" class="form-select">
                                         @foreach ($departments as $department)
                                             <option value="{{ $department->department_id }}" {{ old('department_id', $employee->department_id) == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
                                         @endforeach
                                     </select>
                                     @error('department_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Expected Next Promotion (optional)</label>
-                                    <input type="date" name="expected_next_promotion" class="form-control" value="{{ old('expected_next_promotion', $employee->expected_next_promotion) }}">
-                                    @error('expected_next_promotion') <small class="text-danger">{{ $message }}</small> @enderror
+
+                                <!-- Regular Appointment Fields -->
+                                <div class="row g-3" id="regular_appointment_fields">
+                                    <div class="col-12">
+                                        <h6 class="text-muted">Permanent Appointment Details</h6>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Years of Service</label>
+                                        <input type="text" id="years_of_service" name="years_of_service" class="form-control" readonly>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Cadre <span class="text-danger">*</span></label>
+                                        <select name="cadre_id" class="form-select">
+                                            @foreach ($cadres as $cadre)
+                                                <option value="{{ $cadre->cadre_id }}" {{ old('cadre_id', $employee->cadre_id) == $cadre->cadre_id ? 'selected' : '' }}>{{ $cadre->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('cadre_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
+                                        <select id="salary_scale_id" name="salary_scale_id" class="form-select">
+                                            <option value="">-- Select Salary Scale --</option>
+                                            @foreach ($salaryScales as $scale)
+                                                <option value="{{ $scale->id }}" {{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') == $scale->id ? 'selected' : '' }}>{{ $scale->acronym }} - {{ $scale->full_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-4 col-12">
+                                        <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
+                                        <select id="grade_level_name" name="grade_level_name" class="form-select">
+                                            <option value="">-- Select Grade Level --</option>
+                                        </select>
+                                        @error('grade_level_name') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-2 col-12">
+                                        <label class="form-label font-weight-bold">Step <span class="text-danger">*</span></label>
+                                        <select id="step_level" name="step_level" class="form-select">
+                                            <option value="">-- Step --</option>
+                                        </select>
+                                        @error('step_level') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <input type="hidden" id="grade_level_id" name="grade_level_id" value="{{ old('grade_level_id', $employee->grade_level_id) }}">
+                                    <input type="hidden" id="step_id" name="step_id" value="{{ old('step_id', $employee->step_id) }}">
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
+                                        <select name="rank_id" class="form-select">
+                                            @foreach ($ranks as $rank)
+                                                <option value="{{ $rank->id }}" {{ old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : '' }}>{{ $rank->title }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('rank_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Expected Next Promotion (optional)</label>
+                                        <input type="date" name="expected_next_promotion" class="form-control" value="{{ old('expected_next_promotion', $employee->expected_next_promotion) }}">
+                                        @error('expected_next_promotion') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Expected Retirement Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="expected_retirement_date" class="form-control" readonly value="{{ old('expected_retirement_date', $employee->expected_retirement_date) }}">
+                                        @error('expected_retirement_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
                                 </div>
-                                <div class="col-md-6 col-12">
-                                    <label class="form-label font-weight-bold">Expected Retirement Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="expected_retirement_date" class="form-control" readonly required value="{{ old('expected_retirement_date', $employee->expected_retirement_date) }}">
-                                    @error('expected_retirement_date') <small class="text-danger">{{ $message }}</small> @enderror
+
+                                <!-- Contract Appointment Fields -->
+                                <div class="row g-3 d-none" id="contract_appointment_fields">
+                                    <div class="col-12">
+                                        <h6 class="text-muted">Contract Appointment Details</h6>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Contract Start Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="contract_start_date" class="form-control" value="{{ old('contract_start_date', $employee->contract_start_date) }}">
+                                        @error('contract_start_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Contract End Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="contract_end_date" class="form-control" value="{{ old('contract_end_date', $employee->contract_end_date) }}">
+                                        @error('contract_end_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <label class="form-label font-weight-bold">Amount <span class="text-danger">*</span></label>
+                                        <input type="number" name="amount" class="form-control" value="{{ old('amount', $employee->amount) }}">
+                                        @error('amount') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between mt-4">
@@ -241,30 +282,20 @@
                                     @error('status') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4 col-12">
-                                <label class="form-label font-weight-bold">Highest Certificate (optional)</label>
-                                <select name="highest_certificate" class="form-control">
-                                    <option value="">-- Select --</option>
-                                    <option value="No formal education" {{ old('highest_certificate', $employee->highest_certificate) == 'No formal education' ? 'selected' : '' }}>No formal education</option>
-                                    <option value="Primary education" {{ old('highest_certificate', $employee->highest_certificate) == 'Primary education' ? 'selected' : '' }}>Primary education</option>
-                                    <option value="Secondary education / High school or equivalent" {{ old('highest_certificate', $employee->highest_certificate) == 'Secondary education / High school or equivalent' ? 'selected' : '' }}>Secondary education / High school or equivalent (e.g. SSCE, WAEC, NECO)</option>
-                                    <option value="Vocational qualification" {{ old('highest_certificate', $employee->highest_certificate) == 'Vocational qualification' ? 'selected' : '' }}>Vocational qualification (e.g. NABTEB, trade certificates, NVC)</option>
-                                    <option value="Associate degree / NCE / ND" {{ old('highest_certificate', $employee->highest_certificate) == 'Associate degree / NCE / ND' ? 'selected' : '' }}>Associate degree / NCE / National Diploma (ND)</option>
-                                    <option value="Bachelor’s degree" {{ old('highest_certificate', $employee->highest_certificate) == 'Bachelor’s degree' ? 'selected' : '' }}>Bachelor’s degree (B.Sc, B.A, B.Eng, LLB, etc.)</option>
-                                    <option value="Professional degree/license" {{ old('highest_certificate', $employee->highest_certificate) == 'Professional degree/license' ? 'selected' : '' }}>Professional degree/license (e.g., BL, ICAN, COREN, TRCN, MDCN)</option>
-                                    <option value="Master’s degree" {{ old('highest_certificate', $employee->highest_certificate) == 'Master’s degree' ? 'selected' : '' }}>Master’s degree (M.Sc, MBA, M.A, etc.)</option>
-                                    <option value="Doctorate / Ph.D. or higher" {{ old('highest_certificate', $employee->highest_certificate) == 'Doctorate / Ph.D. or higher' ? 'selected' : '' }}>Doctorate / Ph.D. or higher</option>
-                                </select>
-                                @error('highest_certificate') <small class="text-danger">{{ $message }}</small> @enderror
-                            </div>
-
-                                <div class="col-md-4 col-12">
-                                    <label class="form-label font-weight-bold">Appointment Type <span class="text-danger">*</span></label>
-                                    <select name="appointment_type_id" class="form-select" required>
-                                        @foreach($appointmentTypes as $type)
-                                            <option value="{{ $type->id }}" {{ old('appointment_type_id', $employee->appointment_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
-                                        @endforeach
+                                    <label class="form-label font-weight-bold">Highest Certificate (optional)</label>
+                                    <select name="highest_certificate" class="form-control">
+                                        <option value="">-- Select --</option>
+                                        <option value="No formal education" {{ old('highest_certificate', $employee->highest_certificate) == 'No formal education' ? 'selected' : '' }}>No formal education</option>
+                                        <option value="Primary education" {{ old('highest_certificate', $employee->highest_certificate) == 'Primary education' ? 'selected' : '' }}>Primary education</option>
+                                        <option value="Secondary education / High school or equivalent" {{ old('highest_certificate', $employee->highest_certificate) == 'Secondary education / High school or equivalent' ? 'selected' : '' }}>Secondary education / High school or equivalent (e.g. SSCE, WAEC, NECO)</option>
+                                        <option value="Vocational qualification" {{ old('highest_certificate', $employee->highest_certificate) == 'Vocational qualification' ? 'selected' : '' }}>Vocational qualification (e.g. NABTEB, trade certificates, NVC)</option>
+                                        <option value="Associate degree / NCE / ND" {{ old('highest_certificate', $employee->highest_certificate) == 'Associate degree / NCE / ND' ? 'selected' : '' }}>Associate degree / NCE / National Diploma (ND)</option>
+                                        <option value="Bachelor’s degree" {{ old('highest_certificate', $employee->highest_certificate) == 'Bachelor’s degree' ? 'selected' : '' }}>Bachelor’s degree (B.Sc, B.A, B.Eng, LLB, etc.)</option>
+                                        <option value="Professional degree/license" {{ old('highest_certificate', $employee->highest_certificate) == 'Professional degree/license' ? 'selected' : '' }}>Professional degree/license (e.g., BL, ICAN, COREN, TRCN, MDCN)</option>
+                                        <option value="Master’s degree" {{ old('highest_certificate', $employee->highest_certificate) == 'Master’s degree' ? 'selected' : '' }}>Master’s degree (M.Sc, MBA, M.A, etc.)</option>
+                                        <option value="Doctorate / Ph.D. or higher" {{ old('highest_certificate', $employee->highest_certificate) == 'Doctorate / Ph.D. or higher' ? 'selected' : '' }}>Doctorate / Ph.D. or higher</option>
                                     </select>
-                                    @error('appointment_type_id') <small class="text-danger">{{ $message }}</small> @enderror
+                                    @error('highest_certificate') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-12 col-12">
                                     <label class="form-label font-weight-bold">Photo (optional)</label>
@@ -341,7 +372,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
-                                    <select name="bank_name" class="form-select" required>
+                                    <select name="bank_name" id="bank_name" class="form-select" required>
                                         <option value="">Select Bank</option>
                                         @foreach($banks as $bank)
                                             <option value="{{ $bank->bank_name }}" data-code="{{ $bank->bank_code }}" {{ old('bank_name', $employee->bank->bank_name ?? '') == $bank->bank_name ? 'selected' : '' }}>{{ $bank->bank_name }}</option>
@@ -351,7 +382,7 @@
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Code <span class="text-danger">*</span></label>
-                                    <input type="text" name="bank_code" class="form-control" required value="{{ old('bank_code', $employee->bank->bank_code ?? '') }}">
+                                    <input type="text" name="bank_code" id="bank_code" class="form-control" required value="{{ old('bank_code', $employee->bank->bank_code ?? '') }}" readonly>
                                     @error('bank_code') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
@@ -364,7 +395,6 @@
                                     <input type="text" name="account_no" class="form-control" required value="{{ old('account_no', $employee->bank->account_no ?? '') }}">
                                     @error('account_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                                
                             </div>
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-secondary px-4" onclick="prevStep(5)">Previous</button>
@@ -378,529 +408,486 @@
     </div>
 </div>
 <script>
-    // Define the data
-    const states = @json($states);
-    const lgas = @json($lgas);
-    const wards = @json($wards);
-
-    // Get DOM elements
-    const stateSelect = document.getElementById('state');
-    const lgaSelect = document.getElementById('lga');
-    const wardSelect = document.getElementById('ward');
-
-    // Get existing employee values
-    const selectedStateId = "{{ old('state_id', $employee->state_id) }}";
-    const selectedLgaId = "{{ old('lga_id', $employee->lga_id) }}";
-    const selectedWardId = "{{ old('ward_id', $employee->ward_id) }}";
-
-    // Function to populate LGAs based on selected state
-    function populateLgas(stateId, selectedLga = null) {
-        // Clear existing options
-        lgaSelect.innerHTML = '<option value="">-- Select LGA --</option>';
-        // Also clear wards when state changes
-        wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
-
-        if (stateId) {
-            // Filter LGAs by state
-            const filteredLgas = lgas.filter(lga => {
-                return lga.state_id == stateId;
-            });
-            
-            // Add LGAs to dropdown
-            filteredLgas.forEach(lga => {
-                const option = document.createElement('option');
-                option.value = lga.id;
-                option.text = lga.name;
-                if (selectedLga && lga.id == selectedLga) {
-                    option.selected = true;
-                }
-                lgaSelect.appendChild(option);
-            });
-        }
-    }
-
-    // Function to populate wards based on selected LGA
-    function populateWards(lgaId, selectedWard = null) {
-        // Clear existing options
-        wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
-
-        if (lgaId) {
-            // Filter wards by LGA
-            const filteredWards = wards.filter(ward => {
-                return ward.lga_id == lgaId;
-            });
-            
-            // Add wards to dropdown
-            filteredWards.forEach(ward => {
-                const option = document.createElement('option');
-                option.value = ward.ward_id;
-                option.text = ward.ward_name;
-                if (selectedWard && ward.ward_id == selectedWard) {
-                    option.selected = true;
-                }
-                wardSelect.appendChild(option);
-            });
-        }
-    }
-
-    // Initialize LGA and Ward dropdowns with existing employee data
     document.addEventListener('DOMContentLoaded', function() {
-        // Get existing employee values
-        const selectedStateId = "{{ old('state_id', $employee->state_id) }}";
-        const selectedLgaId = "{{ old('lga_id', $employee->lga_id) }}";
-        const selectedWardId = "{{ old('ward_id', $employee->ward_id) }}";
-        
-        if (selectedStateId) {
-            // Set the state dropdown value
-            stateSelect.value = selectedStateId;
+        const stepNav = document.getElementById('stepNav');
+        const stepCards = document.querySelectorAll('.step-card');
+        const employeeForm = document.getElementById('employeeForm');
+        const appointmentTypeSelect = document.getElementById('appointment_type_id');
+        const regularAppointmentFields = document.getElementById('regular_appointment_fields');
+        const contractAppointmentFields = document.getElementById('contract_appointment_fields');
+
+        let currentStep = 1;
+
+        function showStep(step) {
+            stepCards.forEach(card => card.classList.add('d-none'));
+            document.getElementById('step' + step).classList.remove('d-none');
+            updateNav(step);
+            currentStep = step;
+        }
+
+        function updateNav(step) {
+            document.querySelectorAll('#stepNav .nav-link').forEach((nav, idx) => {
+                nav.classList.remove('active');
+                if (idx === step - 1) nav.classList.add('active');
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-danger alert-dismissible fade show position-fixed bottom-0 end-0 m-3';
+            toast.style.zIndex = '1000';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function validateStep(step) {
+            let isValid = true;
+            const currentStepCard = document.getElementById('step' + step);
+            const inputs = currentStepCard.querySelectorAll('input[required]:not([disabled]), select[required]:not([disabled]), textarea[required]:not([disabled])');
+            const phoneRegex = /^(\+234|0)[789]\d{9}$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            inputs.forEach(input => {
+                let errorMessage = '';
+                if (!input.value) {
+                    errorMessage = 'This field is required.';
+                    isValid = false;
+                } else if (input.name === 'mobile_no' && !phoneRegex.test(input.value)) {
+                    errorMessage = 'Invalid phone number format.';
+                    isValid = false;
+                } else if (input.name === 'kin_mobile_no' && !phoneRegex.test(input.value)) {
+                    errorMessage = 'Invalid phone number format.';
+                    isValid = false;
+                } else if (input.name === 'email' && input.value && !emailRegex.test(input.value)) {
+                    errorMessage = 'Invalid email format.';
+                    isValid = false;
+                } else if (input.name === 'account_no' && !/^\d{10}$/.test(input.value)) {
+                    errorMessage = 'Account number must be 10 digits.';
+                    isValid = false;
+                }
+
+                const existingError = input.nextElementSibling;
+                if (existingError && existingError.classList.contains('text-danger')) {
+                    existingError.remove();
+                }
+
+                if (errorMessage) {
+                    const error = document.createElement('small');
+                    error.className = 'text-danger';
+                    error.innerText = errorMessage;
+                    input.parentNode.appendChild(error);
+                }
+            });
+
+            // Validate contract dates
+            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Contract') {
+                const contractStartDate = document.querySelector('input[name="contract_start_date"]');
+                const contractEndDate = document.querySelector('input[name="contract_end_date"]');
+                if (contractStartDate.value && contractEndDate.value) {
+                    const startDate = new Date(contractStartDate.value);
+                    const endDate = new Date(contractEndDate.value);
+                    if (endDate <= startDate) {
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = 'Contract end date must be after start date.';
+                        const existingError = contractEndDate.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        contractEndDate.parentNode.appendChild(error);
+                        isValid = false;
+                    }
+                }
+            }
             
-            // Populate LGAs for the selected state
-            populateLgas(selectedStateId, selectedLgaId);
-            
-            // If an LGA is selected, populate wards
-            if (selectedLgaId) {
-                populateWards(selectedLgaId, selectedWardId);
+            if (step === 3) {
+                const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
+                if (appointmentTypeName !== 'Contract') {
+                    const gradeLevelIdInput = document.getElementById('grade_level_id');
+                    const stepIdInput = document.getElementById('step_id');
+                    if (!gradeLevelIdInput.value) {
+                        isValid = false;
+                        const gradeLevelSelect = document.getElementById('grade_level_name');
+                        let errorMessage = 'Grade Level is required.';
+                        const existingError = gradeLevelSelect.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = errorMessage;
+                        gradeLevelSelect.parentNode.appendChild(error);
+                    }
+                    if (!stepIdInput.value) {
+                        isValid = false;
+                        const stepLevelSelect = document.getElementById('step_level');
+                        let errorMessage = 'Step is required.';
+                        const existingError = stepLevelSelect.nextElementSibling;
+                        if (existingError && existingError.classList.contains('text-danger')) {
+                            existingError.remove();
+                        }
+                        const error = document.createElement('small');
+                        error.className = 'text-danger';
+                        error.innerText = errorMessage;
+                        stepLevelSelect.parentNode.appendChild(error);
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
+        window.nextStep = function(step) {
+            if (!validateStep(currentStep)) {
+                alert('Please fill in all required fields in this section before proceeding.');
+                return;
+            }
+            showStep(step);
+        }
+
+        window.prevStep = function(step) {
+            showStep(step);
+        }
+
+        window.showStep = showStep;
+
+        function toggleAppointmentFields() {
+            const selectedOption = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex];
+            const appointmentTypeName = selectedOption.dataset.name;
+
+            regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
+            contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
+
+            if (appointmentTypeName === 'Contract') {
+                regularAppointmentFields.classList.add('d-none');
+                contractAppointmentFields.classList.remove('d-none');
+                regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+            } else {
+                regularAppointmentFields.classList.remove('d-none');
+                contractAppointmentFields.classList.add('d-none');
+                contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
             }
         }
-    });
 
-    // Event listeners
-    stateSelect.addEventListener('change', function () {
-        populateLgas(this.value);
-    });
+        appointmentTypeSelect.addEventListener('change', toggleAppointmentFields);
+        toggleAppointmentFields();
 
-    lgaSelect.addEventListener('change', function () {
-        populateWards(this.value);
-    });
+        employeeForm.addEventListener('submit', function(e) {
+            console.log('Form submission triggered');
+            let isFormValid = true;
+            let firstInvalidStep = -1;
 
-    // Initialize the form with existing employee data
-    document.addEventListener('DOMContentLoaded', function() {
-        if (selectedStateId) {
-            // Set the state dropdown value
-            stateSelect.value = selectedStateId;
-            
-            // Populate LGAs for the selected state
-            populateLgas(selectedStateId, selectedLgaId);
-            
-            // If an LGA is selected, populate wards
-            if (selectedLgaId) {
-                populateWards(selectedLgaId, selectedWardId);
+            for (let i = 1; i <= 6; i++) {
+                if (!validateStep(i)) {
+                    isFormValid = false;
+                    if (firstInvalidStep === -1) {
+                        firstInvalidStep = i;
+                    }
+                }
+            }
+
+            if (!isFormValid) {
+                e.preventDefault();
+                console.log('Form submission prevented due to validation errors in step ' + firstInvalidStep);
+                showStep(firstInvalidStep);
+                const stepName = document.querySelector(`#stepNav li:nth-child(${firstInvalidStep}) .nav-link`).textContent;
+                alert(`Please fill in all required fields. The first error is in the "${stepName}" section.`);
+            } else {
+                console.log('Form is valid, proceeding with submission');
+            }
+        });
+
+        const states = @json($states);
+        const lgas = @json($lgas);
+        const wards = @json($wards);
+
+        const stateSelect = document.getElementById('state');
+        const lgaSelect = document.getElementById('lga');
+        const wardSelect = document.getElementById('ward');
+
+        function populateLgas(stateId, selectedLga = null) {
+            lgaSelect.innerHTML = '<option value="">-- Select LGA --</option>';
+            wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
+
+            if (stateId) {
+                const filteredLgas = lgas.filter(lga => lga.state_id == stateId);
+                filteredLgas.forEach(lga => {
+                    const option = document.createElement('option');
+                    option.value = lga.id;
+                    option.text = lga.name;
+                    if (selectedLga && lga.id == selectedLga) {
+                        option.selected = true;
+                    }
+                    lgaSelect.appendChild(option);
+                });
             }
         }
-    });
 
-    // Rest of the existing script from the original file...
-    const firstNameInput = document.querySelector('input[name="first_name"]');
-    const surnameInput = document.querySelector('input[name="surname"]');
-    const middleNameInput = document.querySelector('input[name="middle_name"]');
-    const accountNameInput = document.querySelector('input[name="account_name"]');
-    const salaryScaleSelect = document.getElementById('salary_scale_id');
-    const gradeLevelNameSelect = document.getElementById('grade_level_name');
-    const stepLevelSelect = document.getElementById('step_level');
-    const gradeLevelIdInput = document.getElementById('grade_level_id');
-    const stepIdInput = document.getElementById('step_id');
+        function populateWards(lgaId, selectedWard = null) {
+            wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
 
-    let gradeLevelsData = [];
-    let stepsData = [];
+            if (lgaId) {
+                const filteredWards = wards.filter(ward => ward.lga_id == lgaId);
+                filteredWards.forEach(ward => {
+                    const option = document.createElement('option');
+                    option.value = ward.ward_id;
+                    option.text = ward.ward_name;
+                    if (selectedWard && ward.ward_id == selectedWard) {
+                        option.selected = true;
+                    }
+                    wardSelect.appendChild(option);
+                });
+            }
+        }
 
-    function updateAccountName() {
-        const firstName = firstNameInput.value.trim();
-        const surname = surnameInput.value.trim();
-        const middleName = middleNameInput.value.trim();
-        
-        let accountName = `${firstName} ${middleName} ${surname}`;
-        accountNameInput.value = accountName.replace(/\s+/g, ' ').trim();
-    }
+        const oldStateId = "{{ old('state_id', $employee->state_id) }}";
+        const oldLgaId = "{{ old('lga_id', $employee->lga_id) }}";
+        const oldWardId = "{{ old('ward_id', $employee->ward_id) }}";
 
-    firstNameInput.addEventListener('input', updateAccountName);
-    surnameInput.addEventListener('input', updateAccountName);
-    middleNameInput.addEventListener('input', updateAccountName);
+        if (oldStateId) {
+            stateSelect.value = oldStateId;
+            populateLgas(oldStateId, oldLgaId);
+            if (oldLgaId) {
+                populateWards(oldLgaId, oldWardId);
+            }
+        }
 
-    function setGradeAndStep() {
-        const selectedGradeLevelName = gradeLevelNameSelect.value;
-        const selectedStep = stepLevelSelect.value;
+        stateSelect.addEventListener('change', function () {
+            populateLgas(this.value);
+        });
 
-        if (selectedGradeLevelName && selectedStep) {
-            const selectedGradeLevel = gradeLevelsData.find(item => item.name === selectedGradeLevelName);
-            if (selectedGradeLevel) {
-                const selectedStepData = stepsData.find(step => step.name == selectedStep && step.grade_level_id == selectedGradeLevel.id);
-                if (selectedStepData) {
-                    gradeLevelIdInput.value = selectedGradeLevel.id;
-                    stepIdInput.value = selectedStepData.id;
+        lgaSelect.addEventListener('change', function () {
+            populateWards(this.value);
+        });
+
+        const firstNameInput = document.querySelector('input[name="first_name"]');
+        const surnameInput = document.querySelector('input[name="surname"]');
+        const middleNameInput = document.querySelector('input[name="middle_name"]');
+        const accountNameInput = document.querySelector('input[name="account_name"]');
+        const salaryScaleSelect = document.getElementById('salary_scale_id');
+        const gradeLevelNameSelect = document.getElementById('grade_level_name');
+        const stepLevelSelect = document.getElementById('step_level');
+        const gradeLevelIdInput = document.getElementById('grade_level_id');
+        const stepIdInput = document.getElementById('step_id');
+
+        let gradeLevelsData = [];
+        let stepsData = [];
+
+        function updateAccountName() {
+            const firstName = firstNameInput.value.trim();
+            const surname = surnameInput.value.trim();
+            const middleName = middleNameInput.value.trim();
+            let accountName = `${firstName} ${middleName} ${surname}`;
+            accountNameInput.value = accountName.replace(/\s+/g, ' ').trim();
+        }
+
+        firstNameInput.addEventListener('input', updateAccountName);
+        surnameInput.addEventListener('input', updateAccountName);
+        middleNameInput.addEventListener('input', updateAccountName);
+
+        function setGradeAndStep() {
+            const selectedGradeLevelName = gradeLevelNameSelect.value;
+            const selectedStep = stepLevelSelect.value;
+
+            if (selectedGradeLevelName && selectedStep) {
+                const selectedGradeLevel = gradeLevelsData.find(item => item.name === selectedGradeLevelName);
+                if (selectedGradeLevel) {
+                    const selectedStepData = stepsData.find(step => step.name == selectedStep && step.grade_level_id == selectedGradeLevel.id);
+                    if (selectedStepData) {
+                        gradeLevelIdInput.value = selectedGradeLevel.id;
+                        stepIdInput.value = selectedStepData.id;
+                    }
                 }
             }
         }
-    }
 
-    salaryScaleSelect.addEventListener('change', function() {
-        const salaryScaleId = this.value;
-        gradeLevelNameSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
-        stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
-        gradeLevelIdInput.value = '';
-        stepIdInput.value = '';
+        salaryScaleSelect.addEventListener('change', function() {
+            const salaryScaleId = this.value;
+            gradeLevelNameSelect.innerHTML = '<option value="">-- Select Grade Level --</option>';
+            stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
+            gradeLevelIdInput.value = '';
+            stepIdInput.value = '';
 
-        if (salaryScaleId) {
-            fetch(`/api/salary-scales/${salaryScaleId}/grade-levels`)
-                .then(response => response.json())
-                .then(data => {
-                    gradeLevelsData = data;
-                    if (data.length > 0) {
-                        const uniqueGradeLevels = [...new Set(data.map(item => item.name))];
-                        uniqueGradeLevels.forEach(name => {
+            if (salaryScaleId) {
+                fetch(`/api/salary-scales/${salaryScaleId}/grade-levels`)
+                    .then(response => response.json())
+                    .then(data => {
+                        gradeLevelsData = data;
+                        if (data.length > 0) {
+                            const uniqueGradeLevels = [...new Set(data.map(item => item.name))];
+                            uniqueGradeLevels.forEach(name => {
+                                const option = document.createElement('option');
+                                option.value = name;
+                                option.text = name;
+                                gradeLevelNameSelect.appendChild(option);
+                            });
+                            const oldGradeLevelName = "{{ old('grade_level_name', $employee->gradeLevel->name ?? '') }}";
+                            if (oldGradeLevelName) {
+                                gradeLevelNameSelect.value = oldGradeLevelName;
+                                gradeLevelNameSelect.dispatchEvent(new Event('change'));
+                            }
+                        } else {
                             const option = document.createElement('option');
-                            option.value = name;
-                            option.text = name;
+                            option.value = '';
+                            option.text = 'No grade levels available';
+                            option.disabled = true;
                             gradeLevelNameSelect.appendChild(option);
-                        });
-                    } else {
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching grade levels:', error);
                         const option = document.createElement('option');
                         option.value = '';
-                        option.text = 'No grade levels available';
+                        option.text = 'Error loading grade levels';
                         option.disabled = true;
                         gradeLevelNameSelect.appendChild(option);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching grade levels:', error);
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.text = 'Error loading grade levels';
-                    option.disabled = true;
-                    gradeLevelNameSelect.appendChild(option);
-                });
-        }
-    });
-
-    gradeLevelNameSelect.addEventListener('change', function() {
-        const selectedGradeLevelName = this.value;
-        const salaryScaleId = salaryScaleSelect.value;
-        stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
-        gradeLevelIdInput.value = '';
-        stepIdInput.value = '';
-
-        if (selectedGradeLevelName && salaryScaleId) {
-            fetch(`/api/salary-scales/${salaryScaleId}/grade-levels/${selectedGradeLevelName}/steps`)
-                .then(response => response.json())
-                .then(steps => {
-                    stepsData = steps;
-                    if (steps.length > 0) {
-                        steps.forEach(step => {
-                            const option = document.createElement('option');
-                            option.value = step.name;
-                            option.text = step.name;
-                            stepLevelSelect.appendChild(option);
-                        });
-                    } else {
-                        const option = document.createElement('option');
-                        option.value = '';
-                        option.text = 'No steps available';
-                        option.disabled = true;
-                        stepLevelSelect.appendChild(option);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching steps:', error);
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.text = 'Error loading steps';
-                    option.disabled = true;
-                    stepLevelSelect.appendChild(option);
-                });
-        }
-    });
-
-    stepLevelSelect.addEventListener('change', function() {
-        setGradeAndStep();
-    });
-
-    function validateStep(step) {
-        let isValid = true;
-        const currentStep = document.getElementById('step' + step);
-        const inputs = currentStep.querySelectorAll('input[required], select[required], textarea[required]');
-
-        inputs.forEach(input => {
-            if (!input.value) {
-                isValid = false;
-                const error = document.createElement('small');
-                error.className = 'text-danger';
-                error.innerText = 'This field is required.';
-                const existingError = input.nextElementSibling;
-                if (existingError && existingError.classList.contains('text-danger')) {
-                    existingError.remove();
-                }
-                input.parentNode.appendChild(error);
-            } else {
-                const existingError = input.nextElementSibling;
-                if (existingError && existingError.classList.contains('text-danger')) {
-                    existingError.remove();
-                }
+                    });
             }
         });
 
-        return isValid;
-    }
+        gradeLevelNameSelect.addEventListener('change', function() {
+            const selectedGradeLevelName = this.value;
+            const salaryScaleId = salaryScaleSelect.value;
+            stepLevelSelect.innerHTML = '<option value="">-- Step --</option>';
+            gradeLevelIdInput.value = '';
 
-    function nextStep(step) {
-        if (!validateStep(step - 1)) {
-            return;
-        }
-        document.querySelectorAll('.step-card').forEach(card => card.classList.add('d-none'));
-        document.getElementById('step' + step).classList.remove('d-none');
-        updateNav(step);
-    }
-    function prevStep(step) {
-        document.querySelectorAll('.step-card').forEach(card => card.classList.add('d-none'));
-        document.getElementById('step' + step).classList.remove('d-none');
-        updateNav(step);
-    }
-    function showStep(step) {
-        document.querySelectorAll('.step-card').forEach(card => card.classList.add('d-none'));
-        document.getElementById('step' + step).classList.remove('d-none');
-        updateNav(step);
-    }
-    function updateNav(step) {
-        document.querySelectorAll('#stepNav .nav-link').forEach((nav, idx) => {
-            nav.classList.remove('active');
-            if (idx === step - 1) nav.classList.add('active');
+            if (selectedGradeLevelName && salaryScaleId) {
+                fetch(`/api/salary-scales/${salaryScaleId}/grade-levels/${selectedGradeLevelName}/steps`)
+                    .then(response => response.json())
+                    .then(steps => {
+                        stepsData = steps;
+                        if (steps.length > 0) {
+                            steps.forEach(step => {
+                                const option = document.createElement('option');
+                                option.value = step.name;
+                                option.text = step.name;
+                                stepLevelSelect.appendChild(option);
+                            });
+                            const oldStepLevel = "{{ old('step_level', $employee->step->name ?? '') }}";
+                            if (oldStepLevel) {
+                                stepLevelSelect.value = oldStepLevel;
+                                setGradeAndStep();
+                            }
+                        } else {
+                            const option = document.createElement('option');
+                            option.value = '';
+                            option.text = 'No steps available';
+                            option.disabled = true;
+                            stepLevelSelect.appendChild(option);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching steps:', error);
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.text = 'Error loading steps';
+                        option.disabled = true;
+                        stepLevelSelect.appendChild(option);
+                    });
+            }
         });
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
+
+        stepLevelSelect.addEventListener('change', function() {
+            setGradeAndStep();
+        });
+
+        const oldSalaryScaleId = "{{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') }}";
+        if (oldSalaryScaleId) {
+            salaryScaleSelect.value = oldSalaryScaleId;
+            salaryScaleSelect.dispatchEvent(new Event('change'));
+        }
+
+        const dateOfAppointmentInput = document.querySelector('input[name="date_of_first_appointment"]');
+        const yearsOfServiceDisplay = document.getElementById('years_of_service');
+
+        dateOfAppointmentInput.addEventListener('change', function() {
+            const appointmentDate = new Date(this.value);
+            if (!isNaN(appointmentDate.getTime())) {
+                const today = new Date();
+                let years = today.getFullYear() - appointmentDate.getFullYear();
+                const m = today.getMonth() - appointmentDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < appointmentDate.getDate())) {
+                    years--;
+                }
+                yearsOfServiceDisplay.value = years;
+            } else {
+                yearsOfServiceDisplay.value = '';
+            }
+        });
+
+        const dateOfBirthInput = document.querySelector('input[name="date_of_birth"]');
+        const expectedRetirementDateInput = document.querySelector('input[name="expected_retirement_date"]');
+        let maxRetirementAge = null;
+        let maxYearsOfService = null;
+
+        salaryScaleSelect.addEventListener('change', function() {
+            const salaryScaleId = this.value;
+            if (salaryScaleId) {
+                fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data) {
+                            maxRetirementAge = parseInt(data.max_retirement_age, 10);
+                            maxYearsOfService = parseInt(data.max_years_of_service, 10);
+                            calculateRetirementDate();
+                        }
+                    });
+            }
+        });
+
+        function calculateRetirementDate() {
+            if (maxRetirementAge === null || maxYearsOfService === null) {
+                return;
+            }
+
+            const birthDateStr = dateOfBirthInput.value;
+            const appointmentDateStr = dateOfAppointmentInput.value;
+
+            if (birthDateStr && appointmentDateStr) {
+                const birthDate = new Date(birthDateStr);
+                const appointmentDate = new Date(appointmentDateStr);
+
+                const birthYear = birthDate.getUTCFullYear();
+                const birthMonth = birthDate.getUTCMonth();
+                const birthDay = birthDate.getUTCDate();
+
+                const appointmentYear = appointmentDate.getUTCFullYear();
+                const appointmentMonth = appointmentDate.getUTCMonth();
+                const appointmentDay = appointmentDate.getUTCDate();
+
+                const retirementDateByAge = new Date(Date.UTC(birthYear + maxRetirementAge, birthMonth, birthDay));
+                const retirementDateByService = new Date(Date.UTC(appointmentYear + maxYearsOfService, appointmentMonth, appointmentDay));
+
+                const expectedRetirementDate = new Date(Math.min(retirementDateByAge, retirementDateByService));
+
+                const formattedDate = expectedRetirementDate.toISOString().split('T')[0];
+                expectedRetirementDateInput.value = formattedDate;
+            }
+        }
+
+        dateOfBirthInput.addEventListener('change', calculateRetirementDate);
+        dateOfAppointmentInput.addEventListener('change', calculateRetirementDate);
+
+        const bankNameSelect = document.getElementById('bank_name');
+        const bankCodeInput = document.getElementById('bank_code');
+
+        if (bankNameSelect && bankCodeInput) {
+            bankNameSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const bankCode = selectedOption.getAttribute('data-code');
+                bankCodeInput.value = bankCode || '';
+            });
+        }
+
         @if(session('step'))
             showStep({{ session('step') }});
         @else
             showStep(1);
         @endif
-        
-        const cameraButton = document.getElementById('cameraButton');
-        const cameraContainer = document.getElementById('cameraContainer');
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const snapButton = document.getElementById('snapButton');
-        const cancelButton = document.getElementById('cancelButton');
-        const capturedImage = document.getElementById('capturedImage');
-        const fileInput = document.querySelector('input[name="photo"]');
-        
-        let stream = null;
-        
-        cameraButton.addEventListener('click', async function() {
-            cameraContainer.classList.remove('d-none');
-            
-            try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Your browser does not support camera access. Please try a modern browser or upload a photo instead.');
-                }
-                
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    throw new Error('Camera access requires a secure connection (HTTPS). Please upload a photo instead.');
-                }
-                
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: {
-                        facingMode: 'environment'
-                    } 
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                console.error("Error accessing camera: ", err);
-                cameraContainer.classList.add('d-none');
-                
-                let errorMessage = "Could not access the camera. ";
-                switch (err.name) {
-                    case 'NotAllowedError':
-                        errorMessage += "Please grant camera permission and try again.";
-                        break;
-                    case 'NotFoundError':
-                        errorMessage += "No camera was found on your device.";
-                        break;
-                    case 'NotReadableError':
-                        errorMessage += "Camera is being used by another application.";
-                        break;
-                    case 'OverconstrainedError':
-                        errorMessage += "Your camera does not support the required constraints.";
-                        break;
-                    default:
-                        errorMessage += "Please ensure you've granted permission and that your camera is working. Alternatively, upload a photo from your device.";
-                }
-                
-                alert(errorMessage);
-            }
-        });
-        
-        snapButton.addEventListener('click', function() {
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            canvas.toBlob(function(blob) {
-                const file = new File([blob], "captured_photo.jpg", { type: "image/jpeg" });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                fileInput.files = dataTransfer.files;
-                
-                capturedImage.value = canvas.toDataURL('image/jpeg');
-            }, 'image/jpeg', 0.95);
-            
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            cameraContainer.classList.add('d-none');
-        });
-        
-        cancelButton.addEventListener('click', function() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            cameraContainer.classList.add('d-none');
-        });
-
-        // Pre-fill and handle dynamic dropdowns for edit form
-        const selectedSalaryScaleId = "{{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') }}";
-        const selectedGradeLevelName = "{{ old('grade_level_name', $employee->gradeLevel->name ?? '') }}";
-        const selectedStepLevel = "{{ old('step_level', $employee->step->name ?? '') }}";
-
-        if (selectedSalaryScaleId) {
-            fetch(`/api/salary-scales/${selectedSalaryScaleId}/grade-levels`)
-                .then(response => response.json())
-                .then(data => {
-                    gradeLevelsData = data;
-                    if (data.length > 0) {
-                        const uniqueGradeLevels = [...new Set(data.map(item => item.name))];
-                        uniqueGradeLevels.forEach(name => {
-                            const option = document.createElement('option');
-                            option.value = name;
-                            option.text = name;
-                            if (name === selectedGradeLevelName) {
-                                option.selected = true;
-                            }
-                            gradeLevelNameSelect.appendChild(option);
-                        });
-
-                        if (selectedGradeLevelName) {
-                            fetch(`/api/salary-scales/${selectedSalaryScaleId}/grade-levels/${selectedGradeLevelName}/steps`)
-                                .then(response => response.json())
-                                .then(steps => {
-                                    stepsData = steps;
-                                    if (steps.length > 0) {
-                                        steps.forEach(step => {
-                                            const option = document.createElement('option');
-                                            option.value = step.name;
-                                            option.text = step.name;
-                                            if (step.name == selectedStepLevel) {
-                                                option.selected = true;
-                                            }
-                                            stepLevelSelect.appendChild(option);
-                                        });
-                                        setGradeAndStep(); // Set hidden fields
-                                    }
-                                });
-                        }
-                    }
-                });
-        }
     });
-    
-    document.getElementById('employeeForm').addEventListener('submit', function(e) {
-        let isValid = true;
-        document.querySelectorAll('.step-card').forEach(card => {
-            const inputs = card.querySelectorAll('input[required], select[required], textarea[required]');
-            inputs.forEach(input => {
-                if (!input.value) {
-                    isValid = false;
-                }
-            });
-        });
-        
-        if (!gradeLevelIdInput.value) {
-            isValid = false;
-        }
-        
-        if (!stepIdInput.value) {
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-            alert('Please fill in all required fields before submitting.');
-            return false;
-        }
-    });
-
-    const dateOfAppointmentInput = document.querySelector('input[name="date_of_first_appointment"]');
-    const yearsOfServiceDisplay = document.getElementById('years_of_service');
-
-    dateOfAppointmentInput.addEventListener('change', function() {
-        const appointmentDate = new Date(this.value);
-        if (!isNaN(appointmentDate.getTime())) {
-            const today = new Date();
-            let years = today.getFullYear() - appointmentDate.getFullYear();
-            const m = today.getMonth() - appointmentDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < appointmentDate.getDate())) {
-                years--;
-            }
-            yearsOfServiceDisplay.value = years + (years === 1 ? ' year' : ' years');
-        } else {
-            yearsOfServiceDisplay.value = '';
-        }
-    });
-    dateOfAppointmentInput.dispatchEvent(new Event('change'));
-
-    const dateOfBirthInput = document.querySelector('input[name="date_of_birth"]');
-    const statusSelect = document.querySelector('select[name="status"]');
-    const expectedRetirementDateInput = document.querySelector('input[name="expected_retirement_date"]');
-    let maxRetirementAge = null;
-    let maxYearsOfService = null;
-
-    salaryScaleSelect.addEventListener('change', function() {
-        const salaryScaleId = this.value;
-        if (salaryScaleId) {
-            fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        maxRetirementAge = parseInt(data.max_retirement_age, 10);
-                        maxYearsOfService = parseInt(data.max_years_of_service, 10);
-                        calculateRetirementDate();
-                    }
-                });
-        }
-    });
-    salaryScaleSelect.dispatchEvent(new Event('change'));
-
-    function calculateRetirementDate() {
-        if (maxRetirementAge === null || maxYearsOfService === null) {
-            return;
-        }
-
-        const birthDateStr = dateOfBirthInput.value;
-        const appointmentDateStr = dateOfAppointmentInput.value;
-
-        if (birthDateStr && appointmentDateStr) {
-            const birthDate = new Date(birthDateStr);
-            const appointmentDate = new Date(appointmentDateStr);
-
-            const birthYear = birthDate.getUTCFullYear();
-            const birthMonth = birthDate.getUTCMonth();
-            const birthDay = birthDate.getUTCDate();
-
-            const appointmentYear = appointmentDate.getUTCFullYear();
-            const appointmentMonth = appointmentDate.getUTCMonth();
-            const appointmentDay = appointmentDate.getUTCDate();
-
-            const retirementDateByAge = new Date(Date.UTC(birthYear + maxRetirementAge, birthMonth, birthDay));
-            const retirementDateByService = new Date(Date.UTC(appointmentYear + maxYearsOfService, appointmentMonth, appointmentDay));
-
-            const expectedRetirementDate = new Date(Math.min(retirementDateByAge, retirementDateByService));
-
-            const formattedDate = expectedRetirementDate.toISOString().split('T')[0];
-            expectedRetirementDateInput.value = formattedDate;
-        }
-    }
-
-    dateOfBirthInput.addEventListener('change', calculateRetirementDate);
-    dateOfAppointmentInput.addEventListener('change', calculateRetirementDate);
 </script>
 @endsection
-
-    

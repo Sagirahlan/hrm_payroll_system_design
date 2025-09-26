@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class PayrollCalculationService
 {
-    public function calculatePayroll(Employee $employee, string $month): array
+    public function calculatePayroll(Employee $employee, string $month, bool $isSuspended = false): array
     {
         $gradeLevel = $employee->relationLoaded('gradeLevel')
             ? $employee->gradeLevel
@@ -42,6 +42,12 @@ class PayrollCalculationService
         }
 
         $basicSalary = $step->basic_salary;
+        
+        // For suspended employees, use half of the basic salary for calculations
+        if ($isSuspended) {
+            $basicSalary = $basicSalary / 2;
+        }
+        
         $payrollDate = Carbon::parse($month . '-01');
 
         $totalDeductions = 0;
@@ -52,7 +58,9 @@ class PayrollCalculationService
         // Statutory deductions from grade level
         foreach ($gradeLevel->deductionTypes as $deductionType) {
             if ($deductionType->is_statutory) {
+                // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
                 $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
+                
                 $totalDeductions += $amount;
                 $deductionRecords[] = [
                     'type' => 'deduction',
@@ -77,15 +85,16 @@ class PayrollCalculationService
             }
         }
 
-        // Non-statutory deductions for the employee
-        $nonStatutoryDeductions = Deduction::where('employee_id', $employee->employee_id)
+        // Employee-specific deductions - these amounts are already stored with the correct values
+        // (halved for suspended employees when they were created)
+        $employeeDeductions = Deduction::where('employee_id', $employee->employee_id)
             ->where('start_date', '<=', $payrollDate)
             ->where(function ($query) use ($payrollDate) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
             })->get();
 
-        foreach ($nonStatutoryDeductions as $deduction) {
-            $deductionAmount = $deduction->amount; // Use the calculated amount from the model
+        foreach ($employeeDeductions as $deduction) {
+            $deductionAmount = $deduction->amount; // Use the stored amount (already calculated correctly)
             $totalDeductions += $deductionAmount;
             $deductionRecords[] = [
                 'type' => 'deduction',
@@ -95,14 +104,14 @@ class PayrollCalculationService
             ];
         }
 
-        // Non-statutory additions for the employee
-        $nonStatutoryAdditions = Addition::where('employee_id', $employee->employee_id)
+        // Employee-specific additions
+        $employeeAdditions = Addition::where('employee_id', $employee->employee_id)
             ->where('start_date', '<=', $payrollDate)
             ->where(function ($query) use ($payrollDate) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
             })->get();
 
-        foreach ($nonStatutoryAdditions as $addition) {
+        foreach ($employeeAdditions as $addition) {
             $additionAmount = $addition->amount; // Use the calculated amount from the model
             $totalAdditions += $additionAmount;
             $additionRecords[] = [
@@ -113,6 +122,9 @@ class PayrollCalculationService
             ];
         }
 
+        // Calculate net salary: same formula for both active and suspended
+        // Net salary = Basic Salary - Total Deductions + Total Additions
+        // For suspended employees, we already halved the basic salary above
         $netSalary = $basicSalary - $totalDeductions + $totalAdditions;
 
         return [

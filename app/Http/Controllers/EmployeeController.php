@@ -25,6 +25,7 @@ use App\Models\Ward;
 use App\Models\AppointmentType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class EmployeeController extends Controller
@@ -208,7 +209,7 @@ class EmployeeController extends Controller
 
     public function exportFiltered(Request $request)
 {
-    // Apply same filters as index method for export
+    // Apply same filters as index method for export    
     $query = Employee::with(['department', 'cadre', 'gradeLevel']);
 
     // Search functionality
@@ -396,26 +397,33 @@ class EmployeeController extends Controller
                 'bank_code' => 'required|string|max:20',
                 'account_name' => 'required|string|max:100',
                 'account_no' => 'required|string|max:20',
+                'years_of_service' => 'nullable|string',
             ];
+
+            $validationRules['department_id'] = 'required|exists:departments,department_id';
 
             if ($appointmentType && $appointmentType->name === 'Contract') {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
-                $validationRules['department_id'] = 'required|exists:departments,department_id';
+                
             } else {
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
                 $validationRules['step_id'] = 'required|exists:steps,id';
                 $validationRules['step_level'] = 'required|string|max:50';
-                $validationRules['department_id'] = 'required|exists:departments,department_id';
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'required|date';
                 $validationRules['rank_id'] = 'required|exists:ranks,id';
             }
 
             $validated = $request->validate($validationRules);
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('photos', 'public');
+                $validated['photo_path'] = $path;
+            }
 
             $pendingChange = \App\Models\PendingEmployeeChange::create([
                 'employee_id' => null,
@@ -441,8 +449,8 @@ class EmployeeController extends Controller
 
             $step1_fields = ['first_name', 'surname', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'nationality', 'reg_no', 'mobile_no'];
             $step2_fields = ['address'];
-            $step3_fields = ['date_of_first_appointment', 'cadre_id', 'salary_scale_id', 'grade_level_id', 'step_id', 'step_level', 'department_id', 'rank_id', 'expected_retirement_date', 'contract_start_date', 'contract_end_date', 'amount'];
-            $step4_fields = ['status', 'appointment_type_id'];
+            $step3_fields = ['date_of_first_appointment', 'cadre_id', 'salary_scale_id', 'grade_level_id', 'step_id', 'step_level', 'department_id', 'rank_id', 'expected_retirement_date', 'contract_start_date', 'contract_end_date', 'amount', 'appointment_type_id'];
+            $step4_fields = ['status'];
             $step5_fields = ['kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address'];
             $step6_fields = ['bank_name', 'bank_code', 'account_name', 'account_no'];
 
@@ -520,6 +528,7 @@ class EmployeeController extends Controller
     public function update(Request $request, Employee $employee)
     {
         try {
+            $employee->load(['nextOfKin', 'bank']);
             $appointmentType = AppointmentType::find($request->input('appointment_type_id'));
 
             $validationRules = [
@@ -553,18 +562,18 @@ class EmployeeController extends Controller
                 'account_no' => 'required|string|max:20',
             ];
 
+            $validationRules['department_id'] = 'required|exists:departments,department_id';
+
             if ($appointmentType && $appointmentType->name === 'Contract') {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
-                $validationRules['department_id'] = 'required|exists:departments,department_id';
             } else {
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
                 $validationRules['step_id'] = 'required|exists:steps,id';
                 $validationRules['step_level'] = 'required|string|max:50';
-                $validationRules['department_id'] = 'required|exists:departments,department_id';
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'required|date';
                 $validationRules['rank_id'] = 'required|exists:ranks,id';
@@ -584,12 +593,36 @@ class EmployeeController extends Controller
             $currentData['account_name'] = $employee->bank->account_name ?? null;
             $currentData['account_no'] = $employee->bank->account_no ?? null;
 
+            $changedData = [];
+            $previousData = [];
+
+            foreach ($validated as $key => $value) {
+                if (array_key_exists($key, $currentData) && $currentData[$key] != $value) {
+                    $changedData[$key] = $value;
+                    $previousData[$key] = $currentData[$key];
+                } elseif (!array_key_exists($key, $currentData) && !is_null($value)) {
+                    // New field added or field that was null is now set
+                    $changedData[$key] = $value;
+                    $previousData[$key] = null;
+                }
+            }
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('photos', 'public');
+                $changedData['photo_path'] = $path;
+                $previousData['photo_path'] = $employee->photo_path;
+            }
+
+            if (empty($changedData)) {
+                return redirect()->route('employees.index')->with('info', 'No changes were made to the employee.');
+            }
+
             $pendingChange = \App\Models\PendingEmployeeChange::create([
                 'employee_id' => $employee->employee_id,
                 'requested_by' => auth()->id(),
                 'change_type' => 'update',
-                'data' => $validated,
-                'previous_data' => $currentData,
+                'data' => $changedData,
+                'previous_data' => $previousData,
                 'reason' => $request->input('change_reason', 'Employee update')
             ]);
 
@@ -598,7 +631,7 @@ class EmployeeController extends Controller
                 'action' => 'requested_update',
                 'description' => "Requested update for employee: {$employee->first_name} {$employee->surname}",
                 'action_timestamp' => now(),
-                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id, 'requested_data' => $validated, 'previous_data' => $currentData]),
+                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id, 'requested_data' => $changedData, 'previous_data' => $previousData]),
             ]);
 
             return redirect()->route('employees.index')->with('success', 'Employee update request submitted for approval.');

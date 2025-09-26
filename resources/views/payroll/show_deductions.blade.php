@@ -101,6 +101,10 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    <!-- Pagination -->
+                                    <div class="card-footer bg-white">
+                                        {{ $deductions->withQueryString()->links() }}
+                                    </div>
                                 </div>
                             </div>
                         </div>

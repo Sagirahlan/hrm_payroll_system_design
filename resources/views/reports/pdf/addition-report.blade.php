@@ -75,42 +75,85 @@
         <p>Generated on {{ date('F j, Y') }}</p>
     </div>
 
-    @foreach($data as $additionGroup)
-    <div class="section">
-        <div class="section-title">{{ $additionGroup['addition_type'] }}</div>
-        
-        @if(count($additionGroup['additions']) > 0)
-        <table>
-            <thead>
-                <tr>
-                    <th>Employee ID</th>
-                    <th>Employee Name</th>
-                    <th>Amount</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($additionGroup['additions'] as $addition)
-                <tr>
-                    <td>{{ $addition['employee']['employee_id'] ?? 'N/A' }}</td>
-                    <td>{{ ($addition['employee']['first_name'] ?? '') . ' ' . ($addition['employee']['surname'] ?? '') }}</td>
-                    <td class="text-right">₦{{ number_format($addition['amount'], 2) }}</td>
-                    <td class="text-center">{{ $addition['start_date'] ? date('Y-m-d', strtotime($addition['start_date'])) : 'N/A' }}</td>
-                    <td class="text-center">{{ $addition['end_date'] ? date('Y-m-d', strtotime($addition['end_date'])) : 'N/A' }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @else
-        <p>No additions found for this type.</p>
-        @endif
-    </div>
-    
-    @if(!$loop->last)
-    <div class="page-break"></div>
+    @if(is_string($data))
+        @php
+            $decodedData = json_decode($data, true);
+        @endphp
+    @else
+        @php
+            $decodedData = $data;
+        @endphp
     @endif
-    @endforeach
+    
+    @if(isset($decodedData['addition_type']) && isset($decodedData['additions']))
+        <div class="section">
+            <div class="section-title">{{ $decodedData['addition_type'] }}</div>
+            
+            @if(count($decodedData['additions']) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Amount</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($decodedData['additions'] as $addition)
+                    <tr>
+                        <td>{{ $addition['employee']['employee_id'] ?? 'N/A' }}</td>
+                        <td>{{ ($addition['employee']['first_name'] ?? '') . ' ' . ($addition['employee']['surname'] ?? '') }}</td>
+                        <td class="text-right">₦{{ number_format($addition['amount'] ?? 0, 2) }}</td>
+                        <td class="text-center">{{ $addition['start_date'] ? date('Y-m-d', strtotime($addition['start_date'])) : 'N/A' }}</td>
+                        <td class="text-center">{{ $addition['end_date'] ? date('Y-m-d', strtotime($addition['end_date'])) : 'N/A' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+            <p>No additions found for this type.</p>
+            @endif
+        </div>
+    @else
+        @foreach($decodedData as $additionGroup)
+        <div class="section">
+            <div class="section-title">{{ $additionGroup['addition_type'] }}</div>
+            
+            @if(count($additionGroup['additions']) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Amount</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($additionGroup['additions'] as $addition)
+                    <tr>
+                        <td>{{ $addition['employee']['employee_id'] ?? 'N/A' }}</td>
+                        <td>{{ ($addition['employee']['first_name'] ?? '') . ' ' . ($addition['employee']['surname'] ?? '') }}</td>
+                        <td class="text-right">₦{{ number_format($addition['amount'] ?? 0, 2) }}</td>
+                        <td class="text-center">{{ $addition['start_date'] ? date('Y-m-d', strtotime($addition['start_date'])) : 'N/A' }}</td>
+                        <td class="text-center">{{ $addition['end_date'] ? date('Y-m-d', strtotime($addition['end_date'])) : 'N/A' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+            <p>No additions found for this type.</p>
+            @endif
+        </div>
+        
+        @if(!$loop->last)
+        <div class="page-break"></div>
+        @endif
+        @endforeach
+    @endif
 
     <div class="footer">
         <p>Report generated by {{ $report->generatedBy->name ?? 'System' }} on {{ date('F j, Y g:i A') }}</p>
