@@ -32,7 +32,11 @@ class EmployeeController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_employees']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_employees'], ['only' => ['index', 'ajaxFilter', 'exportFiltered', 'show', 'exportPdf', 'exportExcel', 'exportSingle', 'getLgasByState', 'getWardsByLga', 'getRanksByGradeLevel']]);
+        $this->middleware(['permission:create_employees'], ['only' => ['create', 'store', 'importEmployees']]);
+        $this->middleware(['permission:edit_employees'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_employees'], ['only' => ['destroy']]);
     }
 
     public function index(Request $request)

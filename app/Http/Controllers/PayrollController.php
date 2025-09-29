@@ -27,7 +27,15 @@ class PayrollController extends Controller
 
     public function __construct(PayrollCalculationService $payrollCalculationService)
     {
-        $this->middleware(['auth', 'permission:manage_payroll']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_payroll'], ['only' => ['index', 'show', 'getStatistics', 'search', 'getDetailedPayroll', 'generatePaySlip', 'exportPayroll', 'showDeductions', 'showAdditions', 'manageAllAdjustments']]);
+        $this->middleware(['permission:create_payroll'], ['only' => ['generatePayroll', 'storeDeduction', 'storeAddition', 'storeBulkDeductions', 'storeBulkAdditions', 'bulkDeductions', 'additions', 'deductions', 'manageAllAdjustments', 'importEmployees']]);
+        $this->middleware(['permission:edit_payroll'], ['only' => ['edit', 'update', 'recalculate', 'approve', 'reject', 'bulkUpdateStatus', 'bulkSendForReview', 'bulkMarkAsReviewed', 'bulkSendForApproval', 'bulkFinalApprove', 'sendForReview', 'markAsReviewed', 'sendForApproval', 'finalApprove']]);
+        $this->middleware(['permission:delete_payroll'], ['only' => ['destroy']]);
+        $this->middleware(['permission:generate_payroll'], ['only' => ['generatePayroll', 'recalculate']]);
+        $this->middleware(['permission:approve_payroll'], ['only' => ['approve', 'reject', 'bulkSendForReview', 'bulkMarkAsReviewed', 'bulkSendForApproval', 'bulkFinalApprove', 'sendForReview', 'markAsReviewed', 'sendForApproval', 'finalApprove']]);
+        $this->middleware(['permission:view_payslips'], ['only' => ['generatePaySlip']]);
+        $this->middleware(['permission:manage_payroll_adjustments'], ['only' => ['showDeductions', 'showAdditions', 'storeDeduction', 'storeAddition', 'manageAllAdjustments', 'storeBulkDeductions', 'storeBulkAdditions', 'additions', 'deductions', 'bulkDeductions']]);
         $this->payrollCalculationService = $payrollCalculationService;
     }
 

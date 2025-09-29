@@ -119,17 +119,17 @@ class EmployeeReportService
     {
         return $employee->deductions()
             ->whereHas('employee', function ($query) {
-            $query->where('status', 'active');
+                // Removed status filter as deductions table doesn't have a status column
             })
             ->get()
             ->map(function ($deduction) {
                 return [
-                    'deduction_type' => $deduction->name_type,
+                    'deduction_type' => $deduction->deduction_type,
                     'amount' => $deduction->amount,
-                    'frequency' => $deduction->period,
+                    'frequency' => $deduction->deduction_period,
                     'start_date' => $deduction->start_date,
                     'end_date' => $deduction->end_date,
-                    'description' => $deduction->description
+                    'description' => ''
                 ];
             })->toArray();
     }
@@ -138,7 +138,7 @@ class EmployeeReportService
     {
         return $employee->additions()
             ->whereHas('employee', function ($query) {
-            $query->where('status', 'active');
+                // Removed status filter as additions table doesn't have a status column
             })
             ->get()
             ->map(function ($addition) {
@@ -194,14 +194,12 @@ class EmployeeReportService
         }
 
         $totalDeductions = $employee->deductions()
-            ->where('status', 'active')
             ->sum('amount');
 
         $totalAllowances = $employee->additions()
-            ->where('status', 'active')
             ->sum('amount');
 
-        $lifetimeEarnings = $employee->payrollHistory()
+        $lifetimeEarnings = $employee->payrollRecords()
             ->sum('gross_salary');
 
         return [

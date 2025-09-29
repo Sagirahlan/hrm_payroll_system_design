@@ -16,7 +16,12 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_users']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_users'], ['only' => ['index', 'showEmployeesWithoutUsers']]);
+        $this->middleware(['permission:create_users'], ['only' => ['create', 'store', 'bulkCreateUsers']]);
+        $this->middleware(['permission:edit_users'], ['only' => ['updateRole', 'resetPassword']]);
+        $this->middleware(['permission:delete_users'], ['only' => ['destroy']]);
+        $this->middleware(['permission:reset_user_passwords'], ['only' => ['resetPassword']]);
     }
 
     public function index(Request $request)

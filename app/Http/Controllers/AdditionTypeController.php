@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class AdditionTypeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_addition_types'], ['only' => ['index']]);
+        $this->middleware(['permission:create_addition_types'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:edit_addition_types'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_addition_types'], ['only' => ['destroy']]);
+    }
+
     public function index()
     {
         $additionTypes = AdditionType::all();

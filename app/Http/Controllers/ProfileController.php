@@ -17,20 +17,24 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user()->load('employee.department', 'employee.cadre', 'employee.gradeLevel', 'employee.nextOfKin', 'employee.biometricData', 'employee.bank', 'employee.state', 'employee.lga', 'employee.ward', 'employee.rank', 'employee.step');
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
         ]);
     }
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_profile'], ['only' => ['show', 'edit']]);
+        $this->middleware(['permission:edit_profile'], ['only' => ['update']]);
+        $this->middleware(['permission:change_password'], ['only' => ['destroy']]);
     }
 
     public function show()
     {
-        $user = Auth::user()->load('employee');
-        return view('users.show', compact('user'));
+        $user = Auth::user()->load('employee.department', 'employee.cadre', 'employee.gradeLevel', 'employee.nextOfKin', 'employee.biometricData', 'employee.bank', 'employee.state', 'employee.lga', 'employee.ward', 'employee.rank', 'employee.step');
+        return view('profile.show', compact('user'));
     }
 
     /**
@@ -54,7 +58,7 @@ class ProfileController extends Controller
             'log_data' => json_encode(['entity_type' => 'User', 'entity_id' => Auth::id()]),
         ]);
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.show')->with('status', 'profile-updated');
     }
 
     /**

@@ -42,8 +42,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
     
-    // Profile - accessible to all authenticated users
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    // Profile - accessible to authenticated users based on permission
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('permission:view_profile');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update')->middleware('permission:edit_profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit')->middleware('permission:edit_profile');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy')->middleware('permission:change_password');
 
     // Employee Management - HR and Admin only
     Route::middleware('permission:manage_employees')->group(function () {
