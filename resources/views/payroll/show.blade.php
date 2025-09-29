@@ -62,7 +62,7 @@
                                     <tbody>
                                         @foreach($additions as $addition)
                                             <tr>
-                                                <td>{{ $addition->addition_type }}</td>
+                                                <td>{{ $addition->additionType->name }}</td>
                                                 <td class="text-success">₦{{ number_format($addition->amount, 2) }}</td>
                                                 <td>{{ $addition->calculation_type_description }}</td>
                                             </tr>

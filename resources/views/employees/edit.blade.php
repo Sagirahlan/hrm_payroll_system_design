@@ -106,7 +106,7 @@
                                 </div>
                                
                                 <div class="col-md-4 col-12">
-                                    <label class="form-label font-weight-bold">NIN (optional)</label>
+                                    <label class="form-label font-weight-bold">NIN <span class="text-danger">*</span></label>
                                     <input type="text" name="nin" class="form-control" value="{{ old('nin', $employee->nin) }}">
                                     @error('nin') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -129,6 +129,11 @@
                                     <label class="form-label font-weight-bold">Email (optional)</label>
                                     <input type="email" name="email" class="form-control" value="{{ old('email', $employee->email) }}">
                                     @error('email') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <label class="form-label font-weight-bold">Pay Point <span class="text-danger">*</span></label>
+                                    <input type="text" name="pay_point" class="form-control" value="{{ old('pay_point', $employee->pay_point) }}">
+                                    @error('pay_point') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Address <span class="text-danger">*</span></label>

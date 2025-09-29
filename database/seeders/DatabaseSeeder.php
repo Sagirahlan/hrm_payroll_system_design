@@ -23,11 +23,12 @@ class DatabaseSeeder extends Seeder
             LgaSeeder::class,
             WardSeeder::class,
             UserSeeder::class,
-            EmployeesTableSeeder::class,
+            EmployeesSeeder::class, // Our new employee seeder
             DeductionTypesSeeder::class,
             NonStatutoryItemsSeeder::class,
             AppointmentTypeSeeder::class,
             RankSeeder::class,
+            BankListSeeder::class,
         ]);
     }
 }

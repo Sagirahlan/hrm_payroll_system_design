@@ -62,8 +62,11 @@
                     <h5 class="text-primary mb-3">Contact & Address</h5>
                     <div class="row">
                         <div class="col-md-6"><p><strong>Mobile No:</strong> {{ $employee->mobile_no }}</p></div>
-                        <div class="col-md-6"><p><strong>Email:</strong> {{ $employee->email ?? 'N/A' }}</p></div>
-                        <div class="col-md-12"><p><strong>Address:</strong> {{ $employee->address }}</p></div>
+<div class="col-md-6">
+                                <p><strong>Email:</strong> {{ $employee->email ?? 'N/A' }}</p>
+                                <p><strong>Pay Point:</strong> {{ $employee->pay_point ?? 'N/A' }}</p>
+                                <p><strong>Address:</strong> {{ $employee->address ?? 'N/A' }}</p>
+                            </div>
                     </div>
                 </div>
                 

@@ -28,6 +28,15 @@
                             <input type="month" name="month" id="month" value="{{ now()->format('Y-m') }}"
                                    class="form-control">
                         </div>
+                        <div class="col-md-4">
+                            <label for="appointment_type_id" class="form-label">Appointment Type</label>
+                            <select name="appointment_type_id" id="appointment_type_id" class="form-select">
+                                <option value="">All Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="fas fa-cogs me-1"></i>Generate
@@ -360,7 +369,7 @@
                                                                 <div class="dropdown-menu p-2" style="max-width: 300px;">
                                                                     @foreach($additions as $addition)
                                                                         <div class="dropdown-item-text">
-                                                                            <span class="badge bg-success text-white">{{ $addition->addition_type }}: ₦{{ number_format($addition->amount, 2) }}</span>
+                                                                            <span class="badge bg-success text-white">{{ $addition->additionType->name }}: ₦{{ number_format($addition->amount, 2) }}</span>
                                                                         </div>
                                                                     @endforeach
                                                                 </div>
@@ -621,10 +630,7 @@
                 @csrf
             </form>
 
-            <!-- Pagination -->
-            <div class="mt-4">
-                {{ $payrolls->appends(request()->query())->links('pagination::bootstrap-5') }}
-            </div>
+          
         </div>
     </div>
 </div>

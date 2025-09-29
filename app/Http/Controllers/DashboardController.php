@@ -15,6 +15,11 @@ class DashboardController extends Controller
         $suspendedEmployees = Employee::where('status', 'Suspended')->count();
         $deceasedEmployees = Employee::where('status', 'Deceased')->count();
         $retiredEmployees = Employee::where('status', 'Retired')->count();
+        
+        // Statistics for contract and permanent employees
+        $permanentEmployees = Employee::where('appointment_type_id', 1)->count();
+        $contractEmployees = Employee::where('appointment_type_id', 2)->count();
+        
         $recentAudits = AuditTrail::with('user')->latest()->take(5)->get();
         $departments = Department::withCount('employees')->get();
 
@@ -24,6 +29,8 @@ class DashboardController extends Controller
             'suspendedEmployees',
             'deceasedEmployees',
             'retiredEmployees', 
+            'permanentEmployees',
+            'contractEmployees',
             'recentAudits', 
             'departments'
         ));

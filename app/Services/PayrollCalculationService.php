@@ -27,7 +27,7 @@ class PayrollCalculationService
             ];
         }
 
-        $step = $gradeLevel->steps()->orderBy('name')->first();
+        $step = $employee->step;
 
         if (!$step || !$step->basic_salary) {
             // Handle case where grade level has no steps or basic salary
@@ -85,16 +85,33 @@ class PayrollCalculationService
             }
         }
 
-        // Employee-specific deductions - these amounts are already stored with the correct values
-        // (halved for suspended employees when they were created)
+        // Employee-specific deductions
         $employeeDeductions = Deduction::where('employee_id', $employee->employee_id)
             ->where('start_date', '<=', $payrollDate)
             ->where(function ($query) use ($payrollDate) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
-            })->get();
+            })->with('deductionType')->get();
 
         foreach ($employeeDeductions as $deduction) {
-            $deductionAmount = $deduction->amount; // Use the stored amount (already calculated correctly)
+            // Calculate deduction amount based on the specific step's basic salary
+            if ($deduction->amount_type === 'percentage') {
+                // For percentage-based deductions, calculate amount based on step's basic salary
+                $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
+                if ($step && $step->basic_salary) {
+                    $deductionAmount = ($deduction->amount / 100) * $step->basic_salary;
+                    
+                    // For suspended employees, halve the percentage-based deduction
+                    if ($isSuspended) {
+                        $deductionAmount = $deductionAmount / 2;
+                    }
+                } else {
+                    $deductionAmount = 0; // If no step or basic salary, set amount to 0
+                }
+            } else {
+                // For fixed amount deductions, use the stored amount
+                $deductionAmount = $deduction->amount;
+            }
+            
             $totalDeductions += $deductionAmount;
             $deductionRecords[] = [
                 'type' => 'deduction',
@@ -109,10 +126,28 @@ class PayrollCalculationService
             ->where('start_date', '<=', $payrollDate)
             ->where(function ($query) use ($payrollDate) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
-            })->get();
+            })->with('additionType')->get();
 
         foreach ($employeeAdditions as $addition) {
-            $additionAmount = $addition->amount; // Use the calculated amount from the model
+            // Calculate addition amount based on the specific step's basic salary
+            if ($addition->amount_type === 'percentage') {
+                // For percentage-based additions, calculate amount based on step's basic salary
+                $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
+                if ($step && $step->basic_salary) {
+                    $additionAmount = ($addition->amount / 100) * $step->basic_salary;
+                    
+                    // For suspended employees, halve the percentage-based addition
+                    if ($isSuspended) {
+                        $additionAmount = $additionAmount / 2;
+                    }
+                } else {
+                    $additionAmount = 0; // If no step or basic salary, set amount to 0
+                }
+            } else {
+                // For fixed amount additions, use the stored amount
+                $additionAmount = $addition->amount;
+            }
+            
             $totalAdditions += $additionAmount;
             $additionRecords[] = [
                 'type' => 'addition',

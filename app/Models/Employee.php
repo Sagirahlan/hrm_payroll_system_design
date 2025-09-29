@@ -10,7 +10,7 @@ class Employee extends Model
     protected $primaryKey = 'employee_id';
     protected $fillable = [
         'first_name', 'surname', 'middle_name', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'ward_id',
-        'nationality', 'nin', 'mobile_no', 'email', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
+        'nationality', 'nin', 'mobile_no', 'email', 'pay_point', 'address', 'date_of_first_appointment', 'cadre_id', 'reg_no',
         'grade_level_id', 'step_id', 'rank_id', 'department_id', 'expected_next_promotion',
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
         'photo_path', 'years_of_service', 'contract_start_date', 'contract_end_date', 'amount',

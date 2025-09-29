@@ -130,26 +130,35 @@
                             <a href="{{ route('payroll.deductions') }}" class="btn btn-outline-danger" title="Clear Search">Clear</a>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="department_filter" class="form-label">Department</label>
-                                <select name="department_id" id="department_filter" class="form-select">
-                                    <option value="">All Departments</option>
-                                    @foreach($departments as $dept)
-                                        <option value="{{ $dept->department_id }}" {{ request('department_id') == $dept->department_id ? 'selected' : '' }}>{{ $dept->department_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="grade_level_filter" class="form-label">Grade Level</label>
-                                <select name="grade_level_id" id="grade_level_filter" class="form-select">
-                                    <option value="">All Grade Levels</option>
-                                    @foreach($gradeLevels as $level)
-                                        <option value="{{ $level->id }}" {{ request('grade_level_id') == $level->id ? 'selected' : '' }}>{{ $level->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="department_filter" class="form-label">Department</label>
+        <select name="department_id" id="department_filter" class="form-select">
+            <option value="">All Departments</option>
+            @foreach($departments as $department)
+                <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>{{ $department->department_name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="grade_level_filter" class="form-label">Grade Level</label>
+        <select name="grade_level_id" id="grade_level_filter" class="form-select">
+            <option value="">All Grade Levels</option>
+            @foreach($gradeLevels as $gradeLevel)
+                <option value="{{ $gradeLevel->id }}" {{ request('grade_level_id') == $gradeLevel->id ? 'selected' : '' }}>{{ $gradeLevel->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+        <select name="appointment_type_id" id="appointment_type_filter" class="form-select">
+            <option value="">All Types</option>
+            @foreach($appointmentTypes as $type)
+                <option value="{{ $type->id }}" {{ request('appointment_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
                         
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">Apply Filters</button>

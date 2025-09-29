@@ -126,7 +126,7 @@
                         </div>
                         
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="department_filter" class="form-label">Department</label>
                                 <select name="department_id" id="department_filter" class="form-select">
                                     <option value="">All Departments</option>
@@ -135,12 +135,21 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="grade_level_filter" class="form-label">Grade Level</label>
                                 <select name="grade_level_id" id="grade_level_filter" class="form-select">
                                     <option value="">All Grade Levels</option>
                                     @foreach($gradeLevels as $level)
                                         <option value="{{ $level->id }}" {{ request('grade_level_id') == $level->id ? 'selected' : '' }}>{{ $level->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                                <select name="appointment_type_id" id="appointment_type_filter" class="form-select">
+                                    <option value="">All Types</option>
+                                    @foreach($appointmentTypes as $type)
+                                        <option value="{{ $type->id }}" {{ request('appointment_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
                                     @endforeach
                                 </select>
                             </div>

@@ -305,6 +305,7 @@
                             <th>Name</th>
                             <th>Department</th>
                             <th>Cadre</th>
+                            <th>Pay Point</th>
                             <th>Appointment Type</th>
                             <th>Status</th>
                             <th>Contact</th>
@@ -341,6 +342,7 @@
                                 </td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $employee->cadre->name ?? 'N/A' }}</td>
+                                <td>{{ $employee->pay_point ?? 'N/A' }}</td>
                                 <td>{{ $employee->appointmentType->name ?? 'N/A' }}</td>
                                 <td>
                                     <span class="badge {{ 
@@ -394,7 +396,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="11" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="fas fa-users fa-3x mb-3"></i>
                                         <h5>No employees found</h5>
