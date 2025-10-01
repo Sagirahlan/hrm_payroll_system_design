@@ -4,6 +4,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\GradeLevel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\PromotionHistory;
 
 class Employee extends Model
 {
@@ -150,10 +152,35 @@ public function getCalculatedRetirementDateAttribute()
     return $retirementDateByAge->min($retirementDateByService);
 }
 
-
-
-
-
-
-
+    public function promotionHistory()
+    {
+        return $this->hasMany(PromotionHistory::class, 'employee_id', 'employee_id');
+    }
+    
+    public function getLastPromotionAttribute()
+    {
+        return $this->promotionHistory()->latest('created_at')->first();
+    }
+    
+    /**
+     * Get formatted employee details for API responses
+     */
+    public function getFormattedDetailsAttribute()
+    {
+        return [
+            'employee_id' => $this->employee_id,
+            'first_name' => $this->first_name,
+            'middle_name' => $this->middle_name,
+            'surname' => $this->surname,
+            'full_name' => trim($this->first_name . ' ' . $this->middle_name . ' ' . $this->surname),
+            'department' => $this->department,
+            'gradeLevel' => $this->gradeLevel,
+            'step' => $this->step,
+            'appointmentType' => $this->appointmentType,
+            'status' => $this->status,
+            'last_promotion_date' => $this->getLastPromotionAttribute() ? $this->getLastPromotionAttribute()->promotion_date : null,
+            'date_of_first_appointment' => $this->date_of_first_appointment,
+            'years_of_service' => $this->getYearsOfServiceAttribute(),
+        ];
+    }
 }

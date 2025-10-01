@@ -378,7 +378,6 @@ class RetirementController extends Controller
             return 0;
         }
 
-        // Use gross_salary if available, otherwise fallback to basic_salary
         $salary = $lastPayroll->basic_salary ?? 0;
 
         // Gratuity formula: 10% of last salary per year of service

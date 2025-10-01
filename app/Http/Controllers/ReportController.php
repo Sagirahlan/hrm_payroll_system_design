@@ -133,7 +133,8 @@ class ReportController extends Controller
             'disciplinaryRecords',
             'payrollRecords',
             'deductions',
-            'additions'
+            'additions',
+            'promotionHistory'
         ])->findOrFail($request->employee_id);
 
         // Generate report data
@@ -902,6 +903,11 @@ class ReportController extends Controller
 
     private function generatePDF($report, $employee, $reportData)
     {
+        // Ensure reportData is properly formatted
+        if (is_string($reportData)) {
+            $reportData = json_decode($reportData, true);
+        }
+        
         $pdf = PDF::loadView('reports.pdf.employee-report', [
             'employee' => $employee,
             'data' => $reportData,

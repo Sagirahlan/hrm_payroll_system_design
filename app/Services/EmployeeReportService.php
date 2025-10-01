@@ -18,12 +18,13 @@ class EmployeeReportService
         switch ($reportType) {
             case 'comprehensive':
                 return array_merge($baseData, [
-                    'disciplinary_actions' => $this->getDisciplinaryData($employee),
+                    'disciplinary_records' => $this->getDisciplinaryData($employee),
                     'payroll_records' => $this->getPayrollData($employee),
                     'deductions' => $this->getDeductionsData($employee),
                     'additions' => $this->getAdditionsData($employee),
                     'retirement_info' => $this->getRetirementInfo($employee),
-                    'statistics' => $this->getStatistics($employee)
+                    'statistics' => $this->getStatistics($employee),
+                    'promotion_data' => $this->getPromotionData($employee)
                 ]);
 
             case 'disciplinary':
@@ -161,10 +162,13 @@ class EmployeeReportService
             ->map(function ($promotion) {
                 return [
                     'promotion_date' => $promotion->promotion_date,
-                    'from_grade' => $promotion->from_grade,
-                    'to_grade' => $promotion->to_grade,
+                    'promotion_type' => $promotion->promotion_type,
+                    'from_grade' => $promotion->previous_grade_level,
+                    'to_grade' => $promotion->new_grade_level,
                     'effective_date' => $promotion->effective_date,
-                    'approving_authority' => $promotion->approving_authority
+                    'approving_authority' => $promotion->approving_authority,
+                    'reason' => $promotion->reason,
+                    'status' => $promotion->status
                 ];
             })->toArray();
     }
@@ -200,7 +204,7 @@ class EmployeeReportService
             ->sum('amount');
 
         $lifetimeEarnings = $employee->payrollRecords()
-            ->sum('gross_salary');
+            ->sum('net_salary');
 
         return [
             'total_service_years' => $employee->service_years,

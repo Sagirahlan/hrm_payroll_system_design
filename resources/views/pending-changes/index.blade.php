@@ -4,10 +4,11 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
+            <!-- Pending Employee Data Changes Table -->
             <div class="card mb-4">
                 <div class="card-header pb-0">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">Pending Employee Changes</h6>
+                        <h6 class="mb-0">Pending Employee Data Changes</h6>
                     </div>
                 </div>
                 <div class="card-body px-0 pt-0 pb-2">
@@ -103,7 +104,7 @@
                                 @empty
                                 <tr>
                                     <td colspan="7" class="text-center">
-                                        <p class="text-sm text-muted text-black">No pending changes found.</p>
+                                        <p class="text-sm text-muted text-black">No pending employee data changes found.</p>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -116,6 +117,99 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pending Promotions/Demotions Table -->
+            @if($pendingPromotions && $pendingPromotions->count() > 0)
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Pending Promotions/Demotions</h6>
+                    </div>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Employee</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Change Type</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Details</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Requested By</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Requested At</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-black">Status</th>
+                                    <th class="text-secondary opacity-7 text-black">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($pendingPromotions as $promotion)
+                                <tr>
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm text-black">
+                                                    {{ $promotion->employee->first_name }} {{ $promotion->employee->surname }}
+                                                </h6>
+                                                <p class="text-xs text-secondary mb-0 text-black">
+                                                    {{ $promotion->employee->employee_id }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ $promotion->promotion_type == 'promotion' ? 'success' : 'danger' }} text-black">
+                                            {{ ucfirst($promotion->promotion_type) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 text-black">
+                                            Grade: {{ $promotion->previous_grade_level }} → {{ $promotion->new_grade_level }}
+                                        </p>
+                                        <p class="text-xs text-secondary mb-0 text-black">
+                                            Reason: {{ $promotion->reason }}
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 text-black">
+                                            @if($promotion->creator)
+                                                {{ $promotion->creator->username }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 text-black">{{ $promotion->created_at->format('M d, Y H:i') }}</p>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-secondary text-black">
+                                            {{ ucfirst($promotion->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a href="{{ route('promotions.show', $promotion->id) }}" class="text-secondary font-weight-bold text-xs text-black me-2" data-toggle="tooltip" data-original-title="View">
+                                            View
+                                        </a>
+                                        <div class="btn-group btn-group-xs">
+                                            <form action="{{ route('promotions.approve', $promotion) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('POST')
+                                                <button type="submit" class="btn btn-xs btn-success" onclick="return confirm('Are you sure you want to approve this promotion/demotion?')">Approve</button>
+                                            </form>
+                                            <form action="{{ route('promotions.reject', $promotion) }}" method="POST" class="d-inline ms-1">
+                                                @csrf
+                                                @method('POST')
+                                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure you want to reject this promotion/demotion?')">Reject</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>

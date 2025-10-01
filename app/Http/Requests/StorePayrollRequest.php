@@ -17,7 +17,6 @@ class StorePayrollRequest extends FormRequest
             'employee_id' => 'required|exists:employees,id',
             'payroll_date' => 'required|date',
             'basic_salary' => 'required|numeric',
-            'gross_salary' => 'required|numeric',
             'net_salary' => 'required|numeric',
             'status' => 'required|in:Pending,Approved,Paid',
             'deductions.*.description' => 'required|string|max:255',

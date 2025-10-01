@@ -64,6 +64,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/employees/wards-by-lga', [EmployeeController::class, 'getWardsByLga'])->name('employees.wards-by-lga');
     Route::get('/employees/ranks-by-grade-level', [EmployeeController::class, 'getRanksByGradeLevel'])->name('employees.ranks-by-grade-level');
     
+    // AJAX route for getting all salary scales
+    Route::get('/api/salary-scales', function () {
+        $salaryScales = \App\Models\SalaryScale::select('id', 'acronym', 'full_name')->get();
+        return response()->json($salaryScales);
+    })->name('salary-scales.all.ajax');
+    
+    // AJAX route for getting a single salary scale by ID
+    Route::get('/api/salary-scales/{salaryScaleId}', function ($salaryScaleId) {
+        $salaryScale = \App\Models\SalaryScale::select('id', 'acronym', 'full_name')->find($salaryScaleId);
+        return response()->json($salaryScale);
+    })->name('salary-scales.single.ajax');
+    
     // AJAX route for salary scale grade levels
     Route::get('/api/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
         $gradeLevels = \App\Models\GradeLevel::where('salary_scale_id', $salaryScaleId)->get();
@@ -71,6 +83,12 @@ Route::middleware(['auth'])->group(function () {
     })->name('salary-scales.grade-levels.ajax');
 
     Route::get('/api/salary-scales/{salaryScaleId}/grade-levels/{gradeLevelName}/steps', [\App\Http\Controllers\SalaryScaleController::class, 'getStepsForGradeLevel'])->name('salary-scales.grade-levels.steps.ajax');
+    
+    // AJAX route for getting grade levels with their steps
+    Route::get('/api/grade-levels/with-steps', function () {
+        $gradeLevels = \App\Models\GradeLevel::with('steps')->get();
+        return response()->json($gradeLevels);
+    })->name('grade-levels.with-steps.ajax');
 
     Route::get('/salary-scales/{salaryScaleId}/retirement-info', function ($salaryScaleId) {
         $salaryScale = \App\Models\SalaryScale::find($salaryScaleId);
@@ -246,6 +264,13 @@ Route::middleware(['auth'])->group(function () {
                 Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
                 Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
             });
+            
+            // Promotion and Demotion Management
+            Route::resource('promotions', \App\Http\Controllers\PromotionController::class)->except(['edit', 'update']);
+            Route::get('/promotions/employees/search', [\App\Http\Controllers\PromotionController::class, 'searchEmployees'])->name('promotions.employees.search');
+            Route::get('/employees/{employeeId}', [\App\Http\Controllers\PromotionController::class, 'getEmployeeDetails'])->name('employees.details');
+            Route::post('/promotions/{promotion}/approve', [\App\Http\Controllers\PromotionController::class, 'approve'])->name('promotions.approve');
+            Route::post('/promotions/{promotion}/reject', [\App\Http\Controllers\PromotionController::class, 'reject'])->name('promotions.reject');
         });
 
     // Pending Employee Changes - Admin only

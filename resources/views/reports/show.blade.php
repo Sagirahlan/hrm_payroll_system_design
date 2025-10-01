@@ -138,7 +138,7 @@
                                                     @foreach($report->report_data['payroll_info'] as $key => $value)
                                                         <div class="col-md-6 mb-2">
                                                             <strong>{{ ucwords(str_replace('_', ' ', $key)) }}:</strong>
-                                                            @if(in_array($key, ['basic_salary', 'gross_salary', 'net_salary']))
+                                                            @if(in_array($key, ['basic_salary', 'net_salary']))
                                                                 ₦{{ number_format($value, 2) }}
                                                             @else
                                                                 {{ $value ?? 'N/A' }}

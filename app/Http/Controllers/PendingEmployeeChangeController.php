@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PendingEmployeeChange;
+use App\Models\PromotionHistory;
 use App\Models\Employee;
 use App\Models\NextOfKin;
 use App\Models\Bank;
@@ -87,7 +88,13 @@ class PendingEmployeeChangeController extends Controller
         
         $pendingChanges = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->except('page'));
         
-        return view('pending-changes.index', compact('pendingChanges'));
+        // Also get pending promotions/demotions
+        $pendingPromotions = PromotionHistory::with(['employee', 'creator'])
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('pending-changes.index', compact('pendingChanges', 'pendingPromotions'));
     }
     
     public function show(PendingEmployeeChange $pendingChange)

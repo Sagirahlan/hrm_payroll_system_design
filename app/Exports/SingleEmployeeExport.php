@@ -22,7 +22,7 @@ class SingleEmployeeExport implements FromCollection, WithHeadings
             ->firstOrFail();
 
         $lastPayroll = $employee->payrollRecords->sortByDesc('created_at')->first();
-        $salary = $lastPayroll?->gross_salary ?? 0;
+        $salary = $lastPayroll?->net_salary ?? 0;
         $years = now()->diffInYears($employee->date_of_first_appointment);
         $gratuity = $salary * 0.1 * $years;
 

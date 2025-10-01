@@ -160,14 +160,21 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_deduction_types',
             'delete_deduction_types',
             'manage_deduction_types',
-            
+
             // Payment Management
             'view_payments',
             'create_payments',
             'edit_payments',
             'delete_payments',
             'manage_payments',
-            
+
+            // Promotion Management
+            'view_promotions',
+            'create_promotions',
+            'edit_promotions',
+            'delete_promotions',
+            'manage_promotions',
+
             // Profile Management
             'view_profile',
             'edit_profile',

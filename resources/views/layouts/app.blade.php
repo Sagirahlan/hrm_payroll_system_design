@@ -360,14 +360,15 @@
 
             @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_employees') || auth()->user()->hasPermissionTo('view_employees')))
             <li>
-                <a class="nav-link dropdown-toggle {{ request()->routeIs('employees.*', 'pending-changes.*') ? 'active' : '' }}" href="#employeesSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('employees.*', 'pending-changes.*') ? 'true' : 'false' }}">
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'active' : '' }}" href="#employeesSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'true' : 'false' }}">
                     <i class="fas fa-users"></i> Employees
                 </a>
-                <div class="collapse {{ request()->routeIs('employees.*', 'pending-changes.*') ? 'show' : '' }}" id="employeesSubmenu">
+                <div class="collapse {{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'show' : '' }}" id="employeesSubmenu">
                     <ul class="nav flex-column ms-1">
                         <li><a class="nav-link {{ request()->routeIs('employees.index') ? 'active' : '' }}" href="{{ route('employees.index') }}">Employee List</a></li>
                         @can('manage_employees')
                         <li><a class="nav-link {{ request()->routeIs('employees.create') ? 'active' : '' }}" href="{{ route('employees.create') }}">Add Employee</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions/Demotions</a></li>
                         <li><a class="nav-link {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}">Pending Changes</a></li>
                         @endcan
                     </ul>
