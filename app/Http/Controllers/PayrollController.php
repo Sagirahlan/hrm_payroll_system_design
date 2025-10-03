@@ -740,7 +740,7 @@ class PayrollController extends Controller
         
         $additionsData = $additions->map(function ($addition) {
             return [
-                'type' => $addition->addition_type,
+                'type' => $addition->additionType ? $addition->additionType->name : $addition->addition_type,
                 'amount' => $addition->amount,
                 'formatted_amount' => $addition->formatted_amount,
                 'calculation_type' => $addition->calculation_type_description,
@@ -1026,6 +1026,11 @@ class PayrollController extends Controller
             if ($request->filled('grade_level_id')) {
                 $employeesQuery->where('grade_level_id', $request->grade_level_id);
             }
+            
+            // Always apply appointment type filter, defaulting to 1 (Permanent) if not specified
+            $appointmentTypeId = $request->input('appointment_type_id', 1);
+            $employeesQuery->where('appointment_type_id', $appointmentTypeId);
+            
             $employees = $employeesQuery->get();
         } else {
             $employees = Employee::whereIn('employee_id', $request->employee_ids)->with('gradeLevel', 'step')->get();

@@ -49,6 +49,8 @@ class PayrollCalculationService
         }
         
         $payrollDate = Carbon::parse($month . '-01');
+        $payrollStart = Carbon::parse($month . '-01');
+        $payrollEnd = Carbon::parse($month . '-01')->endOfMonth();
 
         $totalDeductions = 0;
         $totalAdditions = 0;
@@ -87,9 +89,9 @@ class PayrollCalculationService
 
         // Employee-specific deductions
         $employeeDeductions = Deduction::where('employee_id', $employee->employee_id)
-            ->where('start_date', '<=', $payrollDate)
-            ->where(function ($query) use ($payrollDate) {
-                $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
+            ->where('start_date', '<=', $payrollEnd)
+            ->where(function ($query) use ($payrollStart) {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollStart);
             })->with('deductionType')->get();
 
         foreach ($employeeDeductions as $deduction) {
@@ -123,38 +125,65 @@ class PayrollCalculationService
 
         // Employee-specific additions
         $employeeAdditions = Addition::where('employee_id', $employee->employee_id)
-            ->where('start_date', '<=', $payrollDate)
-            ->where(function ($query) use ($payrollDate) {
-                $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollDate);
+            ->where('start_date', '<=', $payrollEnd)
+            ->where(function ($query) use ($payrollStart) {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollStart);
             })->with('additionType')->get();
 
         foreach ($employeeAdditions as $addition) {
-            // Calculate addition amount based on the specific step's basic salary
-            if ($addition->amount_type === 'percentage') {
-                // For percentage-based additions, calculate amount based on step's basic salary
-                $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
-                if ($step && $step->basic_salary) {
-                    $additionAmount = ($addition->amount / 100) * $step->basic_salary;
-                    
-                    // For suspended employees, halve the percentage-based addition
-                    if ($isSuspended) {
-                        $additionAmount = $additionAmount / 2;
-                    }
-                } else {
-                    $additionAmount = 0; // If no step or basic salary, set amount to 0
-                }
-            } else {
-                // For fixed amount additions, use the stored amount
-                $additionAmount = $addition->amount;
+            // Check if this addition should be applied for the current payroll month based on period
+            $shouldApply = false;
+            
+            switch ($addition->addition_period) {
+                case 'Monthly':
+                    // Monthly additions apply every month within the date range
+                    $shouldApply = true;
+                    break;
+                case 'OneTime':
+                    // OneTime additions should only apply in the month that includes the start_date
+                    $additionStartDate = Carbon::parse($addition->start_date);
+                    // Check if the addition's start date falls within the payroll month
+                    $shouldApply = (
+                        $additionStartDate->format('Y-m') === $payrollStart->format('Y-m')
+                    );
+                    break;
+                case 'Perpetual':
+                    // Perpetual additions apply every month while within date range
+                    $shouldApply = true;
+                    break;
+                default:
+                    $shouldApply = false;
+                    break;
             }
             
-            $totalAdditions += $additionAmount;
-            $additionRecords[] = [
-                'type' => 'addition',
-                'name_type' => $addition->addition_type,
-                'amount' => $additionAmount,
-                'frequency' => $addition->addition_period,
-            ];
+            if ($shouldApply) {
+                // Calculate addition amount based on the specific step's basic salary
+                if ($addition->amount_type === 'percentage') {
+                    // For percentage-based additions, calculate amount based on step's basic salary
+                    $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
+                    if ($step && $step->basic_salary) {
+                        $additionAmount = ($addition->amount / 100) * $step->basic_salary;
+                        
+                        // For suspended employees, halve the percentage-based addition
+                        if ($isSuspended) {
+                            $additionAmount = $additionAmount / 2;
+                        }
+                    } else {
+                        $additionAmount = 0; // If no step or basic salary, set amount to 0
+                    }
+                } else {
+                    // For fixed amount additions, use the stored amount
+                    $additionAmount = $addition->amount;
+                }
+                
+                $totalAdditions += $additionAmount;
+                $additionRecords[] = [
+                    'type' => 'addition',
+                    'name_type' => $addition->additionType ? $addition->additionType->name : $addition->addition_type,
+                    'amount' => $additionAmount,
+                    'frequency' => $addition->addition_period,
+                ];
+            }
         }
 
         // Calculate net salary: same formula for both active and suspended

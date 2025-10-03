@@ -8,14 +8,13 @@ class Addition extends Model
     protected $table = 'additions';
     protected $primaryKey = 'addition_id';
     protected $fillable = [
-        'addition_type',
+        'addition_type_id',
         'amount',
         'amount_type',
         'addition_period',
         'start_date',
         'end_date',
         'employee_id',
-        'addition_type_id',
     ];
 
     public function employee()

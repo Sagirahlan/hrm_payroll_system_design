@@ -34,10 +34,11 @@ class AdditionsExport implements FromCollection, WithHeadings, WithMapping, With
         $types = collect();
         
         foreach ($payrollRecords as $payroll) {
-            $employeeAdditions = Addition::where('employee_id', $payroll->employee_id)->get();
+            $employeeAdditions = Addition::with('additionType')->where('employee_id', $payroll->employee_id)->get();
             foreach ($employeeAdditions as $addition) {
-                if (!$types->contains($addition->addition_type)) {
-                    $types->push($addition->addition_type);
+                $typeName = $addition->additionType ? $addition->additionType->name : $addition->addition_type;
+                if (!$types->contains($typeName)) {
+                    $types->push($typeName);
                 }
             }
         }
@@ -51,10 +52,15 @@ class AdditionsExport implements FromCollection, WithHeadings, WithMapping, With
         $exportData = collect();
         
         foreach ($payrollRecords as $index => $payroll) {
-            // Get all additions for this employee
-            $employeeAdditions = Addition::where('employee_id', $payroll->employee_id)
-                ->get()
-                ->keyBy('addition_type');
+            // Get all additions for this employee with their addition types
+            $employeeAdditions = Addition::with('additionType')->where('employee_id', $payroll->employee_id)->get();
+            
+            // Map additions by type name for lookup
+            $additionsByType = [];
+            foreach ($employeeAdditions as $addition) {
+                $typeName = $addition->additionType ? $addition->additionType->name : $addition->addition_type;
+                $additionsByType[$typeName] = $addition;
+            }
             
             $rowData = [
                 'sn' => $index + 1,
@@ -65,14 +71,16 @@ class AdditionsExport implements FromCollection, WithHeadings, WithMapping, With
             
             // Add addition amounts for each type
             foreach ($this->additionTypes as $type) {
+                $addition = $additionsByType[$type] ?? null;
                 $rowData['addition_' . str_replace(' ', '_', strtolower($type))] = 
-                    $employeeAdditions->has($type) ? $employeeAdditions[$type]->amount : 0;
+                    $addition ? $addition->amount : 0;
             }
             
             // Calculate total additions
             $totalAdditions = 0;
             foreach ($this->additionTypes as $type) {
-                $totalAdditions += $employeeAdditions->has($type) ? $employeeAdditions[$type]->amount : 0;
+                $addition = $additionsByType[$type] ?? null;
+                $totalAdditions += $addition ? $addition->amount : 0;
             }
             $rowData['total_additions'] = $totalAdditions;
             

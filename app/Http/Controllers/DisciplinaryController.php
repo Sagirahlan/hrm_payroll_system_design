@@ -82,7 +82,11 @@ class DisciplinaryController extends Controller
 
     public function create(Request $request)
     {
-        $query = Employee::with('department')->where('status', 'Active');
+        $query = Employee::with('department')
+            ->where('status', 'Active')
+            ->whereHas('appointmentType', function ($q) {
+                $q->where('name', 'Permanent');
+            });
         
         // Search functionality
         if ($request->filled('search')) {
