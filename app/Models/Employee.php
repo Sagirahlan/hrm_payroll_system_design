@@ -118,6 +118,19 @@ public function additions()
     return $this->hasMany(Addition::class, 'employee_id', 'employee_id');
 }
 
+public function loans()
+{
+    return $this->hasMany(Loan::class, 'employee_id', 'employee_id');
+}
+
+public function hasActiveLoanForAdditionType($additionTypeName)
+{
+    return $this->loans()
+        ->where('loan_type', $additionTypeName)
+        ->where('status', 'active')
+        ->exists();
+}
+
 public function getYearsOfServiceAttribute(): ?int
 {
     if (!$this->date_of_first_appointment) {

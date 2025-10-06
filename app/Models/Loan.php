@@ -111,4 +111,12 @@ class Loan extends Model
         }
         return 0;
     }
+    
+    /**
+     * Scope to get active loans for a specific type
+     */
+    public function scopeForType($query, $loanType)
+    {
+        return $query->where('loan_type', $loanType);
+    }
 }

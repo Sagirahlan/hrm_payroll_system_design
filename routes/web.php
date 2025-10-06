@@ -254,6 +254,7 @@ Route::middleware(['auth'])->group(function () {
             // Loans Management
             Route::resource('loans', \App\Http\Controllers\LoanController::class)->except(['edit', 'update']);
             Route::get('/loans/employees/{employee}/additions', [LoanController::class, 'getAdditionsForEmployee'])->name('loans.employee.additions');
+            Route::get('/loans/employees/{employee}/salary', [LoanController::class, 'getEmployeeSalary'])->name('loans.employee.salary');
 
             // Grade Level Adjustments
             Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
