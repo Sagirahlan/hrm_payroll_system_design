@@ -21,6 +21,7 @@ use App\Http\Controllers\GradeLevelController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PendingEmployeeChangeController;
+use App\Http\Controllers\LoanController;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
@@ -249,6 +250,10 @@ Route::middleware(['auth'])->group(function () {
 
             // Addition Types
             Route::resource('addition-types', \App\Http\Controllers\AdditionTypeController::class);
+
+            // Loans Management
+            Route::resource('loans', \App\Http\Controllers\LoanController::class)->except(['edit', 'update']);
+            Route::get('/loans/employees/{employee}/additions', [LoanController::class, 'getAdditionsForEmployee'])->name('loans.employee.additions');
 
             // Grade Level Adjustments
             Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');

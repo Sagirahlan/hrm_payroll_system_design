@@ -468,15 +468,16 @@
 
             @can('manage_payroll')
             <li>
-                <a class="nav-link dropdown-toggle {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'active' : '' }}" href="#payrollSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'true' : 'false' }}">
+                <a class="nav-link dropdown-toggle {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'active' : '' }}" href="#payrollSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'true' : 'false' }}">
                     <i class="fas fa-money-check-alt"></i> Payroll
                 </a>
-                <div class="collapse {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'show' : '' }}" id="payrollSubmenu">
+                <div class="collapse {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'show' : '' }}" id="payrollSubmenu">
                     <ul class="nav flex-column ms-1">
                         <li><a class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}" href="{{ route('payroll.index') }}">Process Payroll</a></li>
                         <li><a class="nav-link {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}">Bulk Additions</a></li>
                         <li><a class="nav-link {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}">Bulk Deductions</a></li>
                         <li><a class="nav-link {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}">Employee Adjustments</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}" href="{{ route('loans.index') }}">Loans Deduction</a></li>
                         <li><a class="nav-link {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}">Addition Types</a></li>
                         <li><a class="nav-link {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}">Deduction Types</a></li>
                         <li><a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">Salary Scales</a></li>

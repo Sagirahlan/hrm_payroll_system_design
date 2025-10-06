@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\Deduction;
 use App\Models\Addition;
+use App\Models\Loan;
+use App\Models\LoanDeduction;
 use Carbon\Carbon;
 
 class PayrollCalculationService
@@ -87,37 +89,98 @@ class PayrollCalculationService
             }
         }
 
-        // Employee-specific deductions
+        // Handle Loan Deductions
+        $activeLoans = Loan::where('employee_id', $employee->employee_id)
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($activeLoans as $loan) {
+            // Check if loan deduction has already been processed for this payroll month
+            $existingDeduction = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)
+                ->where('payroll_month', $month)
+                ->first();
+
+            if ($existingDeduction) {
+                // This loan deduction has already been processed for this month, skip it
+                continue;
+            }
+
+            if ($loan->remaining_balance > 0) {
+                // Calculate deduction amount based on monthly deduction amount if set, otherwise calculate from percentage
+                $deductionAmount = $loan->monthly_deduction > 0 ? $loan->monthly_deduction : ($loan->monthly_percentage / 100) * $basicSalary;
+                
+                // Ensure deduction doesn't exceed remaining balance
+                $deductionAmount = min($deductionAmount, $loan->remaining_balance);
+
+                if ($isSuspended) {
+                    $deductionAmount /= 2;
+                }
+
+                $totalDeductions += $deductionAmount;
+                $deductionRecords[] = [
+                    'type' => 'deduction',
+                    'name_type' => $loan->loan_type,
+                    'amount' => $deductionAmount,
+                    'frequency' => 'Monthly',
+                ];
+
+                // Update loan details
+                $loan->total_repaid += $deductionAmount;
+                $loan->remaining_balance -= $deductionAmount;
+                $loan->remaining_months = $loan->calculateRemainingMonths();
+
+                // Update months completed
+                $monthsCompleted = $loan->total_months - $loan->remaining_months;
+                
+                if ($loan->remaining_balance <= 0) {
+                    $loan->status = 'completed';
+                    $loan->end_date = Carbon::now();
+                }
+                
+                $loan->save();
+
+                // Create loan deduction record to track this deduction
+                \App\Models\LoanDeduction::create([
+                    'loan_id' => $loan->loan_id,
+                    'employee_id' => $employee->employee_id,
+                    'amount_deducted' => $deductionAmount,
+                    'remaining_balance' => $loan->remaining_balance,
+                    'month_number' => $monthsCompleted,
+                    'payroll_month' => $month,
+                    'deduction_date' => Carbon::now(),
+                    'status' => 'completed',
+                ]);
+            }
+        }
+
+        // Employee-specific deductions (non-loan)
         $employeeDeductions = Deduction::where('employee_id', $employee->employee_id)
             ->where('start_date', '<=', $payrollEnd)
             ->where(function ($query) use ($payrollStart) {
                 $query->whereNull('end_date')->orWhere('end_date', '>=', $payrollStart);
-            })->with('deductionType')->get();
+            })
+            ->whereNull('loan_id') // Exclude loan-related deductions
+            ->with('deductionType')
+            ->get();
 
         foreach ($employeeDeductions as $deduction) {
-            // Calculate deduction amount based on the specific step's basic salary
+            $deductionAmount = 0;
             if ($deduction->amount_type === 'percentage') {
-                // For percentage-based deductions, calculate amount based on step's basic salary
                 $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
                 if ($step && $step->basic_salary) {
                     $deductionAmount = ($deduction->amount / 100) * $step->basic_salary;
-                    
-                    // For suspended employees, halve the percentage-based deduction
                     if ($isSuspended) {
-                        $deductionAmount = $deductionAmount / 2;
+                        $deductionAmount /= 2;
                     }
-                } else {
-                    $deductionAmount = 0; // If no step or basic salary, set amount to 0
                 }
             } else {
-                // For fixed amount deductions, use the stored amount
                 $deductionAmount = $deduction->amount;
             }
             
             $totalDeductions += $deductionAmount;
             $deductionRecords[] = [
                 'type' => 'deduction',
-                'name_type' => $deduction->deduction_type,
+                'name_type' => $deduction->deductionType ? $deduction->deductionType->name : $deduction->deduction_type,
                 'amount' => $deductionAmount,
                 'frequency' => $deduction->deduction_period,
             ];
@@ -141,10 +204,12 @@ class PayrollCalculationService
                     break;
                 case 'OneTime':
                     // OneTime additions should only apply in the month that includes the start_date
-                    $additionStartDate = Carbon::parse($addition->start_date);
-                    // Check if the addition's start date falls within the payroll month
+                    $additionStartDate = Carbon::parse($addition->start_date)->startOfDay();
+                    $payrollMonthStart = Carbon::parse($month . '-01')->startOfMonth();
+                    $payrollMonthEnd = Carbon::parse($month . '-01')->endOfMonth();
+                    // Check if the addition's start date falls within the payroll month range
                     $shouldApply = (
-                        $additionStartDate->format('Y-m') === $payrollStart->format('Y-m')
+                        $additionStartDate->between($payrollMonthStart, $payrollMonthEnd)
                     );
                     break;
                 case 'Perpetual':

@@ -487,14 +487,16 @@ class PayrollController extends Controller
 
     public function storeAddition(Request $request, $employeeId)
     {
-        $request->validate([
+        $rules = [
             'addition_type_id' => 'required|exists:addition_types,id',
             'amount_type' => 'required|in:fixed,percentage',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        ];
+
+        $request->validate($rules);
 
         $additionType = AdditionType::find($request->addition_type_id);
         
@@ -512,17 +514,21 @@ class PayrollController extends Controller
             
             if ($request->amount_type === 'percentage') {
                 // Check if employee has a step with basic salary for percentage calculation
-                if ($employee->step && $employee->step->basic_salary) {
-                    // Calculate addition amount based on the employee's step basic salary
-                    $basicSalary = $employee->step->basic_salary;
-                    if ($basicSalary > 0 && $request->amount > 0) {
-                        $amount = ($request->amount / 100) * $basicSalary;
-                    }
-                } else {
+                if (!$employee->step || !$employee->step->basic_salary) {
                     return redirect()->back()
-                        ->withErrors(['error' => 'Employee does not have a valid step with basic salary.'])
+                        ->withErrors(['error' => 'Employee does not have a valid step with basic salary for percentage calculation.'])
                         ->withInput();
                 }
+                // Calculate addition amount based on the employee's step basic salary
+                $basicSalary = $employee->step->basic_salary;
+                $amount = ($request->amount / 100) * $basicSalary;
+
+                if ($amount < 0.01) {
+                    return redirect()->back()
+                        ->withErrors(['error' => 'Calculated addition amount is too small or zero. Check employee\'s basic salary.'])
+                        ->withInput();
+                }
+
             } else {
                 // Fixed amount - use the provided amount directly
                 $amount = $request->amount;
@@ -684,14 +690,23 @@ class PayrollController extends Controller
         $additions = Addition::where('employee_id', $payroll->employee_id)
             ->where(function($query) use ($payroll) {
                 $payrollMonth = Carbon::parse($payroll->payroll_month);
-                $query->where('start_date', '<=', $payrollMonth)
+                $query->where('start_date', '<=', $payrollMonth->endOfMonth())
                       ->where(function($q) use ($payrollMonth) {
                           $q->whereNull('end_date')
-                            ->orWhere('end_date', '>=', $payrollMonth);
+                            ->orWhere('end_date', '>=', $payrollMonth->startOfMonth());
                       });
             })
-            ->with(['additionType', 'employee.gradeLevel.steps']) // Eager load relationships for amount calculation
-            ->get();
+            ->with(['additionType', 'employee.gradeLevel.steps'])
+            ->get()
+            ->filter(function ($addition) use ($payroll) {
+                if ($addition->addition_period === 'OneTime') {
+                    $additionStartDate = Carbon::parse($addition->start_date)->startOfDay();
+                    $payrollMonthStart = Carbon::parse($payroll->payroll_month)->startOfMonth();
+                    $payrollMonthEnd = Carbon::parse($payroll->payroll_month)->endOfMonth();
+                    return $additionStartDate->between($payrollMonthStart, $payrollMonthEnd);
+                }
+                return true;
+            });
 
         return view('payroll.show', compact('payroll', 'deductions', 'additions'));
     }

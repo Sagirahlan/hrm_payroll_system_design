@@ -356,6 +356,7 @@
                                                                                 ->orWhere('end_date', '>=', $payrollMonth);
                                                                           });
                                                                 })
+                                                                ->with('additionType')
                                                                 ->get();
                                                         }
                                                     @endphp

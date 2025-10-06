@@ -109,3 +109,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const periodSelect = document.getElementById('period');
+        const startDateInput = document.getElementById('start_date');
+
+        periodSelect.addEventListener('change', function () {
+            if (this.value === 'OneTime') {
+                const selectedDate = new Date(startDateInput.value);
+                const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                const year = firstDayOfMonth.getFullYear();
+                const month = ('0' + (firstDayOfMonth.getMonth() + 1)).slice(-2);
+                const day = ('0' + firstDayOfMonth.getDate()).slice(-2);
+                startDateInput.value = `${year}-${month}-${day}`;
+            }
+        });
+    });
+</script>
+@endpush

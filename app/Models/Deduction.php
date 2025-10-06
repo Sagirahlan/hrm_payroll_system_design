@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Models\Loan;
 
 class Deduction extends Model
 {
@@ -20,6 +21,7 @@ class Deduction extends Model
         'end_date',
         'employee_id',
         'deduction_type_id',
+        'loan_id', // Added for loan deductions
     ];
 
     public function employee()
@@ -30,6 +32,11 @@ class Deduction extends Model
     public function deductionType()
     {
         return $this->belongsTo(DeductionType::class, 'deduction_type_id');
+    }
+
+    public function loan()
+    {
+        return $this->belongsTo(Loan::class, 'loan_id');
     }
 
     // Accessor for the 'amount' attribute
