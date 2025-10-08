@@ -16,6 +16,7 @@ class Employee extends Model
         'grade_level_id', 'step_id', 'rank_id', 'department_id', 'expected_next_promotion',
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
         'photo_path', 'years_of_service', 'contract_start_date', 'contract_end_date', 'amount',
+        'rsa_balance', 'pfa_contribution_rate', 'pension_administrator', 'rsa_pin',
     ];
 
     public function setDateOfBirthAttribute($value)

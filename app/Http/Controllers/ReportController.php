@@ -762,6 +762,101 @@ class ReportController extends Controller
         return redirect()->route('reports.index')->with('success', 'Retired employees report generated successfully.');
     }
 
+    // Generate pensioners report
+    private function generatePensionersReport(Request $request)
+    {
+        // Get all pensioners with their details
+        $pensioners = \App\Models\Pensioner::with([
+            'employee.department',
+            'employee.cadre',
+            'employee.gradeLevel',
+            'employee.step',
+            'employee.bank',
+            'retirement'
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // Prepare report data
+        $reportData = [
+            'report_title' => 'Pensioners Report',
+            'generated_date' => now()->format('F j, Y'),
+            'total_pensioners' => $pensioners->count(),
+            'pensioners' => []
+        ];
+
+        // Process each pensioner
+        foreach ($pensioners as $pensioner) {
+            $employee = $pensioner->employee;
+            
+            // Handle date parsing for pension start date
+            $pensionStartDate = null;
+            if ($pensioner->pension_start_date) {
+                try {
+                    $pensionStartDate = \Carbon\Carbon::parse($pensioner->pension_start_date);
+                } catch (\Exception $e) {
+                    $pensionStartDate = null;
+                }
+            }
+            
+            // Handle date parsing for retirement date
+            $retirementDate = null;
+            if ($pensioner->retirement && $pensioner->retirement->retirement_date) {
+                try {
+                    $retirementDate = \Carbon\Carbon::parse($pensioner->retirement->retirement_date);
+                } catch (\Exception $e) {
+                    $retirementDate = null;
+                }
+            }
+
+            $pensionerData = [
+                'employee_id' => $employee->employee_id,
+                'full_name' => $employee->first_name . ' ' . ($employee->middle_name ?? '') . ' ' . $employee->surname,
+                'department' => $employee->department->department_name ?? 'N/A',
+                'cadre' => $employee->cadre->cadre_name ?? 'N/A',
+                'grade_level' => ($employee->gradeLevel->grade_level ?? 'N/A') . ' Step ' . ($employee->step->step_level ?? 'N/A'),
+                'retirement_date' => $retirementDate ? $retirementDate->format('Y-m-d') : 'N/A',
+                'pension_start_date' => $pensionStartDate ? $pensionStartDate->format('Y-m-d') : 'N/A',
+                'pension_type' => $pensioner->pension_type ?? 'N/A',
+                'pension_amount' => '₦' . number_format($pensioner->pension_amount ?? 0, 2),
+                'rsa_balance_at_retirement' => '₦' . number_format($pensioner->rsa_balance_at_retirement ?? 0, 2),
+                'lump_sum_amount' => '₦' . number_format($pensioner->lump_sum_amount ?? 0, 2),
+                'expected_lifespan_months' => $pensioner->expected_lifespan_months ?? 'N/A',
+                'status' => $pensioner->status ?? 'N/A',
+                'bank_details' => $employee->bank ? $employee->bank->bank_name . ' (' . $employee->bank->account_no . ')' : 'N/A'
+            ];
+
+            $reportData['pensioners'][] = $pensionerData;
+        }
+
+        // Create report record
+        $report = Report::create([
+            'report_type' => 'pensioners',
+            'generated_by' => Auth::id(),
+            'generated_date' => now(),
+            'report_data' => json_encode($reportData),
+            'export_format' => $request->export_format,
+            'description' => 'Pensioners Report (' . $pensioners->count() . ' pensioners)'
+        ]);
+
+        // Generate file based on format
+        if ($request->export_format === 'PDF') {
+            $this->generatePensionersPDF($report, $reportData);
+        } else {
+            $this->generatePensionersExcel($report, $reportData);
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'generated_pensioners_report',
+            'description' => "Generated pensioners report for " . $pensioners->count() . " pensioners",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Report', 'entity_id' => $report->id, 'report_type' => 'pensioners', 'pensioner_count' => $pensioners->count()]),
+        ]);
+
+        return redirect()->route('reports.index')->with('success', 'Pensioners report generated successfully.');
+    }
+
     private function generateRetiredEmployeesPDF($report, $reportData)
     {
         // Ensure reportData is an array if it's a JSON string
@@ -1012,6 +1107,103 @@ class ReportController extends Controller
         return view('reports.show', compact('report'));
     }
     
+    private function generatePensionersPDF($report, $reportData)
+    {
+        // Ensure reportData is an array if it's a JSON string
+        $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
+        
+        $pdf = PDF::loadView('reports.pdf.pensioners-report', [
+            'data' => $processedReportData,
+            'report' => $report
+        ]);
+
+        $fileName = "pensioners_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
+        $filePath = "reports/pdf/{$fileName}";
+
+        // Save PDF to storage
+        Storage::put($filePath, $pdf->output());
+
+        // Update report with file path
+        $report->update(['file_path' => $filePath]);
+    }
+
+    private function generatePensionersExcel($report, $reportData)
+    {
+        // Ensure reportData is an array if it's a JSON string
+        $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
+        
+        // Ensure processedReportData is an array
+        if (!is_array($processedReportData)) {
+            $processedReportData = [];
+        }
+        
+        $fileName = "pensioners_report_" . now()->format('Y_m_d_H_i_s') . '.csv';
+        $filePath = "reports/excel/{$fileName}";
+
+        $file = fopen('php://temp', 'w+');
+
+        // Header
+        fputcsv($file, ['Pensioners Report']);
+        fputcsv($file, ['Generated on: ' . now()->format('F j, Y')]);
+        fputcsv($file, ['Total Pensioners: ' . ($processedReportData['total_pensioners'] ?? 0)]);
+        fputcsv($file, []);
+
+        // Column headers
+        fputcsv($file, [
+            'Employee ID', 
+            'Full Name', 
+            'Department', 
+            'Cadre', 
+            'Grade Level', 
+            'Retirement Date', 
+            'Pension Start Date', 
+            'Pension Type',
+            'Pension Amount', 
+            'RSA Balance at Retirement', 
+            'Lump Sum Amount',
+            'Expected Lifespan (Months)',
+            'Status',
+            'Bank Details'
+        ]);
+
+        // Check if pensioners exist and is an array
+        $pensioners = $processedReportData['pensioners'] ?? [];
+        if (is_array($pensioners)) {
+            foreach ($pensioners as $pensioner) {
+                // Ensure pensioner is an array
+                if (!is_array($pensioner)) {
+                    $pensioner = [];
+                }
+                
+                fputcsv($file, [
+                    $pensioner['employee_id'] ?? '',
+                    $pensioner['full_name'] ?? '',
+                    $pensioner['department'] ?? '',
+                    $pensioner['cadre'] ?? '',
+                    $pensioner['grade_level'] ?? '',
+                    $pensioner['retirement_date'] ?? '',
+                    $pensioner['pension_start_date'] ?? '',
+                    $pensioner['pension_type'] ?? '',
+                    $pensioner['pension_amount'] ?? '',
+                    $pensioner['rsa_balance_at_retirement'] ?? '',
+                    $pensioner['lump_sum_amount'] ?? '',
+                    $pensioner['expected_lifespan_months'] ?? '',
+                    $pensioner['status'] ?? '',
+                    $pensioner['bank_details'] ?? ''
+                ]);
+            }
+        }
+
+        rewind($file);
+        $csvData = stream_get_contents($file);
+        fclose($file);
+
+        // Save CSV to storage
+        Storage::put($filePath, $csvData);
+
+        // Update report with file path
+        $report->update(['file_path' => $filePath]);
+    }
 
     public function download($id)
     {

@@ -85,12 +85,37 @@ class PensionerController extends Controller
             'pension_start_date' => 'required|date|after_or_equal:today',
             'pension_amount' => 'required|numeric|min:0',
             'status' => 'required|in:Active,Deceased',
+            'rsa_balance_at_retirement' => 'nullable|numeric|min:0',
+            'lump_sum_amount' => 'nullable|numeric|min:0',
+            'pension_type' => 'nullable|in:PW,Annuity',
+            'expected_lifespan_months' => 'nullable|integer|min:1',
         ]);
 
         try {
             $retirement = Retirement::where('employee_id', $validated['employee_id'])
                 ->where('status', 'approved')
                 ->firstOrFail();
+
+            // Get employee to use their RSA balance if not provided
+            $employee = Employee::find($validated['employee_id']);
+            if (!$validated['rsa_balance_at_retirement'] && $employee) {
+                $validated['rsa_balance_at_retirement'] = $employee->rsa_balance;
+            }
+            
+            // Calculate default lump sum (25% of RSA balance) if not provided
+            if (!$validated['lump_sum_amount'] && $validated['rsa_balance_at_retirement']) {
+                $validated['lump_sum_amount'] = $validated['rsa_balance_at_retirement'] * 0.25;
+            }
+            
+            // Set default pension type if not provided
+            if (empty($validated['pension_type'])) {
+                $validated['pension_type'] = 'PW'; // Default to Programmed Withdrawal
+            }
+            
+            // Set default expected lifespan if not provided (240 months = 20 years)
+            if (empty($validated['expected_lifespan_months'])) {
+                $validated['expected_lifespan_months'] = 240;
+            }
 
             $pensioner = Pensioner::create($validated);
 
@@ -133,5 +158,83 @@ class PensionerController extends Controller
             Log::error('Pensioner status update failed', ['error' => $e->getMessage()]);
             return back()->with('error', 'Failed to update pensioner status: ' . $e->getMessage());
         }
+    }
+    
+    // Method to track pension payments
+    public function trackPayment(Request $request, $pensioner_id)
+    {
+        $validated = $request->validate([
+            'payment_date' => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'payment_method' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:100',
+            'account_number' => 'nullable|string|max:50',
+            'reference' => 'nullable|string|max:100',
+            'status' => 'required|in:Pending,Paid,Failed,Cancelled',
+        ]);
+
+        try {
+            $pensioner = Pensioner::findOrFail($pensioner_id);
+
+            // Create a payroll record for this pension payment to track it
+            $payroll = PayrollRecord::create([
+                'employee_id' => $pensioner->employee_id,
+                'grade_level_id' => $pensioner->employee->gradeLevel->id ?? null,
+                'payroll_month' => Carbon::parse($validated['payment_date'])->format('Y-m-01'),
+                'basic_salary' => 0,
+                'total_additions' => 0,
+                'total_deductions' => 0,
+                'net_salary' => $validated['amount'],
+                'status' => $validated['status'],
+                'payment_date' => $validated['payment_date'],
+                'remarks' => "Pension payment - " . ($validated['payment_method'] ?? 'Direct Bank Transfer') . " - Ref: {$validated['reference']}",
+            ]);
+
+            // Create a payment transaction for this pension payment
+            \App\Models\PaymentTransaction::create([
+                'payroll_id' => $payroll->payroll_id,
+                'employee_id' => $pensioner->employee_id,
+                'amount' => $validated['amount'],
+                'payment_date' => $validated['payment_date'],
+                'bank_code' => null,
+                'account_name' => $pensioner->employee->first_name . ' ' . $pensioner->employee->surname,
+                'account_number' => $validated['account_number'] ?? ($pensioner->employee->bank->account_no ?? 'N/A'),
+                'status' => $validated['status'],
+                'reference' => $validated['reference'],
+                'method' => $validated['payment_method'] ?? 'Bank Transfer',
+            ]);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'pension_payment_tracked',
+                'description' => "Tracked pension payment for pensioner ID: {$pensioner_id}, amount: {$validated['amount']}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode([
+                    'entity_type' => 'PensionPayment',
+                    'entity_id' => $payroll->payroll_id,
+                    'pensioner_id' => $pensioner_id,
+                    'amount' => $validated['amount'],
+                    'status' => $validated['status']
+                ]),
+            ]);
+
+            return redirect()->back()->with('success', 'Pension payment tracked successfully.');
+        } catch (\Exception $e) {
+            Log::error('Pension payment tracking failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to track pension payment: ' . $e->getMessage());
+        }
+    }
+    
+    // Method to view pension payment history
+    public function paymentHistory($pensioner_id)
+    {
+        $pensioner = Pensioner::with('employee')->findOrFail($pensioner_id);
+        
+        // Get all payroll records for this pensioner (monthly pension payments)
+        $paymentHistory = PayrollRecord::where('employee_id', $pensioner->employee_id)
+            ->orderBy('payroll_month', 'desc')
+            ->paginate(20);
+        
+        return view('pensioners.payment_history', compact('pensioner', 'paymentHistory'));
     }
 }

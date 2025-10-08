@@ -7,7 +7,9 @@ use App\Models\Employee;
 use App\Models\PaymentTransaction;
 use App\Models\Deduction;
 use App\Models\Addition;
+use App\Models\Pensioner;
 use App\Services\PayrollCalculationService;
+use App\Services\PensionPayrollService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PayrollRecordsExport;
@@ -1678,6 +1680,35 @@ class PayrollController extends Controller
 
         return redirect()->back()
             ->with('success', 'Payroll record finally approved successfully.');
+    }
+
+    // Generate pension payroll for all active pensioners
+    public function generatePensionPayroll(Request $request)
+    {
+        $month = $request->input('month', now()->format('Y-m'));
+
+        try {
+            $pensionPayrollService = new PensionPayrollService();
+            $processedPensioners = $pensionPayrollService->generatePensionPayroll($month);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'generated_pension_payroll',
+                'description' => "Generated pension payroll for month: {$month} for " . count($processedPensioners) . " pensioners.",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'PensionPayroll', 'entity_id' => null, 'month' => $month, 'pensioner_count' => count($processedPensioners)]),
+            ]);
+
+            return redirect()->route('payroll.index')
+                ->with('success', 'Pension payroll generated successfully for ' . $month . ' (' . count($processedPensioners) . ' pensioners)');
+        } catch (\Exception $e) {
+            \Log::error('Error generating pension payroll: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Error generating pension payroll: ' . $e->getMessage());
+        }
     }
 
     

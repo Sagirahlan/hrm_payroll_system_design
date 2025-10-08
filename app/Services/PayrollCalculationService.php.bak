@@ -89,14 +89,29 @@ class PayrollCalculationService
             }
         }
 
-        // We will accumulate all pension-related amounts to add to RSA balance once at the end
-        $totalPensionAmount = 0;
-
-        // Process pension amounts from statutory deductions
-        foreach ($deductionRecords as $record) {
-            if (stripos($record['name_type'], 'Pension') !== false) {
-                $totalPensionAmount += $record['amount'];
-            }
+        // Handle Pension Contribution Deductions (for RSA)
+        $pensionDeductionAmount = 0;
+        $pensionDeductionType = \App\Models\DeductionType::where('name', 'like', '%Pension%')->first();
+        if ($pensionDeductionType) {
+            // Calculate pension contribution (Employee 8% + Employer 10% = 18% of emoluments)
+            // Note: This is just tracking the employee's portion (8%) for now
+            $pensionRate = 0.08; // 8% employee contribution
+            
+            // Calculate pension contribution based on basic salary + allowances (emoluments)
+            $grossEmoluments = $basicSalary + $totalAdditions;
+            $pensionDeductionAmount = $pensionRate * $grossEmoluments;
+            
+            // Add to employee's RSA balance
+            $employee->rsa_balance = ($employee->rsa_balance ?? 0) + $pensionDeductionAmount;
+            $employee->save();
+            
+            $totalDeductions += $pensionDeductionAmount;
+            $deductionRecords[] = [
+                'type' => 'deduction',
+                'name_type' => $pensionDeductionType->name,
+                'amount' => $pensionDeductionAmount,
+                'frequency' => 'Monthly',
+            ];
         }
 
         // Handle Loan Deductions
@@ -306,12 +321,6 @@ class PayrollCalculationService
                     'frequency' => $deduction->deduction_period,
                 ];
                 
-                // If this is a pension-related deduction, accumulate the amount
-                $deductionName = $deduction->deductionType ? $deduction->deductionType->name : $deduction->deduction_type;
-                if (stripos($deductionName, 'Pension') !== false) {
-                    $totalPensionAmount += $deductionAmount;
-                }
-                
                 // If this was a processed loan deduction, update the loan record and create tracking record
                 if ($processedLoanDeduction && isset($loan)) {
                     // Update loan details
@@ -358,13 +367,6 @@ class PayrollCalculationService
                     ]);
                 }
             }
-        }
-
-        // Now update the RSA balance with the total pension amount after all deductions have been processed
-        if ($totalPensionAmount > 0) {
-            $currentRsaBalance = $employee->rsa_balance ?? 0;
-            $newRsaBalance = $currentRsaBalance + $totalPensionAmount;
-            $employee->update(['rsa_balance' => $newRsaBalance]);
         }
 
         // Employee-specific additions

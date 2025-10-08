@@ -42,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reports/bulk-generate', [ReportController::class, 'bulkGenerate'])->name('reports.bulk_generate');
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
+    Route::post('/reports/generate-pensioners', [ReportController::class, 'generatePensionersReport'])->name('reports.generate_pensioners');
     
     // Profile - accessible to authenticated users based on permission
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('permission:view_profile');
@@ -164,6 +165,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:manage_employees')->group(function () {
         Route::resource('pensioners', PensionerController::class);
         Route::post('pensioners/{pensioner_id}/status', [PensionerController::class, 'updateStatus'])->name('pensioners.updateStatus');
+        Route::post('pensioners/{pensioner_id}/track-payment', [PensionerController::class, 'trackPayment'])->name('pensioners.trackPayment');
+        Route::get('pensioners/{pensioner_id}/payment-history', [PensionerController::class, 'paymentHistory'])->name('pensioners.paymentHistory');
     });
 
     // Payroll Management - Bursary and Admin only (ENHANCED WITH SEARCH & FILTERS)
