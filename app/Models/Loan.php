@@ -54,6 +54,14 @@ class Loan extends Model
     {
         return $this->hasMany(\App\Models\LoanDeduction::class, 'loan_id', 'loan_id');
     }
+    
+    /**
+     * Relationship to related deduction records
+     */
+    public function deductions()
+    {
+        return $this->hasMany(\App\Models\Deduction::class, 'loan_id', 'loan_id');
+    }
 
     /**
      * Calculate remaining months based on remaining balance and monthly deduction
@@ -95,19 +103,28 @@ class Loan extends Model
 
     /**
      * Calculate the loan end date based on start date and total months
+     * End date should be the last day of the final month
+     * For example, if start date is Nov 1, 2025 and total months is 3:
+     * Month 1: November 2025, Month 2: December 2025, Month 3: January 2026
+     * End date should be January 31, 2026 (last day of the 3rd month)
      */
     public function calculateEndDate()
     {
-        return Carbon::parse($this->start_date)->addMonths($this->total_months);
+        return Carbon::parse($this->start_date)->addMonths(max(0, $this->total_months - 1))->endOfMonth();
     }
 
     /**
      * Accessor for remaining months
+     * Calculate remaining months based on remaining balance, but ensure it doesn't exceed total months
      */
     public function getRemainingMonthsAttribute()
     {
         if ($this->monthly_deduction > 0 && $this->attributes['monthly_deduction'] > 0) {
-            return ceil($this->attributes['remaining_balance'] / $this->attributes['monthly_deduction']);
+            // Calculate remaining months based on remaining balance
+            $calculatedMonths = ceil($this->attributes['remaining_balance'] / $this->attributes['monthly_deduction']);
+            
+            // Ensure remaining months doesn't exceed total months to prevent negative months completed
+            return min($calculatedMonths, $this->attributes['total_months']);
         }
         return 0;
     }

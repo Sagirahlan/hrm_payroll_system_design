@@ -51,47 +51,56 @@
 
                         <div class="mb-3">
                             <label for="principal_amount" class="form-label">Principal Amount</label>
-                            <input type="number" step="0.01" name="principal_amount" id="principal_amount" class="form-control" value="{{ old('principal_amount') }}" required readonly>
+                            <input type="number" step="0.01" name="principal_amount" id="principal_amount" class="form-control" value="{{ old('principal_amount') }}" required>
                             @error('principal_amount')
                                 <div class="text-danger">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="monthly_deduction" class="form-label">Monthly Deduction Amount</label>
-                                <input type="number" step="0.01" name="monthly_deduction" id="monthly_deduction" class="form-control" value="{{ old('monthly_deduction') }}">
-                                <small class="form-text text-muted">OR percentage below</small>
-                                @error('monthly_deduction')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
+                                                            <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="monthly_deduction" class="form-label">Monthly Deduction Amount</label>
+                                                <input type="number" step="0.01" name="monthly_deduction" id="monthly_deduction" class="form-control" value="{{ old('monthly_deduction') }}">
+                                                <small class="form-text text-muted">OR percentage below</small>
+                                                @error('monthly_deduction')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
+                                            </div>
 
-                            <div class="col-md-4 mb-3">
-                                <label for="monthly_percentage" class="form-label">Monthly Percentage of Salary (%)</label>
-                                <input type="number" step="0.01" name="monthly_percentage" id="monthly_percentage" class="form-control" value="{{ old('monthly_percentage') }}" max="100">
-                                <small class="form-text text-muted">OR number of months</small>
-                                @error('monthly_percentage')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="loan_duration_months" class="form-label">Number of Months to Pay</label>
-                                <input type="number" name="loan_duration_months" id="loan_duration_months" class="form-control" value="{{ old('loan_duration_months') }}" min="1">
-                                <small class="form-text text-muted">OR percentage/amount</small>
-                                @error('loan_duration_months')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="monthly_percentage" class="form-label">Monthly Percentage of Salary (%)</label>
+                                                <input type="number" step="0.01" name="monthly_percentage" id="monthly_percentage" class="form-control" value="{{ old('monthly_percentage') }}" max="100">
+                                                <small class="form-text text-muted">OR number of months</small>
+                                                @error('monthly_percentage')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            
+                                            <div class="col-md-4 mb-3">
+                                                <label for="loan_duration_months" class="form-label">Number of Months to Pay</label>
+                                                <input type="number" name="loan_duration_months" id="loan_duration_months" class="form-control" value="{{ old('loan_duration_months') }}" min="1">
+                                                <small class="form-text text-muted">Enter exact months (e.g., 29)</small>
+                                                @error('loan_duration_months')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="auto_calculated_percentage" class="form-label">Auto-Calculated Percentage</label>
-                                <input type="number" step="0.01" name="auto_calculated_percentage" id="auto_calculated_percentage" class="form-control" readonly>
-                                <small class="form-text text-muted">Percentage based on salary and loan duration</small>
-                            </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="auto_calculated_percentage" class="form-label">Auto-Calculated Percentage</label>
+                                                <input type="number" step="0.01" name="auto_calculated_percentage" id="auto_calculated_percentage" class="form-control" readonly>
+                                                <small class="form-text text-muted">Percentage based on salary and loan duration</small>
+                                            </div>
+                                            
+                                            <div class="col-md-6 mb-3">
+                                                <label for="display_monthly_deduction" class="form-label">Calculated Monthly Deduction</label>
+                                                <input type="number" step="0.01" id="display_monthly_deduction" class="form-control" readonly>
+                                                <small class="form-text text-muted">Amount to be deducted monthly</small>
+                                            </div>
+                                        </div>
+
+<!-- REMOVE the hidden calculated_monthly_deduction field entirely -->  
                             
                             <!-- Hidden field to store the calculated monthly deduction when using months input -->
                             <input type="hidden" name="calculated_monthly_deduction" id="calculated_monthly_deduction" value="">
@@ -129,139 +138,177 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const employeeSelect = document.getElementById('employee_id');
-        const additionSelect = document.getElementById('addition_id');
-        const principalAmountInput = document.getElementById('principal_amount');
-        const monthlyDeductionInput = document.getElementById('monthly_deduction');
-        const monthlyPercentageInput = document.getElementById('monthly_percentage');
-        const loanDurationMonthsInput = document.getElementById('loan_duration_months');
-        const autoCalculatedPercentageInput = document.getElementById('auto_calculated_percentage');
-        const calculatedMonthlyDeductionInput = document.getElementById('calculated_monthly_deduction');
+    const employeeSelect = document.getElementById('employee_id');
+    const additionSelect = document.getElementById('addition_id');
+    const principalAmountInput = document.getElementById('principal_amount');
+    const monthlyDeductionInput = document.getElementById('monthly_deduction');
+    const monthlyPercentageInput = document.getElementById('monthly_percentage');
+    const loanDurationMonthsInput = document.getElementById('loan_duration_months');
+    const autoCalculatedPercentageInput = document.getElementById('auto_calculated_percentage');
+    const displayMonthlyDeductionInput = document.getElementById('display_monthly_deduction');
 
-        // Function to clear other fields when one is filled
-        function clearOtherFields(exceptField) {
-            if (exceptField !== 'monthly_deduction') {
-                monthlyDeductionInput.value = '';
-            }
-            if (exceptField !== 'monthly_percentage') {
-                monthlyPercentageInput.value = '';
-            }
-            if (exceptField !== 'loan_duration_months') {
-                loanDurationMonthsInput.value = '';
-                autoCalculatedPercentageInput.value = '';
-                calculatedMonthlyDeductionInput.value = '';
+    // Function to clear other fields when one is filled
+    function clearOtherFields(exceptField) {
+        if (exceptField !== 'monthly_deduction') {
+            monthlyDeductionInput.value = '';
+        }
+        if (exceptField !== 'monthly_percentage') {
+            monthlyPercentageInput.value = '';
+        }
+        if (exceptField !== 'loan_duration_months') {
+            loanDurationMonthsInput.value = '';
+            autoCalculatedPercentageInput.value = '';
+            if (displayMonthlyDeductionInput) {
+                displayMonthlyDeductionInput.value = '';
             }
         }
+    }
 
-        // Function to calculate percentage based on loan duration
-        function calculatePercentage() {
-            const principalAmount = parseFloat(principalAmountInput.value) || 0;
-            const loanDurationMonths = parseInt(loanDurationMonthsInput.value) || 0;
+    // Function to calculate percentage based on loan duration
+    function calculatePercentage() {
+        const principalAmount = parseFloat(principalAmountInput.value) || 0;
+        const loanDurationMonths = parseInt(loanDurationMonthsInput.value) || 0;
+        
+        console.log('Calculating with:', {
+            principal: principalAmount,
+            months: loanDurationMonths
+        });
+        
+        if (principalAmount > 0 && loanDurationMonths > 0) {
+            const employeeId = employeeSelect.value;
             
-            if (principalAmount > 0 && loanDurationMonths > 0) {
-                // Get employee's basic salary (this would need to be fetched after employee is selected)
-                const employeeId = employeeSelect.value;
-                
-                if (employeeId) {
-                    fetch(`/loans/employees/${employeeId}/salary`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.basic_salary) {
-                                const monthlyDeduction = principalAmount / loanDurationMonths;
-                                const percentage = (monthlyDeduction / data.basic_salary) * 100;
-                                
-                                autoCalculatedPercentageInput.value = percentage.toFixed(2);
-                                calculatedMonthlyDeductionInput.value = monthlyDeduction.toFixed(2);
-                                // Update the monthly deduction field to match the calculated value
-                                monthlyDeductionInput.value = monthlyDeduction.toFixed(2); 
-                            } else {
-                                alert('Employee does not have a valid salary for percentage calculation.');
-                                loanDurationMonthsInput.value = '';
-                                autoCalculatedPercentageInput.value = '';
-                                calculatedMonthlyDeductionInput.value = '';
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching employee salary:', error);
-                            alert('Error fetching employee salary information.');
-                        });
-                } else {
-                    alert('Please select an employee first.');
-                    loanDurationMonthsInput.value = '';
-                    autoCalculatedPercentageInput.value = '';
-                    calculatedMonthlyDeductionInput.value = '';
-                }
-            } else {
-                autoCalculatedPercentageInput.value = '';
-                calculatedMonthlyDeductionInput.value = '';
-            }
-        }
-
-        // Event listeners to clear other fields when one is filled
-        monthlyDeductionInput.addEventListener('input', function() {
-            if (this.value) {
-                clearOtherFields('monthly_deduction');
-            }
-        });
-        
-        monthlyPercentageInput.addEventListener('input', function() {
-            if (this.value) {
-                clearOtherFields('monthly_percentage');
-            }
-        });
-        
-        loanDurationMonthsInput.addEventListener('input', function() {
-            if (this.value) {
-                clearOtherFields('loan_duration_months');
-                calculatePercentage();
-            } else {
-                autoCalculatedPercentageInput.value = '';
-                calculatedMonthlyDeductionInput.value = '';
-            }
-        });
-
-        employeeSelect.addEventListener('change', function () {
-            const employeeId = this.value;
             if (employeeId) {
-                fetch(`/loans/employees/${employeeId}/additions`)
+                fetch(`/loans/employees/${employeeId}/salary`)
                     .then(response => response.json())
                     .then(data => {
-                        additionSelect.innerHTML = '<option value="">Select Loan Type</option>';
-                        data.forEach(addition => {
-                            const option = document.createElement('option');
-                            option.value = addition.addition_id;
-                            // Check the structure of the returned data and adjust accordingly
-                            if (addition.addition_type && addition.addition_type.name) {
-                                option.textContent = addition.addition_type.name; // Use the lowercase 'addition_type' as it's the relationship name in Laravel
-                            } else if (addition.additionType && addition.additionType.name) {
-                                option.textContent = addition.additionType.name;
-                            } else {
-                                option.textContent = 'Unnamed Addition';
+                        if (data.basic_salary) {
+                            // Calculate exact monthly deduction: Principal ÷ Months
+                            const monthlyDeduction = principalAmount / loanDurationMonths;
+                            const percentage = (monthlyDeduction / data.basic_salary) * 100;
+                            
+                            console.log('Calculated:', {
+                                monthlyDeduction: monthlyDeduction,
+                                percentage: percentage,
+                                verifyTotal: monthlyDeduction * loanDurationMonths
+                            });
+                            
+                            autoCalculatedPercentageInput.value = percentage.toFixed(2);
+                            if (displayMonthlyDeductionInput) {
+                                displayMonthlyDeductionInput.value = monthlyDeduction.toFixed(2);
                             }
-                            option.dataset.amount = addition.amount;
-                            additionSelect.appendChild(option);
-                        });
+                        } else {
+                            alert('Employee does not have a valid salary for percentage calculation.');
+                            loanDurationMonthsInput.value = '';
+                            autoCalculatedPercentageInput.value = '';
+                            if (displayMonthlyDeductionInput) {
+                                displayMonthlyDeductionInput.value = '';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching employee salary:', error);
+                        alert('Error fetching employee salary information.');
                     });
             } else {
-                additionSelect.innerHTML = '<option value="">Select Loan Type</option>';
-                principalAmountInput.value = '';
-                autoCalculatedPercentageInput.value = '';
-                calculatedMonthlyDeductionInput.value = '';
+                alert('Please select an employee first.');
                 loanDurationMonthsInput.value = '';
-                monthlyPercentageInput.value = '';
-                monthlyDeductionInput.value = '';
+                autoCalculatedPercentageInput.value = '';
+                if (displayMonthlyDeductionInput) {
+                    displayMonthlyDeductionInput.value = '';
+                }
             }
-        });
+        } else {
+            autoCalculatedPercentageInput.value = '';
+            if (displayMonthlyDeductionInput) {
+                displayMonthlyDeductionInput.value = '';
+            }
+        }
+    }
 
-        additionSelect.addEventListener('change', function () {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.value && selectedOption.dataset.amount) {
-                principalAmountInput.value = selectedOption.dataset.amount;
-            } else {
-                principalAmountInput.value = '';
-            }
-        });
+    // Event listeners to clear other fields when one is filled
+    monthlyDeductionInput.addEventListener('input', function() {
+        if (this.value) {
+            clearOtherFields('monthly_deduction');
+        }
     });
+    
+    monthlyPercentageInput.addEventListener('input', function() {
+        if (this.value) {
+            clearOtherFields('monthly_percentage');
+        }
+    });
+    
+    loanDurationMonthsInput.addEventListener('input', function() {
+        if (this.value) {
+            clearOtherFields('loan_duration_months');
+            calculatePercentage();
+        } else {
+            autoCalculatedPercentageInput.value = '';
+            if (displayMonthlyDeductionInput) {
+                displayMonthlyDeductionInput.value = '';
+            }
+        }
+    });
+
+    // Recalculate when principal amount changes
+    principalAmountInput.addEventListener('input', function() {
+        if (loanDurationMonthsInput.value) {
+            calculatePercentage();
+        }
+    });
+
+    employeeSelect.addEventListener('change', function () {
+        const employeeId = this.value;
+        if (employeeId) {
+            fetch(`/loans/employees/${employeeId}/additions`)
+                .then(response => response.json())
+                .then(data => {
+                    additionSelect.innerHTML = '<option value="">Select Loan Type</option>';
+                    data.forEach(addition => {
+                        const option = document.createElement('option');
+                        option.value = addition.addition_id;
+                        if (addition.addition_type && addition.addition_type.name) {
+                            option.textContent = addition.addition_type.name;
+                        } else if (addition.additionType && addition.additionType.name) {
+                            option.textContent = addition.additionType.name;
+                        } else {
+                            option.textContent = 'Unnamed Addition';
+                        }
+                        option.dataset.amount = addition.amount;
+                        additionSelect.appendChild(option);
+                    });
+                });
+        } else {
+            additionSelect.innerHTML = '<option value="">Select Loan Type</option>';
+            principalAmountInput.value = '';
+            principalAmountInput.removeAttribute('readonly');
+            autoCalculatedPercentageInput.value = '';
+            if (displayMonthlyDeductionInput) {
+                displayMonthlyDeductionInput.value = '';
+            }
+            loanDurationMonthsInput.value = '';
+            monthlyPercentageInput.value = '';
+            monthlyDeductionInput.value = '';
+        }
+    });
+
+    // Make principal amount readonly after loan type is selected
+    additionSelect.addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value && selectedOption.dataset.amount) {
+            principalAmountInput.value = selectedOption.dataset.amount;
+            principalAmountInput.setAttribute('readonly', true);
+            
+            // Recalculate if months were already entered
+            if (loanDurationMonthsInput.value) {
+                calculatePercentage();
+            }
+        } else {
+            principalAmountInput.value = '';
+            principalAmountInput.removeAttribute('readonly');
+        }
+    });
+});
 </script>
 @endpush
 @endsection

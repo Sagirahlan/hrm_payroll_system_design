@@ -87,98 +87,152 @@ class LoanController extends Controller
     /**
      * Store a newly created loan in storage.
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,employee_id',
-            'addition_id' => 'required|exists:additions,addition_id',
-            'principal_amount' => 'required|numeric|min:0',
-            'monthly_percentage' => 'nullable|numeric|min:0|max:100|required_without_all:monthly_deduction,loan_duration_months',
-            'monthly_deduction' => 'nullable|numeric|min:0|required_without_all:monthly_percentage,loan_duration_months',
-            'loan_duration_months' => 'nullable|integer|min:1|required_without_all:monthly_percentage,monthly_deduction',
-            'start_date' => 'required|date',
-            'description' => 'nullable|string'
-        ]);
+  public function store(Request $request)
+{
+    $request->validate([
+        'employee_id' => 'required|exists:employees,employee_id',
+        'addition_id' => 'required|exists:additions,addition_id',
+        'principal_amount' => 'required|numeric|min:0',
+        'monthly_percentage' => 'nullable|numeric|min:0|max:100',
+        'monthly_deduction' => 'nullable|numeric|min:0',
+        'loan_duration_months' => 'nullable|integer|min:1',
+        'start_date' => 'required|date',
+        'description' => 'nullable|string',
+        'deduction_type_id' => 'required|exists:deduction_types,id'
+    ], [
+        'monthly_percentage.required_without_all' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.',
+        'monthly_deduction.required_without_all' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.',
+        'loan_duration_months.required_without_all' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.',
+    ]);
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            $addition = Addition::find($request->addition_id);
-            $employee = Employee::find($request->employee_id);
-            $step = $employee->step;
+        $addition = Addition::find($request->addition_id);
+        $employee = Employee::find($request->employee_id);
+        $step = $employee->step;
 
-            // Validate that the employee has a salary if we need to calculate percentage
-            if (!$step || !$step->basic_salary) {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['employee_id' => 'Employee does not have a valid salary for percentage calculation.']);
-            }
-
-            // Determine the monthly deduction based on the input provided
-            // Check in order of precedence to avoid conflicts when multiple fields are submitted
-            if ($request->filled('loan_duration_months')) {
-                // If number of months is provided, calculate monthly deduction and percentage
-                $totalMonths = $request->loan_duration_months;
-                $monthlyDeduction = $request->principal_amount / $totalMonths;
-                $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
-            } elseif ($request->filled('monthly_percentage')) {
-                // If monthly percentage is provided, calculate monthly deduction based on employee's salary
-                $monthlyDeduction = ($request->monthly_percentage / 100) * $step->basic_salary;
-                $totalMonths = ceil($request->principal_amount / $monthlyDeduction);
-                $monthlyPercentage = $request->monthly_percentage;
-            } elseif ($request->filled('monthly_deduction')) {
-                // If monthly deduction is provided directly
-                $monthlyDeduction = $request->monthly_deduction;
-                $totalMonths = ceil($request->principal_amount / $request->monthly_deduction);
-                $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
-            } else {
-                return redirect()->back()
-                    ->withInput()
-                    ->withErrors(['error' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.']);
-            }
-
-            // Create the loan record
-            $loan = Loan::create([
-                'employee_id' => $request->employee_id,
-                'deduction_type_id' => $request->deduction_type_id,
-                'loan_type' => $addition->additionType->name,
-                'principal_amount' => $request->principal_amount,
-                'monthly_deduction' => $monthlyDeduction,
-                'total_months' => (int)$totalMonths,
-                'remaining_months' => (int)$totalMonths,
-                'monthly_percentage' => $monthlyPercentage,
-                'start_date' => $request->start_date,
-                'end_date' => now()->addMonths((int)$totalMonths)->format('Y-m-d'),
-                'remaining_balance' => $request->principal_amount,
-                'status' => 'active',
-                'description' => $request->description,
-            ]);
-
-          
-
-            // Create a deduction record
-            Deduction::create([
-                'employee_id' => $loan->employee_id,
-                'deduction_type_id' => $loan->deduction_type_id,
-                'deduction_type' => $loan->loan_type,
-                'amount' => $loan->monthly_deduction,
-                'deduction_period' => 'monthly',
-                'start_date' => $loan->start_date,
-                'end_date' => $loan->end_date,
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('loans.index')
-                ->with('success', 'Loan created successfully.');
-        } catch (\Exception $e) {
-            DB::rollback();
-            
+        // Validate that the employee has a salary
+        if (!$step || !$step->basic_salary) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['error' => 'Failed to create loan: ' . $e->getMessage()]);
+                ->withErrors(['employee_id' => 'Employee does not have a valid salary for percentage calculation.']);
         }
+
+        // CRITICAL: Principal amount is FIXED - never modify it
+        $principalAmount = (float) $request->principal_amount;
+        
+        // Priority order: loan_duration_months > monthly_deduction > monthly_percentage
+        // This ensures the user's primary choice is respected
+        
+        if ($request->filled('loan_duration_months') && $request->loan_duration_months > 0) {
+            // PRIORITY 1: User specified EXACT number of months
+            $totalMonths = (int) $request->loan_duration_months;
+            
+            // Calculate exact monthly deduction: Principal ÷ Exact Months
+            $monthlyDeduction = $principalAmount / $totalMonths;
+            
+            // Calculate what percentage this represents
+            $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
+            
+            \Log::info('Loan Duration Method', [
+                'months_input' => $request->loan_duration_months,
+                'total_months' => $totalMonths,
+                'principal' => $principalAmount,
+                'monthly_deduction' => $monthlyDeduction
+            ]);
+            
+        } elseif ($request->filled('monthly_deduction') && $request->monthly_deduction > 0) {
+            // PRIORITY 2: User specified monthly deduction amount
+            $monthlyDeduction = (float) $request->monthly_deduction;
+            
+            // Calculate months needed - round up to ensure loan is fully paid
+            $totalMonths = (int) ceil($principalAmount / $monthlyDeduction);
+            
+            // Calculate percentage
+            $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
+            
+        } elseif ($request->filled('monthly_percentage') && $request->monthly_percentage > 0) {
+            // PRIORITY 3: User specified percentage of salary
+            $monthlyPercentage = (float) $request->monthly_percentage;
+            
+            // Calculate monthly deduction from percentage
+            $monthlyDeductionBasedOnPercentage = ($monthlyPercentage / 100) * $step->basic_salary;
+            
+            // Calculate months needed based on the percentage-based deduction
+            $totalMonths = (int) ceil($principalAmount / $monthlyDeductionBasedOnPercentage);
+            
+            // To ensure total repayment equals principal, adjust the monthly deduction
+            $monthlyDeduction = $principalAmount / $totalMonths;
+            
+        } else {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.']);
+        }
+
+       // Calculate end date from start date + total months
+        // End date should be the last day of the final month
+        // For example, if start date is Nov 1, 2025 and total months is 3:
+        // Month 1: November 2025, Month 2: December 2025, Month 3: January 2026
+        // End date should be January 31, 2026 (last day of the 3rd month)
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $endDate = $startDate->copy()->addMonths(max(0, $totalMonths - 1))->endOfMonth();
+
+        // Create the loan record
+        $loan = Loan::create([
+            'employee_id' => $request->employee_id,
+            'deduction_type_id' => $request->deduction_type_id,
+            'loan_type' => $addition->additionType->name,
+            'principal_amount' => $principalAmount,
+            'monthly_deduction' => $monthlyDeduction,
+            'total_months' => $totalMonths,
+            'remaining_months' => $totalMonths,
+            'monthly_percentage' => $monthlyPercentage,
+            'start_date' => $request->start_date,
+            'end_date' => $endDate->format('Y-m-d'),
+            'remaining_balance' => $principalAmount,
+            'status' => 'active',
+            'description' => $request->description,
+        ]);
+
+        // Create a deduction record to show in UI
+        Deduction::create([
+            'employee_id' => $loan->employee_id,
+            'deduction_type_id' => $loan->deduction_type_id,
+            'deduction_type' => $loan->loan_type,
+            'amount' => $monthlyDeduction,
+            'deduction_period' => 'monthly',
+            'start_date' => $loan->start_date,
+            'end_date' => $loan->end_date,
+            'loan_id' => $loan->loan_id,
+        ]);
+
+        DB::commit();
+
+        \Log::info('Loan Created', [
+            'loan_id' => $loan->loan_id,
+            'total_months' => $loan->total_months,
+            'monthly_deduction' => $loan->monthly_deduction,
+            'principal' => $loan->principal_amount
+        ]);
+
+        return redirect()->route('loans.index')
+            ->with('success', 'Loan created successfully.');
+            
+    } catch (\Exception $e) {
+        DB::rollback();
+        
+        \Log::error('Loan Creation Failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return redirect()->back()
+            ->withInput()
+            ->withErrors(['error' => 'Failed to create loan: ' . $e->getMessage()]);
     }
+}
 
     /**
      * Display the specified loan.

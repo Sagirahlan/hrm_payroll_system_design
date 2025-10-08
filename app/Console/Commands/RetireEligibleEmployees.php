@@ -106,17 +106,13 @@ class RetireEligibleEmployees extends Command
             return 0;
         }
 
-        $yearsOfService = $dateOfFirstAppointment->diffInYears($retirementDate);
-        if ($dateOfFirstAppointment->copy()->addYears($yearsOfService)->lt($retirementDate)) {
-            $yearsOfService += 1;
-        }
+        // For Nigerian CPS: Gratuity = 100% of last gross annual emoluments
+        // Gross emoluments = Basic salary + all allowances (housing, transport, etc.)
+        $grossMonthlyEmoluments = $lastPayroll->basic_salary + $lastPayroll->total_additions;
+        $grossAnnualEmoluments = $grossMonthlyEmoluments * 12; // Annual calculation
 
-        if ($yearsOfService < 1) {
-            return 0;
-        }
-
-        $salary = $lastPayroll->basic_salary;
-        $gratuity = $salary * 0.1 * $yearsOfService;
+        // Nigerian CPS gratuity formula: 100% of last gross annual emoluments
+        $gratuity = $grossAnnualEmoluments;
 
         return round($gratuity, 2);
     }

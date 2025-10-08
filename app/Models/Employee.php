@@ -127,7 +127,7 @@ public function hasActiveLoanForAdditionType($additionTypeName)
 {
     return $this->loans()
         ->where('loan_type', $additionTypeName)
-        ->where('status', 'active')
+        ->whereIn('status', ['active', 'completed'])
         ->exists();
 }
 

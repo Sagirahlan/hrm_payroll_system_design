@@ -684,8 +684,45 @@ class PayrollController extends Controller
                             ->orWhere('end_date', '>=', $payrollMonth);
                       });
             })
-            ->with(['deductionType', 'employee.gradeLevel.steps']) // Eager load relationships for amount calculation
-            ->get();
+            ->with(['deductionType', 'employee.gradeLevel.steps', 'loan']) // Eager load relationships for amount calculation
+            ->get()
+            ->filter(function ($deduction) use ($payroll) {
+                // If this is a loan-related deduction, check if the loan was still active during this payroll period
+                if ($deduction->loan_id) {
+                    $loan = $deduction->loan;
+                    if ($loan) {
+                        // Check if the loan was still active during the payroll month
+                        $payrollMonth = Carbon::parse($payroll->payroll_month);
+                        $loanStart = Carbon::parse($loan->start_date);
+                        $loanEnd = Carbon::parse($loan->end_date);
+                        
+                        // Loan is active if payroll month falls within loan's start and end dates
+                        // and the loan status is not completed
+                        $isLoanActive = $payrollMonth->between($loanStart, $loanEnd) && $loan->status !== 'completed';
+                        
+                        // Additionally, check if loan was completed before this payroll month
+                        if (!$isLoanActive && $loan->status === 'completed') {
+                            // Check if loan ended before this payroll month
+                            $loanWasActiveBefore = $loanEnd->lt($payrollMonth);
+                            // If loan ended before this payroll month, it should not appear in this payroll
+                            if ($loanWasActiveBefore) {
+                                return false;
+                            }
+                        }
+                        
+                        // For loans that have existing LoanDeduction records for this month, 
+                        // check if they were already processed this month (to avoid showing both template deduction and processed loan deduction)
+                        $existingLoanDeduction = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)
+                            ->where('payroll_month', $payrollMonth->format('Y-m'))
+                            ->first();
+                            
+                        // If a loan has an existing LoanDeduction for this month, it means it was processed 
+                        // by the payroll calculation service, so we should not show the template deduction
+                        return !$existingLoanDeduction && $isLoanActive;
+                    }
+                }
+                return true; // For non-loan deductions, use the original logic
+            });
         
         $additions = Addition::where('employee_id', $payroll->employee_id)
             ->where(function($query) use ($payroll) {
@@ -741,7 +778,16 @@ class PayrollController extends Controller
                       });
             })
             ->with(['additionType', 'employee.gradeLevel.steps'])
-            ->get();
+            ->get()
+            ->filter(function ($addition) use ($payroll) {
+                if ($addition->addition_period === 'OneTime') {
+                    $additionStartDate = Carbon::parse($addition->start_date)->startOfDay();
+                    $payrollMonthStart = Carbon::parse($payroll->payroll_month)->startOfMonth();
+                    $payrollMonthEnd = Carbon::parse($payroll->payroll_month)->endOfMonth();
+                    return $additionStartDate->between($payrollMonthStart, $payrollMonthEnd);
+                }
+                return true;
+            });
         
         // Format the response
         $deductionsData = $deductions->map(function ($deduction) {

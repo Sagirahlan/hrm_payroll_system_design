@@ -368,23 +368,15 @@ class RetirementController extends Controller
             return 0;
         }
 
-        // Calculate years of service (count partial years as full year)
-        $yearsOfService = $dateOfFirstAppointment->diffInYears($retirementDate);
-        if ($dateOfFirstAppointment->copy()->addYears($yearsOfService)->lt($retirementDate)) {
-            $yearsOfService += 1;
-        }
+        // For Nigerian CPS: Gratuity = 100% of last gross annual emoluments
+        // Gross emoluments = Basic salary + all allowances (housing, transport, etc.)
+        $grossMonthlyEmoluments = $lastPayroll->basic_salary + $lastPayroll->total_additions;
+        $grossAnnualEmoluments = $grossMonthlyEmoluments * 12; // Annual calculation
 
-        if ($yearsOfService < 1) {
-            return 0;
-        }
-
-        $salary = $lastPayroll->basic_salary ?? 0;
-
-        // Gratuity formula: 10% of last salary per year of service
-        $gratuity = $salary * 0.1 * $yearsOfService;
+        // Nigerian CPS gratuity formula: 100% of last gross annual emoluments
+        $gratuity = $grossAnnualEmoluments;
 
         return round($gratuity, 2);
-        
     }
 
 

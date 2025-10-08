@@ -44,4 +44,16 @@ class PayrollRecord extends Model
     {
     return $this->hasOne(PaymentTransaction::class, 'payroll_id', 'payroll_id');
     }
+    
+    /**
+     * Set the net salary attribute, ensuring it's not negative
+     *
+     * @param  float  $value
+     * @return void
+     */
+    public function setNetSalaryAttribute($value)
+    {
+        // Ensure net salary is never negative
+        $this->attributes['net_salary'] = max(0, $value);
+    }
 }

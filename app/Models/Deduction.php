@@ -75,4 +75,26 @@ class Deduction extends Model
 
         return 'N/A';
     }
+    
+    /**
+     * Scope to exclude completed loan deductions
+     */
+    public function scopeExcludeCompletedLoans($query)
+    {
+        return $query->whereDoesntHave('loan', function ($query) {
+            $query->where('status', 'completed');
+        });
+    }
+    
+    /**
+     * Check if this deduction is from a completed loan
+     */
+    public function isFromCompletedLoan()
+    {
+        if ($this->loan_id) {
+            $loan = $this->loan;
+            return $loan && $loan->status === 'completed';
+        }
+        return false;
+    }
 }
