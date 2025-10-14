@@ -225,6 +225,63 @@ class PensionerController extends Controller
         }
     }
     
+    public function show($pensioner_id)
+    {
+        $pensioner = Pensioner::with(['employee', 'retirement'])->findOrFail($pensioner_id);
+        
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'viewed_pensioner',
+            'description' => "Viewed pensioner details: {$pensioner->employee->first_name} {$pensioner->employee->surname}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => $pensioner->pensioner_id]),
+        ]);
+
+        return view('pensioners.show', compact('pensioner'));
+    }
+    
+    public function edit($pensioner_id)
+    {
+        $pensioner = Pensioner::findOrFail($pensioner_id);
+        $employees = Employee::select('employee_id', 'first_name', 'surname')
+            ->whereIn('employee_id', Retirement::where('status', 'approved')->pluck('employee_id'))
+            ->get();
+        
+        return view('pensioners.edit', compact('pensioner', 'employees'));
+    }
+
+    public function update(Request $request, $pensioner_id)
+    {
+        $validated = $request->validate([
+            'pension_start_date' => 'required|date|after_or_equal:today',
+            'pension_amount' => 'required|numeric|min:0',
+            'status' => 'required|in:Active,Deceased',
+            'rsa_balance_at_retirement' => 'nullable|numeric|min:0',
+            'lump_sum_amount' => 'nullable|numeric|min:0',
+            'pension_type' => 'nullable|in:PW,Annuity',
+            'expected_lifespan_months' => 'nullable|integer|min:1',
+        ]);
+
+        try {
+            $pensioner = Pensioner::findOrFail($pensioner_id);
+            
+            $pensioner->update($validated);
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'updated_pensioner',
+                'description' => "Updated pensioner details for {$pensioner->employee->first_name} {$pensioner->employee->surname}",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => $pensioner->pensioner_id]),
+            ]);
+
+            return redirect()->route('pensioners.show', $pensioner->pensioner_id)->with('success', 'Pensioner record updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Pensioner update failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to update pensioner: ' . $e->getMessage());
+        }
+    }
+    
     // Method to view pension payment history
     public function paymentHistory($pensioner_id)
     {
@@ -232,6 +289,7 @@ class PensionerController extends Controller
         
         // Get all payroll records for this pensioner (monthly pension payments)
         $paymentHistory = PayrollRecord::where('employee_id', $pensioner->employee_id)
+            ->with('transaction') // Load the payment transaction relationship
             ->orderBy('payroll_month', 'desc')
             ->paginate(20);
         

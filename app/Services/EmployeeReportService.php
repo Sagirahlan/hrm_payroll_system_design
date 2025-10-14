@@ -192,11 +192,6 @@ class EmployeeReportService
     }   
     private function getStatistics(Employee $employee): array
     {
-        // Consider employee if status is 'Active' or 'Suspended'
-        if (!in_array($employee->status, ['Active', 'Suspended'])) {
-            return [];
-        }
-
         $totalDeductions = $employee->deductions()
             ->sum('amount');
 
@@ -217,7 +212,8 @@ class EmployeeReportService
                 ->count(),
             'last_promotion_date' => $employee->promotionHistory()
                 ->orderBy('effective_date', 'desc')
-                ->first()?->effective_date?->format('Y-m-d')
+                ->first()?->effective_date?->format('Y-m-d'),
+            'status' => $employee->status
         ];
     }
 

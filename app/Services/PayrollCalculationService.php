@@ -363,7 +363,14 @@ class PayrollCalculationService
         // Now update the RSA balance with the total pension amount after all deductions have been processed
         if ($totalPensionAmount > 0) {
             $currentRsaBalance = $employee->rsa_balance ?? 0;
-            $newRsaBalance = $currentRsaBalance + $totalPensionAmount;
+
+            // Calculate government's contribution (10% of basic salary)
+            $governmentContribution = $basicSalary * 0.10;
+
+            // The $totalPensionAmount already contains the employee's contribution.
+            // So, we add both to the RSA balance.
+            $newRsaBalance = $currentRsaBalance + $totalPensionAmount + $governmentContribution;
+            
             $employee->update(['rsa_balance' => $newRsaBalance]);
         }
 

@@ -72,7 +72,7 @@
                                                     {{ $pensioner->employee ? $pensioner->employee->first_name . ' ' . $pensioner->employee->surname . ' (' . $pensioner->employee_id . ')' : 'N/A' }}
                                                 </span>
                                             </td>
-                                            <td>{{ $pensioner->pension_start_date->format('Y-m-d') }}</td>
+                                            <td>{{ $pensioner->pension_start_date ? $pensioner->pension_start_date->format('Y-m-d') : 'N/A' }}</td>
                                             <td>
                                                 <span class="badge bg-info text-dark">
                                                     {{ number_format($pensioner->pension_amount, 2) }}
@@ -84,13 +84,16 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <form action="{{ route('pensioners.updateStatus', $pensioner->pensioner_id) }}" method="POST" style="display:inline;">
-                                                    @csrf
-                                                    <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
-                                                        <option value="Active" {{ $pensioner->status === 'Active' ? 'selected' : '' }}>Active</option>
-                                                        <option value="Deceased" {{ $pensioner->status === 'Deceased' ? 'selected' : '' }}>Deceased</option>
-                                                    </select>
-                                                </form>
+                                                <div class="d-flex flex-column flex-sm-row gap-1">
+                                                    <a href="{{ route('pensioners.show', $pensioner->pensioner_id) }}" class="btn btn-sm btn-primary mb-1 mb-sm-0 me-sm-1">View</a>
+                                                    <form action="{{ route('pensioners.updateStatus', $pensioner->pensioner_id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                                            <option value="Active" {{ $pensioner->status === 'Active' ? 'selected' : '' }}>Active</option>
+                                                            <option value="Deceased" {{ $pensioner->status === 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                                                        </select>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach

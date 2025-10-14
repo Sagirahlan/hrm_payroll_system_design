@@ -118,7 +118,7 @@
                                         </td>
                                         <td>{{ $payment->transaction ? $payment->transaction->method : 'N/A' }}</td>
                                         <td>{{ $payment->transaction ? $payment->transaction->reference : 'N/A' }}</td>
-                                        <td>{{ $payment->created_at->format('M d, Y H:i') }}</td>
+                                        <td>{{ $payment->created_at ? $payment->created_at->format('M d, Y H:i') : 'N/A' }}</td>
                                     </tr>
                                 @empty
                                     <tr>

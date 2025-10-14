@@ -58,20 +58,29 @@
                         @csrf
                         <input type="hidden" name="report_type" value="retired_employees">
                         <div class="row">
+                           
+                            
+                        </div>
+                    </form>
+                    
+                    <form action="{{ route('reports.bulk_generate') }}" method="POST" class="mt-3">
+                        @csrf
+                        <input type="hidden" name="report_type" value="retired_employees_summary">
+                        <div class="row">
                             <div class="col-md-5 mb-3">
-                                <label class="form-label">Retired Employees Report</label>
-                                <p class="text-muted">Generate a comprehensive report of all retired employees</p>
+                                <label class="form-label">Retired Employees Summary Report</label>
+                                <p class="text-muted">Generate a tabular report of all retired employees with basic information</p>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="retired_export_format" class="form-label">Export Format</label>
-                                <select name="export_format" id="retired_export_format" class="form-select">
+                                <label for="summary_export_format" class="form-label">Export Format</label>
+                                <select name="export_format" id="summary_export_format" class="form-select">
                                     <option value="PDF">PDF</option>
                                     <option value="Excel">Excel</option>
                                 </select>
                             </div>
                             <div class="col-md-3 mb-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-file-export"></i> Generate Retired Report
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-table"></i> Generate Summary Report
                                 </button>
                             </div>
                         </div>
@@ -357,25 +366,22 @@
                 const deductionSection = form.querySelector('.deduction-type-section');
                 const additionSection = form.querySelector('.addition-type-section');
                 
+                let finalReportType = reportTypeSelect.value;
+
                 if (reportTypeSelect.value === 'deduction' && deductionSection && deductionSection.style.display !== 'none') {
                     const deductionTypeSelect = form.querySelector('.deduction-type-select');
                     if (deductionTypeSelect && deductionTypeSelect.value) {
-                        // Change the report_type to include the deduction type ID
-                        reportTypeSelect.value = `deduction_${deductionTypeSelect.value}`;
-                    } else {
-                        // If no deduction type selected, reset to just 'deduction'
-                        reportTypeSelect.value = 'deduction';
+                        finalReportType = `deduction_${deductionTypeSelect.value}`;
                     }
                 } else if (reportTypeSelect.value === 'addition' && additionSection && additionSection.style.display !== 'none') {
                     const additionTypeSelect = form.querySelector('.addition-type-select');
                     if (additionTypeSelect && additionTypeSelect.value) {
-                        // Change the report_type to include the addition type ID
-                        reportTypeSelect.value = `addition_${additionTypeSelect.value}`;
-                    } else {
-                        // If no addition type selected, reset to just 'addition'
-                        reportTypeSelect.value = 'addition';
+                        finalReportType = `addition_${additionTypeSelect.value}`;
                     }
                 }
+
+                // Set the value of the original select to the final value
+                reportTypeSelect.value = finalReportType;
             });
         });
     });

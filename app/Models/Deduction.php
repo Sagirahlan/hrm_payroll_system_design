@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Models\Loan;
+use App\Models\Loan;
 
 class Deduction extends Model
 {
@@ -96,5 +96,32 @@ class Deduction extends Model
             return $loan && $loan->status === 'completed';
         }
         return false;
+    }
+    
+    /**
+     * Get loan details for this deduction if it's a loan-related deduction
+     */
+    public function getLoanDetailsAttribute()
+    {
+        if ($this->loan_id && $this->loan) {
+            $loan = $this->loan;
+            
+            // Calculate total paid from loan deductions
+            $totalPaid = $loan->loanDeductions ? $loan->loanDeductions->sum('amount_deducted') : 0;
+            
+            return [
+                'loan_id' => $loan->loan_id,
+                'loan_type' => $loan->loan_type,
+                'principal_amount' => $loan->principal_amount,
+                'total_repaid' => $totalPaid,
+                'remaining_balance' => $loan->remaining_balance,
+                'monthly_deduction' => $loan->monthly_deduction,
+                'total_months' => $loan->total_months,
+                'remaining_months' => $loan->remaining_months,
+                'status' => $loan->status
+            ];
+        }
+        
+        return null;
     }
 }
