@@ -49,6 +49,18 @@
                                     <td>{{ number_format($loan->principal_amount, 2) }}</td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Interest Rate:</strong></td>
+                                    <td>{{ $loan->interest_rate ? $loan->interest_rate . '%' : '0.00%' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Interest:</strong></td>
+                                    <td>{{ number_format($loan->total_interest, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Repayment:</strong></td>
+                                    <td>{{ number_format($loan->total_repayment, 2) }}</td>
+                                </tr>
+                                <tr>
                                     <td><strong>Monthly Deduction:</strong></td>
                                     <td>{{ number_format($loan->monthly_deduction, 2) }}</td>
                                 </tr>

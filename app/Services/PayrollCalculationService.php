@@ -13,37 +13,48 @@ class PayrollCalculationService
 {
     public function calculatePayroll(Employee $employee, string $month, bool $isSuspended = false): array
     {
-        $gradeLevel = $employee->relationLoaded('gradeLevel')
-            ? $employee->gradeLevel
-            : $employee->gradeLevel()->first();
+        // Check if employee is a contract employee using the new method
+        $isContractEmployee = $employee->isContractEmployee();
+        
+        $basicSalary = 0;
+        
+        if ($isContractEmployee) {
+            // For contract employees, use the amount field instead of grade level step
+            $basicSalary = $employee->amount ?: 0;
+        } else {
+            // For permanent/temporary employees, use grade level step
+            $gradeLevel = $employee->relationLoaded('gradeLevel')
+                ? $employee->gradeLevel
+                : $employee->gradeLevel()->first();
 
-        if (!$gradeLevel) {
-            // Handle case where employee has no grade level
-            return [
-                'basic_salary'     => 0,
-                'total_deductions' => 0,
-                'total_additions'  => 0,
-                'net_salary'       => 0,
-                'deductions'       => [],
-                'additions'        => [],
-            ];
+            if (!$gradeLevel) {
+                // Handle case where employee has no grade level
+                return [
+                    'basic_salary'     => 0,
+                    'total_deductions' => 0,
+                    'total_additions'  => 0,
+                    'net_salary'       => 0,
+                    'deductions'       => [],
+                    'additions'        => [],
+                ];
+            }
+
+            $step = $employee->step;
+
+            if (!$step || !$step->basic_salary) {
+                // Handle case where grade level has no steps or basic salary
+                return [
+                    'basic_salary'     => 0,
+                    'total_deductions' => 0,
+                    'total_additions'  => 0,
+                    'net_salary'       => 0,
+                    'deductions'       => [],
+                    'additions'        => [],
+                ];
+            }
+
+            $basicSalary = $step->basic_salary;
         }
-
-        $step = $employee->step;
-
-        if (!$step || !$step->basic_salary) {
-            // Handle case where grade level has no steps or basic salary
-            return [
-                'basic_salary'     => 0,
-                'total_deductions' => 0,
-                'total_additions'  => 0,
-                'net_salary'       => 0,
-                'deductions'       => [],
-                'additions'        => [],
-            ];
-        }
-
-        $basicSalary = $step->basic_salary;
         
         // For suspended employees, use half of the basic salary for calculations
         if ($isSuspended) {
@@ -59,43 +70,49 @@ class PayrollCalculationService
         $deductionRecords = [];
         $additionRecords = [];
 
-        // Statutory deductions from grade level
-        foreach ($gradeLevel->deductionTypes as $deductionType) {
-            if ($deductionType->is_statutory) {
-                // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
-                $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
-                
-                $totalDeductions += $amount;
-                $deductionRecords[] = [
-                    'type' => 'deduction',
-                    'name_type' => $deductionType->name,
-                    'amount' => $amount,
-                    'frequency' => 'Monthly', // Assuming statutory deductions are monthly
-                ];
+        // Statutory deductions from grade level (only for non-contract employees)
+        if (!$isContractEmployee && $gradeLevel) {
+            foreach ($gradeLevel->deductionTypes as $deductionType) {
+                if ($deductionType->is_statutory) {
+                    // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
+                    $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
+                    
+                    $totalDeductions += $amount;
+                    $deductionRecords[] = [
+                        'type' => 'deduction',
+                        'name_type' => $deductionType->name,
+                        'amount' => $amount,
+                        'frequency' => 'Monthly', // Assuming statutory deductions are monthly
+                    ];
+                }
             }
         }
 
-        // Statutory additions from grade level
-        foreach ($gradeLevel->additionTypes as $additionType) {
-            if ($additionType->is_statutory) {
-                $amount = ($additionType->pivot->percentage / 100) * $basicSalary;
-                $totalAdditions += $amount;
-                $additionRecords[] = [
-                    'type' => 'addition',
-                    'name_type' => $additionType->name,
-                    'amount' => $amount,
-                    'frequency' => 'Monthly', // Assuming statutory additions are monthly
-                ];
+        // Statutory additions from grade level (only for non-contract employees)
+        if (!$isContractEmployee && $gradeLevel) {
+            foreach ($gradeLevel->additionTypes as $additionType) {
+                if ($additionType->is_statutory) {
+                    $amount = ($additionType->pivot->percentage / 100) * $basicSalary;
+                    $totalAdditions += $amount;
+                    $additionRecords[] = [
+                        'type' => 'addition',
+                        'name_type' => $additionType->name,
+                        'amount' => $amount,
+                        'frequency' => 'Monthly', // Assuming statutory additions are monthly
+                    ];
+                }
             }
         }
 
         // We will accumulate all pension-related amounts to add to RSA balance once at the end
         $totalPensionAmount = 0;
 
-        // Process pension amounts from statutory deductions
-        foreach ($deductionRecords as $record) {
-            if (stripos($record['name_type'], 'Pension') !== false) {
-                $totalPensionAmount += $record['amount'];
+        // Process pension amounts from statutory deductions (only for non-contract employees)
+        if (!$isContractEmployee) {
+            foreach ($deductionRecords as $record) {
+                if (stripos($record['name_type'], 'Pension') !== false) {
+                    $totalPensionAmount += $record['amount'];
+                }
             }
         }
 
@@ -164,9 +181,10 @@ class PayrollCalculationService
                 // Ensure deduction doesn't exceed remaining balance
                 $deductionAmount = min($deductionAmount, $loan->remaining_balance);
 
-                if ($isSuspended) {
-                    $deductionAmount /= 2;
-                }
+                // Loan deductions continue at full amount even during suspension
+                // if ($isSuspended) {
+                //     $deductionAmount /= 2;
+                // }
 
                 // Calculate the maximum total deductions allowed to prevent negative net pay
                 $maxTotalDeductionsAllowed = $basicSalary + $totalAdditions;
@@ -260,9 +278,10 @@ class PayrollCalculationService
                         // Loan is active for this month - use the loan's monthly deduction amount
                         $deductionAmount = $loan->monthly_deduction;
                         
-                        if ($isSuspended) {
-                            $deductionAmount /= 2;
-                        }
+                        // Loan deductions continue at full amount even during suspension
+                        // if ($isSuspended) {
+                        //     $deductionAmount /= 2;
+                        // }
                         
                         // Track this loan deduction and update the loan record
                         $processedLoanDeduction = true;
@@ -272,11 +291,19 @@ class PayrollCalculationService
             } else {
                 // Regular deduction processing
                 if ($deduction->amount_type === 'percentage') {
-                    $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
-                    if ($step && $step->basic_salary) {
-                        $deductionAmount = ($deduction->amount / 100) * $step->basic_salary;
+                    // For contract employees, use their contract amount for percentage calculations
+                    if ($isContractEmployee) {
+                        $deductionAmount = ($deduction->amount / 100) * $employee->amount;
                         if ($isSuspended) {
                             $deductionAmount /= 2;
+                        }
+                    } else {
+                        $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
+                        if ($step && $step->basic_salary) {
+                            $deductionAmount = ($deduction->amount / 100) * $step->basic_salary;
+                            if ($isSuspended) {
+                                $deductionAmount /= 2;
+                            }
                         }
                     }
                 } else {
@@ -412,17 +439,28 @@ class PayrollCalculationService
             if ($shouldApply) {
                 // Calculate addition amount based on the specific step's basic salary
                 if ($addition->amount_type === 'percentage') {
-                    // For percentage-based additions, calculate amount based on step's basic salary
-                    $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
-                    if ($step && $step->basic_salary) {
-                        $additionAmount = ($addition->amount / 100) * $step->basic_salary;
+                    // For percentage-based additions, calculate amount based on employee type
+                    if ($isContractEmployee) {
+                        // For contract employees, use their contract amount for percentage calculations
+                        $additionAmount = ($addition->amount / 100) * $employee->amount;
                         
-                        // For suspended employees, halve the percentage-based addition
-                        if ($isSuspended) {
-                            $additionAmount = $additionAmount / 2;
-                        }
+                        // Additions continue at full amount even during suspension
+                        // if ($isSuspended) {
+                        //     $additionAmount = $additionAmount / 2;
+                        // }
                     } else {
-                        $additionAmount = 0; // If no step or basic salary, set amount to 0
+                        // For regular employees, use step's basic salary
+                        $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
+                        if ($step && $step->basic_salary) {
+                            $additionAmount = ($addition->amount / 100) * $step->basic_salary;
+                            
+                            // Additions continue at full amount even during suspension
+                            // if ($isSuspended) {
+                            //     $additionAmount = $additionAmount / 2;
+                            // }
+                        } else {
+                            $additionAmount = 0; // If no step or basic salary, set amount to 0
+                        }
                     }
                 } else {
                     // For fixed amount additions, use the stored amount

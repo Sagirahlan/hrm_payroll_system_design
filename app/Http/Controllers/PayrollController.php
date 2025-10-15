@@ -48,20 +48,44 @@ class PayrollController extends Controller
         $month = $request->input('month', now()->format('Y-m'));
         $appointmentTypeId = $request->input('appointment_type_id');
 
-        // Fetch employees with valid grade level assigned (both Active and Suspended)
+        // Fetch employees (both Active and Suspended)
         $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
-            ->whereNotNull('grade_level_id') // Ensures grade level exists
             ->with(['gradeLevel', 'step']);      // Load related grade level and step
 
         if ($appointmentTypeId) {
             $employeesQuery->where('appointment_type_id', $appointmentTypeId);
+            
+            // For contract employees (appointment_type_id = 2), don't require grade_level_id
+            // since contract employees may not have grade levels assigned
+            if ($appointmentTypeId == 2) { // Contract employees
+                // No need to filter by grade_level_id for contract employees
+            } else {
+                // For permanent/temporary employees, require grade level
+                $employeesQuery->whereNotNull('grade_level_id');
+            }
+        } else {
+            // If no specific appointment type selected, only include non-contract employees with grade levels
+            // and contract employees with amounts
+            $employeesQuery->where(function($query) {
+                $query->where(function($q) {
+                    $q->whereNotNull('grade_level_id') // Non-contract employees with grade levels
+                      ->where('appointment_type_id', '!=', 2); // Not contract employees
+                })->orWhere(function($q) {
+                    $q->where('appointment_type_id', 2) // Contract employees
+                      ->whereNotNull('amount'); // With contract amount
+                });
+            });
         }
 
         $employees = $employeesQuery->get();
 
         foreach ($employees as $employee) {
-            // Safety check if relationship failed
-            if (!$employee->gradeLevel || !$employee->gradeLevel->id) {
+            // Check if the employee is a contract employee
+            $isContractEmployee = $employee->isContractEmployee();
+            
+            // For contract employees, we don't require a grade level
+            // For non-contract employees, check if they have a grade level
+            if (!$isContractEmployee && (!$employee->gradeLevel || !$employee->gradeLevel->id)) {
                 continue;
             }
 
@@ -73,7 +97,7 @@ class PayrollController extends Controller
                 // Create the payroll record for suspended employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $employee->gradeLevel->id,
+                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
                     'payroll_month' => $month . '-01',
                     'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
                     'total_additions' => $calculation['total_additions'], // Additions still apply
@@ -101,7 +125,7 @@ class PayrollController extends Controller
                 // Create the payroll record for active employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $employee->gradeLevel->id,
+                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
                     'payroll_month' => $month . '-01',
                     'basic_salary' => $calculation['basic_salary'],
                     'total_additions' => $calculation['total_additions'],
@@ -404,7 +428,7 @@ class PayrollController extends Controller
 
     public function storeDeduction(Request $request, $employeeId)
     {
-        $employee = Employee::with('gradeLevel.steps', 'step')->findOrFail($employeeId);
+        $employee = Employee::with('gradeLevel.steps', 'step', 'appointmentType')->findOrFail($employeeId);
         $deductionType = DeductionType::find($request->deduction_type_id);
         
         // Prevent creating statutory deductions individually - they should be created via bulk process
@@ -440,17 +464,34 @@ class PayrollController extends Controller
             // Calculate the deduction amount for non-statutory deductions
             if (!$deductionType->is_statutory) {
                 if ($request->amount_type === 'percentage') {
-                    // Check if employee has a step with basic salary
-                    if ($employee->step && $employee->step->basic_salary) {
-                        // Use the specific step's basic salary for percentage calculation
-                        $basicSalary = $employee->step->basic_salary;
-                        if ($basicSalary > 0 && $request->amount > 0) {
-                            $amount = ($request->amount / 100) * $basicSalary;
+                    // Check if employee is a contract employee using the new method
+                    $isContractEmployee = $employee->isContractEmployee();
+                    
+                    if ($isContractEmployee) {
+                        // For contract employees, use the amount field instead of step basic salary
+                        if ($employee->amount && $employee->amount > 0) {
+                            $contractAmount = $employee->amount;
+                            if ($contractAmount > 0 && $request->amount > 0) {
+                                $amount = ($request->amount / 100) * $contractAmount;
+                            }
+                        } else {
+                            return redirect()->back()
+                                ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                                ->withInput();
                         }
                     } else {
-                        return redirect()->back()
-                            ->withErrors(['error' => 'Employee does not have a valid step with basic salary.'])
-                            ->withInput();
+                        // For regular employees, check if employee has a step with basic salary
+                        if ($employee->step && $employee->step->basic_salary) {
+                            // Use the specific step's basic salary for percentage calculation
+                            $basicSalary = $employee->step->basic_salary;
+                            if ($basicSalary > 0 && $request->amount > 0) {
+                                $amount = ($request->amount / 100) * $basicSalary;
+                            }
+                        } else {
+                            return redirect()->back()
+                                ->withErrors(['error' => 'Employee does not have a valid step with basic salary.'])
+                                ->withInput();
+                        }
                     }
                 } else {
                     // Fixed amount - use the provided amount directly
@@ -509,28 +550,48 @@ class PayrollController extends Controller
                 ->withInput();
         }
 
-        $employee = Employee::with('step')->findOrFail($employeeId);
+        $employee = Employee::with('step', 'appointmentType')->findOrFail($employeeId);
 
         if ($additionType) {
             $amount = 0;
             
             if ($request->amount_type === 'percentage') {
-                // Check if employee has a step with basic salary for percentage calculation
-                if (!$employee->step || !$employee->step->basic_salary) {
-                    return redirect()->back()
-                        ->withErrors(['error' => 'Employee does not have a valid step with basic salary for percentage calculation.'])
-                        ->withInput();
-                }
-                // Calculate addition amount based on the employee's step basic salary
-                $basicSalary = $employee->step->basic_salary;
-                $amount = ($request->amount / 100) * $basicSalary;
+                // Check if employee is a contract employee
+                $isContractEmployee = $employee->isContractEmployee();
+                
+                if ($isContractEmployee) {
+                    // For contract employees, use the amount field instead of step basic salary
+                    if ($employee->amount && $employee->amount > 0) {
+                        $contractAmount = $employee->amount;
+                        $amount = ($request->amount / 100) * $contractAmount;
 
-                if ($amount < 0.01) {
-                    return redirect()->back()
-                        ->withErrors(['error' => 'Calculated addition amount is too small or zero. Check employee\'s basic salary.'])
-                        ->withInput();
-                }
+                        if ($amount < 0.01) {
+                            return redirect()->back()
+                                ->withErrors(['error' => 'Calculated addition amount is too small or zero. Check employee\'s contract amount.'])
+                                ->withInput();
+                        }
+                    } else {
+                        return redirect()->back()
+                            ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                            ->withInput();
+                    }
+                } else {
+                    // For regular employees, check if employee has a step with basic salary
+                    if (!$employee->step || !$employee->step->basic_salary) {
+                        return redirect()->back()
+                            ->withErrors(['error' => 'Employee does not have a valid step with basic salary for percentage calculation.'])
+                            ->withInput();
+                    }
+                    // Calculate addition amount based on the employee's step basic salary
+                    $basicSalary = $employee->step->basic_salary;
+                    $amount = ($request->amount / 100) * $basicSalary;
 
+                    if ($amount < 0.01) {
+                        return redirect()->back()
+                            ->withErrors(['error' => 'Calculated addition amount is too small or zero. Check employee\'s basic salary.'])
+                            ->withInput();
+                    }
+                }
             } else {
                 // Fixed amount - use the provided amount directly
                 $amount = $request->amount;

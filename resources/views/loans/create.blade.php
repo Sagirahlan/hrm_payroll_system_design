@@ -18,7 +18,12 @@
                             <select name="employee_id" id="employee_id" class="form-control" required>
                                 <option value="">Select Employee</option>
                                 @foreach($filteredEmployees as $employee)
-                                    <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->last_name }} ({{ $employee->employee_number }})</option>
+                                    <option value="{{ $employee->employee_id }}" data-appointment-type="{{ $employee->appointmentType->name ?? 'Permanent' }}">
+                                        {{ $employee->first_name }} {{ $employee->last_name }} ({{ $employee->employee_number }})
+                                        @if($employee->isContractEmployee())
+                                            [Contract: {{ number_format($employee->amount ?? 0) }}]
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                             @error('employee_id')
@@ -49,12 +54,32 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="principal_amount" class="form-label">Principal Amount</label>
-                            <input type="number" step="0.01" name="principal_amount" id="principal_amount" class="form-control" value="{{ old('principal_amount') }}" required>
-                            @error('principal_amount')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="principal_amount" class="form-label">Principal Amount</label>
+                                <input type="number" step="0.01" name="principal_amount" id="principal_amount" class="form-control" value="{{ old('principal_amount') }}" required>
+                                @error('principal_amount')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="interest_rate" class="form-label">Interest Rate (%)</label>
+                                <input type="number" step="0.01" name="interest_rate" id="interest_rate" class="form-control" value="{{ old('interest_rate') }}">
+                                @error('interest_rate')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="total_interest" class="form-label">Total Interest</label>
+                                <input type="number" step="0.01" id="total_interest" class="form-control" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="total_repayment" class="form-label">Total Repayment</label>
+                                <input type="number" step="0.01" id="total_repayment" class="form-control" readonly>
+                            </div>
                         </div>
 
                                                             <div class="row">
@@ -141,6 +166,9 @@
     const employeeSelect = document.getElementById('employee_id');
     const additionSelect = document.getElementById('addition_id');
     const principalAmountInput = document.getElementById('principal_amount');
+    const interestRateInput = document.getElementById('interest_rate');
+    const totalInterestInput = document.getElementById('total_interest');
+    const totalRepaymentInput = document.getElementById('total_repayment');
     const monthlyDeductionInput = document.getElementById('monthly_deduction');
     const monthlyPercentageInput = document.getElementById('monthly_percentage');
     const loanDurationMonthsInput = document.getElementById('loan_duration_months');
@@ -167,14 +195,24 @@
     // Function to calculate percentage based on loan duration
     function calculatePercentage() {
         const principalAmount = parseFloat(principalAmountInput.value) || 0;
+        const interestRate = parseFloat(interestRateInput.value) || 0;
         const loanDurationMonths = parseInt(loanDurationMonthsInput.value) || 0;
         
+        const totalInterest = (principalAmount * interestRate) / 100;
+        const totalRepayment = principalAmount + totalInterest;
+
+        totalInterestInput.value = totalInterest.toFixed(2);
+        totalRepaymentInput.value = totalRepayment.toFixed(2);
+
         console.log('Calculating with:', {
             principal: principalAmount,
+            interestRate: interestRate,
+            totalInterest: totalInterest,
+            totalRepayment: totalRepayment,
             months: loanDurationMonths
         });
         
-        if (principalAmount > 0 && loanDurationMonths > 0) {
+        if (totalRepayment > 0 && loanDurationMonths > 0) {
             const employeeId = employeeSelect.value;
             
             if (employeeId) {
@@ -182,8 +220,8 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.basic_salary) {
-                            // Calculate exact monthly deduction: Principal ÷ Months
-                            const monthlyDeduction = principalAmount / loanDurationMonths;
+                            // Calculate exact monthly deduction: Total Repayment ÷ Months
+                            const monthlyDeduction = totalRepayment / loanDurationMonths;
                             const percentage = (monthlyDeduction / data.basic_salary) * 100;
                             
                             console.log('Calculated:', {
@@ -250,12 +288,9 @@
         }
     });
 
-    // Recalculate when principal amount changes
-    principalAmountInput.addEventListener('input', function() {
-        if (loanDurationMonthsInput.value) {
-            calculatePercentage();
-        }
-    });
+    // Recalculate when principal amount or interest rate changes
+    principalAmountInput.addEventListener('input', calculatePercentage);
+    interestRateInput.addEventListener('input', calculatePercentage);
 
     employeeSelect.addEventListener('change', function () {
         const employeeId = this.value;

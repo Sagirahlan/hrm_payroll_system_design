@@ -135,7 +135,7 @@ class EmployeesSeeder extends Seeder
             ];
             
             // Apply validation rules based on appointment type (Permanent vs Contract)
-            if ($appointmentType && $appointmentType->name === 'Contract') {
+            if ($appointmentTypeId == 2) { // Contract employees have appointment_type_id = 2
                 // Add contract-specific fields
                 $contractStartDate = $dateOfFirstAppointment;
                 $contractEndDate = date('Y-m-d', strtotime($contractStartDate . ' + 2 years')); // 2-year contract
@@ -144,15 +144,20 @@ class EmployeesSeeder extends Seeder
                 $employee['contract_start_date'] = $contractStartDate;
                 $employee['contract_end_date'] = $contractEndDate;
                 $employee['amount'] = $amount;
+                // Contract employees should also have a department
+                $employee['department_id'] = $departments->random();
             } else {
                 // Add permanent employee fields
                 $employee['cadre_id'] = $cadres->random();
-                $employee['grade_level_id'] = 15; // Set grade level id to 15 as requested
+                $employee['grade_level_id'] = $gradeLevels->random(); // Use random grade level instead of hardcoded 15
                 $employee['step_id'] = $steps->random();
                 $employee['department_id'] = $departments->random();
                 $employee['expected_next_promotion'] = date('Y-m-d', strtotime('+' . rand(1, 3) . ' years'));
                 $employee['expected_retirement_date'] = $retirementDate;
                 $employee['rank_id'] = $ranks->random();
+                
+                // Basic salary is now calculated dynamically based on step, so we don't need to set it here
+                // The system will calculate it when needed based on the employee's step_id
             }
             
             $employees[] = $employee;

@@ -177,6 +177,14 @@ public function getCalculatedRetirementDateAttribute()
     }
     
     /**
+     * Check if employee is a contract employee
+     */
+    public function isContractEmployee(): bool
+    {
+        return $this->appointmentType && $this->appointmentType->name === 'Contract';
+    }
+    
+    /**
      * Get formatted employee details for API responses
      */
     public function getFormattedDetailsAttribute()

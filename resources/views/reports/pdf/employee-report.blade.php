@@ -165,7 +165,11 @@
             <div class="card" style="max-width: 320px;">
                 <h2>Payroll Information</h2>
                 <table class="info-table">
-                    <tr><th>Basic Salary</th><td>₦{{ number_format($data['payroll_info']['basic_salary'] ?? 0, 2) }}</td></tr>
+                    @if(isset($data['employee_info']['appointment_type']) && $data['employee_info']['appointment_type'] === 'Contract')
+                        <tr><th>Amount</th><td>₦{{ number_format($data['payroll_info']['basic_salary'] ?? 0, 2) }}</td></tr>
+                    @else
+                        <tr><th>Basic Salary</th><td>₦{{ number_format($data['payroll_info']['basic_salary'] ?? 0, 2) }}</td></tr>
+                    @endif
                     <tr><th>Net Salary</th><td>₦{{ number_format($data['payroll_info']['net_salary'] ?? 0, 2) }}</td></tr>
                     <tr><th>Bank Name</th><td>{{ $data['payroll_info']['bank_name'] ?? 'N/A' }}</td></tr>
                     <tr><th>Account Number</th><td>{{ $data['payroll_info']['account_number'] ?? 'N/A' }}</td></tr>

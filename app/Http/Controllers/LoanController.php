@@ -70,12 +70,25 @@ class LoanController extends Controller
      */
     public function getEmployeeSalary(Employee $employee)
     {
-        $step = $employee->step;
+        // Check if employee is a contract employee using the new method
+        $isContractEmployee = $employee->isContractEmployee();
         
-        if ($step && $step->basic_salary) {
-            return response()->json([
-                'basic_salary' => $step->basic_salary
-            ]);
+        if ($isContractEmployee) {
+            // For contract employees, use the amount field
+            if ($employee->amount) {
+                return response()->json([
+                    'basic_salary' => $employee->amount
+                ]);
+            }
+        } else {
+            // For permanent/temporary employees, use grade level step
+            $step = $employee->step;
+            
+            if ($step && $step->basic_salary) {
+                return response()->json([
+                    'basic_salary' => $step->basic_salary
+                ]);
+            }
         }
         
         return response()->json([
@@ -93,6 +106,7 @@ class LoanController extends Controller
         'employee_id' => 'required|exists:employees,employee_id',
         'addition_id' => 'required|exists:additions,addition_id',
         'principal_amount' => 'required|numeric|min:0',
+        'interest_rate' => 'nullable|numeric|min:0|max:100',
         'monthly_percentage' => 'nullable|numeric|min:0|max:100',
         'monthly_deduction' => 'nullable|numeric|min:0',
         'loan_duration_months' => 'nullable|integer|min:1',
@@ -110,10 +124,22 @@ class LoanController extends Controller
 
         $addition = Addition::find($request->addition_id);
         $employee = Employee::find($request->employee_id);
-        $step = $employee->step;
+        
+        // Determine if employee is contract or regular using the new method
+        $isContractEmployee = $employee->isContractEmployee();
+        $salary = 0;
+        
+        if ($isContractEmployee) {
+            // For contract employees, use the amount field
+            $salary = $employee->amount;
+        } else {
+            // For regular employees, use step basic salary
+            $step = $employee->step;
+            $salary = $step ? $step->basic_salary : 0;
+        }
 
         // Validate that the employee has a salary
-        if (!$step || !$step->basic_salary) {
+        if (!$salary) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['employee_id' => 'Employee does not have a valid salary for percentage calculation.']);
@@ -122,6 +148,13 @@ class LoanController extends Controller
         // CRITICAL: Principal amount is FIXED - never modify it
         $principalAmount = (float) $request->principal_amount;
         
+        // Get interest rate from request (default to 0 if not provided)
+        $interestRate = (float) ($request->interest_rate ?? 0);
+        
+        // Calculate interest and total repayment
+        $totalInterest = ($principalAmount * $interestRate) / 100;
+        $totalRepayment = $principalAmount + $totalInterest;
+        
         // Priority order: loan_duration_months > monthly_deduction > monthly_percentage
         // This ensures the user's primary choice is respected
         
@@ -129,16 +162,19 @@ class LoanController extends Controller
             // PRIORITY 1: User specified EXACT number of months
             $totalMonths = (int) $request->loan_duration_months;
             
-            // Calculate exact monthly deduction: Principal ÷ Exact Months
-            $monthlyDeduction = $principalAmount / $totalMonths;
+            // Calculate exact monthly deduction: Total Repayment ÷ Exact Months
+            $monthlyDeduction = $totalRepayment / $totalMonths;
             
             // Calculate what percentage this represents
-            $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
+            $monthlyPercentage = ($monthlyDeduction / $salary) * 100;
             
             \Log::info('Loan Duration Method', [
                 'months_input' => $request->loan_duration_months,
                 'total_months' => $totalMonths,
                 'principal' => $principalAmount,
+                'interest_rate' => $interestRate,
+                'total_interest' => $totalInterest,
+                'total_repayment' => $totalRepayment,
                 'monthly_deduction' => $monthlyDeduction
             ]);
             
@@ -147,23 +183,23 @@ class LoanController extends Controller
             $monthlyDeduction = (float) $request->monthly_deduction;
             
             // Calculate months needed - round up to ensure loan is fully paid
-            $totalMonths = (int) ceil($principalAmount / $monthlyDeduction);
+            $totalMonths = (int) ceil($totalRepayment / $monthlyDeduction);
             
             // Calculate percentage
-            $monthlyPercentage = ($monthlyDeduction / $step->basic_salary) * 100;
+            $monthlyPercentage = ($monthlyDeduction / $salary) * 100;
             
         } elseif ($request->filled('monthly_percentage') && $request->monthly_percentage > 0) {
             // PRIORITY 3: User specified percentage of salary
             $monthlyPercentage = (float) $request->monthly_percentage;
             
             // Calculate monthly deduction from percentage
-            $monthlyDeductionBasedOnPercentage = ($monthlyPercentage / 100) * $step->basic_salary;
+            $monthlyDeductionBasedOnPercentage = ($monthlyPercentage / 100) * $salary;
             
             // Calculate months needed based on the percentage-based deduction
-            $totalMonths = (int) ceil($principalAmount / $monthlyDeductionBasedOnPercentage);
+            $totalMonths = (int) ceil($totalRepayment / $monthlyDeductionBasedOnPercentage);
             
-            // To ensure total repayment equals principal, adjust the monthly deduction
-            $monthlyDeduction = $principalAmount / $totalMonths;
+            // To ensure total repayment is fully covered, adjust the monthly deduction
+            $monthlyDeduction = $totalRepayment / $totalMonths;
             
         } else {
             return redirect()->back()
@@ -185,13 +221,16 @@ class LoanController extends Controller
             'deduction_type_id' => $request->deduction_type_id,
             'loan_type' => $addition->additionType->name,
             'principal_amount' => $principalAmount,
+            'total_interest' => $totalInterest,
+            'interest_rate' => $interestRate,
+            'total_repayment' => $totalRepayment,
             'monthly_deduction' => $monthlyDeduction,
             'total_months' => $totalMonths,
             'remaining_months' => $totalMonths,
             'monthly_percentage' => $monthlyPercentage,
             'start_date' => $request->start_date,
             'end_date' => $endDate->format('Y-m-d'),
-            'remaining_balance' => $principalAmount,
+            'remaining_balance' => $totalRepayment, // Remaining balance should be total repayment, not just principal
             'status' => 'active',
             'description' => $request->description,
         ]);
@@ -214,7 +253,10 @@ class LoanController extends Controller
             'loan_id' => $loan->loan_id,
             'total_months' => $loan->total_months,
             'monthly_deduction' => $loan->monthly_deduction,
-            'principal' => $loan->principal_amount
+            'principal' => $loan->principal_amount,
+            'total_interest' => $loan->total_interest,
+            'interest_rate' => $loan->interest_rate,
+            'total_repayment' => $loan->total_repayment
         ]);
 
         return redirect()->route('loans.index')
@@ -253,6 +295,12 @@ class LoanController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            // Delete the corresponding deduction record first
+            $deduction = Deduction::where('loan_id', $loan->loan_id)->first();
+            if ($deduction) {
+                $deduction->delete();
+            }
 
             // Delete the loan record
             $loan->delete();

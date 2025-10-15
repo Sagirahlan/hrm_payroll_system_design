@@ -27,6 +27,8 @@
                                     <th>Employee</th>
                                     <th>Loan Type</th>
                                     <th>Principal Amount</th>
+                                    <th>Interest Rate</th>
+                                    <th>Total Repayment</th>
                                     <th>Monthly Deduction</th>
                                     <th>Monthly Percentage</th>
                                     <th>Start Date</th>
@@ -44,6 +46,8 @@
                                         <td>{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}</td>
                                         <td>{{ $loan->deductionType->name ?? $loan->loan_type }}</td>
                                         <td>{{ number_format($loan->principal_amount, 2) }}</td>
+                                        <td>{{ $loan->interest_rate ? $loan->interest_rate . '%' : '0.00%' }}</td>
+                                        <td>{{ number_format($loan->total_repayment, 2) }}</td>
                                         <td>{{ number_format($loan->monthly_deduction, 2) }}</td>
                                         <td>{{ $loan->monthly_percentage ? $loan->monthly_percentage . '%' : 'N/A' }}</td>
                                         <td>{{ $loan->start_date->format('Y-m-d') }}</td>
@@ -56,12 +60,27 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('loans.show', $loan->loan_id) }}" class="btn btn-sm btn-info">View</a>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="{{ route('loans.show', $loan->loan_id) }}">View</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('loans.destroy', $loan->loan_id) }}" method="POST" style="display: inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this loan?')">Delete</button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="text-center">No loans found.</td>
+                                        <td colspan="14" class="text-center">No loans found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

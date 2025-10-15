@@ -227,6 +227,9 @@ class EmployeeController extends Controller
     {
         try {
             $appointmentType = AppointmentType::find($request->input('appointment_type_id'));
+            $employee = new Employee(); // Create a temporary employee instance to check appointment type
+            $employee->appointment_type_id = $request->input('appointment_type_id');
+            $employee->load('appointmentType');
 
             $validationRules = [
                 'first_name' => 'required|string|max:50',
@@ -264,7 +267,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($appointmentType && $appointmentType->name === 'Contract') {
+            if ($employee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -438,7 +441,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($appointmentType && $appointmentType->name === 'Contract') {
+            if ($employee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';

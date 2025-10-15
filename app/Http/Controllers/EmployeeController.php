@@ -407,7 +407,12 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($appointmentType && $appointmentType->name === 'Contract') {
+            // Check if appointment type is contract using the new method
+            $tempEmployee = new Employee();
+            $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
+            $tempEmployee->load('appointmentType');
+            
+            if ($tempEmployee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -570,7 +575,11 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($appointmentType && $appointmentType->name === 'Contract') {
+            $tempEmployee = new Employee();
+            $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
+            $tempEmployee->load('appointmentType');
+            
+            if ($tempEmployee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
