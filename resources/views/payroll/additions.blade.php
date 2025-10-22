@@ -28,6 +28,7 @@
     <div class="row">
         <!-- Left Column: Assignment Details -->
         <div class="col-md-5">
+            @can('manage_payroll_adjustments')
             <form action="{{ route('payroll.additions.bulk.store') }}" method="POST" id="bulk-assignment-form">
                 @csrf
                 <input type="hidden" name="select_all_pages" id="select_all_pages" value="0">
@@ -108,6 +109,11 @@
                     <button type="submit" class="btn btn-primary btn-lg">Assign to Selected Employees</button>
                 </div>
             </form>
+            @else
+            <div class="alert alert-warning">
+                You don't have permission to manage payroll adjustments.
+            </div>
+            @endcan
         </div>
 
         <!-- Right Column: Employee Selection -->

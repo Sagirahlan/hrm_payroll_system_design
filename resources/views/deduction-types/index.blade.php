@@ -2,8 +2,9 @@
 
 @section('content')
 <div class="container">
-    <h1>Deduction Types</h1>
+     @can('create_deduction_types')
     <a href="{{ route('deduction-types.create') }}" class="btn btn-primary">Create Deduction Type</a>
+    @endcan
     <table class="table">
         <thead>
             <tr>
@@ -12,7 +13,9 @@
                 <th>Statutory</th>
                 <th>Calculation Type</th>
                 <th>Rate/Amount</th>
+                 @can('edit_deduction_types')
                 <th>Actions</th>
+                @endcan
             </tr>
         </thead>
         <tbody>
@@ -23,6 +26,7 @@
                     <td>{{ $deductionType->is_statutory ? 'Yes' : 'No' }}</td>
                     <td>{{ $deductionType->calculation_type }}</td>
                     <td>{{ $deductionType->rate_or_amount }}</td>
+                     @can('edit_deduction_types')
                     <td>
                         <a href="{{ route('deduction-types.edit', $deductionType) }}" class="btn btn-sm btn-primary">Edit</a>
                         <form action="{{ route('deduction-types.destroy', $deductionType) }}" method="POST" style="display: inline-block;">
@@ -31,6 +35,7 @@
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
                     </td>
+                    @endcan
                 </tr>
             @endforeach
         </tbody>

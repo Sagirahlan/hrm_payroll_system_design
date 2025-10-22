@@ -9,9 +9,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Promotions & Demotions</h3>
+                    @can('create_promotions')
                     <a href="{{ route('promotions.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> New Promotion/Demotion
                     </a>
+                    @endcan
                 </div>
                 <div class="card-body">
                     <!-- Search and Filter Form -->
@@ -67,7 +69,9 @@
                                     <th>Effective Date</th>
                                     <th>Status</th>
                                     <th>Created By</th>
+                                    @can('view_promotions')
                                     <th>Actions</th>
+                                    @endcan
                                 </tr>
                             </thead>
                             <tbody>
@@ -92,9 +96,11 @@
                                             </span>
                                         </td>
                                         <td>{{ $promotion->creator->name ?? 'System' }}</td>
+                                        @can('view_promotions')
                                         <td>
                                             <a href="{{ route('promotions.show', $promotion->id) }}" class="btn btn-sm btn-info">View</a>
                                         </td>
+                                        @endcan
                                     </tr>
                                 @empty
                                     <tr>

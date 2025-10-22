@@ -12,7 +12,9 @@ class BiometricController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_biometrics']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_biometric_data'], ['only' => ['index']]);
+        $this->middleware(['permission:create_biometric_data'], ['only' => ['create', 'store']]);
     }
 
     public function index(Request $request)

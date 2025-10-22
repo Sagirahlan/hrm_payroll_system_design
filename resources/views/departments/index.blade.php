@@ -6,9 +6,11 @@
 <div class="container mt-4">
     <h1 class="mb-4 text-primary border-bottom border-3 border-primary pb-2">Departments</h1>
    
+    @can('create_departments')
     <a href="{{ route('departments.create') }}" class="btn btn-primary mb-3">
         <i class="fas fa-plus"></i> Add Department
     </a>
+    @endcan
 
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show border border-success" role="alert">
@@ -31,7 +33,9 @@
                         <th class="border-primary">Name</th>
                         <th class="border-primary">Description</th>
                         <th class="border-primary">Employees</th>
+                        @canany(['edit_departments', 'delete_departments'])
                         <th class="border-primary">Actions</th>
+                        @endcanany
                     </tr>
                 </thead>
                 <tbody>
@@ -101,17 +105,21 @@
                                     </div>
                                 </div>
                             </td>
+                            @canany(['edit_departments', 'delete_departments'])
                             <td class="border-primary">
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="actionsDropdown{{ $department->id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                         Actions
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="actionsDropdown{{ $department->id }}">
+                                        @can('edit_departments')
                                         <li>
                                             <a href="{{ route('departments.edit', $department) }}" class="dropdown-item">
                                                 <i class="fas fa-edit"></i> Edit
                                             </a>
                                         </li>
+                                        @endcan
+                                        @can('delete_departments')
                                         <li>
                                             <form action="{{ route('departments.destroy', $department) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this department?')" style="display:inline;">
                                                 @csrf
@@ -121,9 +129,11 @@
                                                 </button>
                                             </form>
                                         </li>
+                                        @endcan
                                     </ul>
                                 </div>
                             </td>
+                            @endcanany
                         </tr>
                     @empty
                         <tr>

@@ -9,9 +9,12 @@
                 <i class="fas fa-users me-2"></i>Employees Management
             </h4>
             <div class="d-flex flex-wrap gap-2 justify-content-center">
+                @can('create_employees')
                 <a href="{{ route('employees.create') }}" class="btn btn-light btn-sm rounded-pill me-2 font-weight-bold shadow-sm">
                     <i class="fas fa-plus me-1"></i>Add Employee
                 </a>
+                @endcan
+                @can('view_employees')
                 <div class="btn-group">
                     <button type="button" class="btn btn-light btn-sm rounded-pill dropdown-toggle font-weight-bold shadow-sm" data-bs-toggle="dropdown">
                         <i class="fas fa-download me-1"></i>Export
@@ -32,6 +35,7 @@
                         </a></li>
                     </ul>
                 </div>
+                @endcan
             </div>
         </div>
 
@@ -362,7 +366,7 @@
                                     </small>
                                 </td>
                                 <td>
-                                    @if(auth()->user()->hasPermissionTo('manage_employees'))
+                                    @can('manage_employees')
                                         <div class="dropdown">
                                             <button class="btn btn-secondary btn-sm rounded-pill dropdown-toggle" 
                                                     type="button" data-bs-toggle="dropdown">
@@ -374,24 +378,28 @@
                                                         <i class="fas fa-eye me-2"></i>View
                                                     </a>
                                                 </li>
+                                                @can('edit_employees')
                                                 <li>
                                                     <a class="dropdown-item" href="{{ route('employees.edit', $employee) }}">
                                                         <i class="fas fa-edit me-2"></i>Edit
                                                     </a>
                                                 </li>
+                                                @endcan
+                                                @can('delete_employees')
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <a href="#" class="dropdown-item text-danger" onclick="deleteEmployee({{ $employee->employee_id }}, '{{ $employee->first_name }} {{ $employee->surname }}')">
                                                         <i class="fas fa-trash me-2"></i>Delete
                                                     </a>
                                                 </li>
+                                                @endcan
                                             </ul>
                                         </div>
                                     @else
                                         <a class="btn btn-outline-secondary btn-sm rounded-pill" href="{{ route('employees.show', $employee) }}">
                                             <i class="fas fa-eye me-1"></i>View
                                         </a>
-                                    @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

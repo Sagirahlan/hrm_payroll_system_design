@@ -5,9 +5,11 @@
     <div class="card shadow">
         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Salary Scales Management</h5>
+            @can('create_salary_scales')
             <a href="{{ route('salary-scales.create') }}" class="btn btn-light btn-sm">
                 <i class="fas fa-plus me-1"></i> Add New Salary Scale
             </a>
+            @endcan
         </div>
         <div class="card-body">
             <!-- Search and Filter Form -->
@@ -67,8 +69,12 @@
                             <td>{{ $scale->max_retirement_age }}</td>
                             <td>{{ $scale->max_years_of_service }}</td>
                             <td>{{ $scale->gradeLevels->count() }}</td>
+                            
                             <td>
+                                @can('view_grade_levels')
                                 <a href="{{ route('salary-scales.grade-levels', $scale->id) }}" class="btn btn-sm btn-info">View Grade Levels</a>
+                                @endcan
+                                @can('edit_salary_scales')
                                 <a href="{{ route('salary-scales.edit', $scale->id) }}" class="btn btn-sm btn-primary">Edit</a>
                                 <form action="{{ route('salary-scales.destroy', $scale->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this salary scale?');">
                                     @csrf
@@ -76,6 +82,7 @@
                                     <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                 </form>
                             </td>
+                            @endcan
                         </tr>
                     @empty
                         <tr>

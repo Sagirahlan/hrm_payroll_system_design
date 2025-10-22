@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class DeductionTypeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_deduction_types'], ['only' => ['index']]);
+        $this->middleware(['permission:create_deduction_types'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:edit_deduction_types'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_deduction_types'], ['only' => ['destroy']]);
+    }
     public function index()
     {
         $deductionTypes = DeductionType::all();

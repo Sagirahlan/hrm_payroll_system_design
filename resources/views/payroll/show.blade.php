@@ -116,19 +116,24 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex gap-2">
+                                @can('view_payslips')
                                 <a href="{{ route('payroll.payslip', $payroll->payroll_id) }}" class="btn btn-primary">
                                     <i class="fas fa-download"></i> Download Pay Slip
                                 </a>
+                                @endcan
                                 
                                 @if($payroll->status !== 'Approved')
+                                    @can('approve_payroll')
                                     <form action="{{ route('payroll.approve', $payroll->payroll_id) }}" method="POST" class="d-inline">
                                         @csrf
                                         <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to approve this payroll?')">
                                             <i class="fas fa-check"></i> Approve Payroll
                                         </button>
                                     </form>
+                                    @endcan
                                 @endif
                                 
+                                @can('manage_payroll_adjustments')
                                 <a href="{{ route('payroll.deductions.show', $payroll->employee_id) }}" class="btn btn-warning">
                                     <i class="fas fa-minus-circle"></i> Manage Deductions
                                 </a>
@@ -136,6 +141,7 @@
                                 <a href="{{ route('payroll.additions.show', $payroll->employee_id) }}" class="btn btn-info">
                                     <i class="fas fa-plus-circle"></i> Manage Additions
                                 </a>
+                                @endcan
                                 
                                 <button type="button" class="btn btn-secondary" onclick="window.print()">
                                     <i class="fas fa-print"></i> Print

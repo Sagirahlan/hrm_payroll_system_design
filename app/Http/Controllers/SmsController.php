@@ -14,7 +14,9 @@ class SmsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_sms']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_sms_notifications'], ['only' => ['index']]);
+        $this->middleware(['permission:create_sms_notifications'], ['only' => ['create', 'store']]);
     }
 
     public function index()

@@ -22,7 +22,7 @@
             --primary-color-lighter: #0ed2ecff;
             --text-color-light: #ffffff;
             --text-color-dark: #212529;
-            --body-bg-light: #f4f7f6;
+            --body-bg-light: #f4f7f6;   
             --card-bg-light: #ffffff;
             --border-color-light: #dee2e6;
             --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
@@ -50,7 +50,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            padding-top: 56px; /* Space for top navbar on mobile */
         }
         
         .wrapper {
@@ -58,18 +57,6 @@
             width: 100%;
             align-items: stretch;
             flex-grow: 1;
-        }
-        
-        /* Ensure proper scrolling on small devices */
-        @media (max-width: 991.98px) {
-            .wrapper {
-                overflow: hidden;
-                flex-direction: column;
-            }
-            
-            body {
-                padding-top: 0;
-            }
         }
 
         /* ================================
@@ -81,43 +68,6 @@
             background: var(--primary-color-darker);
             color: var(--text-color-light);
             transition: margin-left var(--transition-speed) ease;
-            /* Add scrollbar for small devices */
-            overflow-y: auto;
-            max-height: 100vh;
-        }
-        
-        /* Custom scrollbar for sidebar */
-        .sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.1);
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 4px;
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-color-lighter);
-        }
-        
-        /* Mobile sidebar improvements */
-        @media (max-width: 991.98px) {
-            .sidebar {
-                max-height: 100vh;
-                position: fixed;
-                top: 0;
-                bottom: 0;
-                z-index: 1050; /* Above content but below offcanvas backdrop */
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
         }
         
         .sidebar .sidebar-header {
@@ -125,16 +75,9 @@
             text-align: center;
             background: rgba(0,0,0,0.1); /* Changed to be slightly darker than sidebar */
         }
-        
-        /* Compact sidebar header on mobile */
-        @media (max-width: 991.98px) {
-            .sidebar .sidebar-header {
-                padding: 0.75rem;
-            }
-            
-            .sidebar .sidebar-header img {
-                max-width: 100px;
-            }
+
+        .sidebar .sidebar-header img {
+            max-width: 120px;
         }
         
         /* Sidebar Navigation Links */
@@ -201,18 +144,6 @@
             border-radius: var(--border-radius);
             margin-bottom: 1.5rem;
             padding: 0.5rem 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1040;
-        }
-        
-        @media (max-width: 991.98px) {
-            .top-navbar {
-                position: relative;
-                margin-bottom: 1rem;
-            }
         }
         
         [data-bs-theme="dark"] .top-navbar .nav-link,
@@ -243,7 +174,6 @@
             border: none;
             box-shadow: var(--box-shadow);
             background-color: var(--card-bg-light);
-            margin-bottom: 1.5rem;
         }
 
         .card-header {
@@ -279,63 +209,6 @@
             color: var(--text-color-light);
         }
 
-        /* ================================
-        Mobile-specific improvements
-        ================================
-        */
-        @media (max-width: 767.98px) {
-            .container, .container-fluid {
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-            
-            .card-body {
-                padding: 1rem;
-            }
-            
-            .top-navbar .navbar-text {
-                font-size: 0.9rem;
-            }
-            
-            .user-dropdown-toggle img {
-                width: 30px;
-                height: 30px;
-            }
-            
-            .sidebar .nav-link {
-                padding: 0.7rem 1rem;
-                font-size: 0.9rem;
-            }
-            
-            .sidebar .nav-link i {
-                margin-right: 0.75rem;
-            }
-            
-            .form-label {
-                font-size: 0.9rem;
-            }
-            
-            .btn {
-                font-size: 0.875rem;
-                padding: 0.375rem 0.75rem;
-            }
-        }
-        
-        @media (max-width: 575.98px) {
-            .top-navbar .navbar-text {
-                display: none;
-            }
-            
-            .sidebar .nav-link {
-                padding: 0.6rem 0.8rem;
-                font-size: 0.85rem;
-            }
-            
-            .card-header h4, .card-header h5, .card-header h6 {
-                font-size: 1.1rem;
-            }
-        }
-
     </style>
     @yield('styles')
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -346,12 +219,11 @@
     <nav id="sidebar" class="sidebar offcanvas-lg offcanvas-start d-flex flex-column flex-shrink-0 p-3">
         <div class="sidebar-header">
             <a href="{{ route('dashboard') }}">
-                <img src="{{ asset('images/logo-white.png') }}" alt="Logo" class="img-fluid">
+                <img src="{{ asset('images/logo-white.png') }}" alt="Logo">
             </a>
         </div>
         
-        <div class="overflow-auto flex-grow-1">
-            <ul class="nav nav-pills flex-column mb-auto mt-4">
+        <ul class="nav nav-pills flex-column mb-auto mt-4">
             <li>
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
@@ -360,16 +232,22 @@
 
             @if(auth()->user() && (auth()->user()->hasPermissionTo('manage_employees') || auth()->user()->hasPermissionTo('view_employees')))
             <li>
-                <a class="nav-link dropdown-toggle {{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'active' : '' }}" href="#employeesSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'true' : 'false' }}">
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('employees.*', 'pending-changes.*') ? 'active' : '' }}" href="#employeesSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('employees.*', 'pending-changes.*') ? 'true' : 'false' }}">
                     <i class="fas fa-users"></i> Employees
                 </a>
                 <div class="collapse {{ request()->routeIs('employees.*', 'pending-changes.*', 'promotions.*') ? 'show' : '' }}" id="employeesSubmenu">
                     <ul class="nav flex-column ms-1">
+                         @can('view_employees')
                         <li><a class="nav-link {{ request()->routeIs('employees.index') ? 'active' : '' }}" href="{{ route('employees.index') }}">Employee List</a></li>
-                        @can('manage_employees')
+                        @endcan
+                        @can('create_employees')
                         <li><a class="nav-link {{ request()->routeIs('employees.create') ? 'active' : '' }}" href="{{ route('employees.create') }}">Add Employee</a></li>
-                        <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions/Demotions</a></li>
+                        @endcan
+                        @can('approve_employee_changes')
                         <li><a class="nav-link {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}">Pending Changes</a></li>
+                        @endcan
+                        @can('view_promotions')
+                        <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions</a></li>
                         @endcan
                     </ul>
                 </div>
@@ -383,8 +261,12 @@
                 </a>
                 <div class="collapse {{ request()->routeIs('users.*', 'roles.*') ? 'show' : '' }}" id="usersSubmenu">
                     <ul class="nav flex-column ms-1">
+                        @can('view_users')
                         <li><a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Users</a></li>
+                        @endcan
+                        @can('manage_roles')
                         <li><a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}" href="{{ route('roles.index') }}">Roles</a></li>
+                        @endcan
                     </ul>
                 </div>
             </li>
@@ -397,8 +279,12 @@
                 </a>
                 <div class="collapse {{ request()->routeIs('departments.*') ? 'show' : '' }}" id="departmentsSubmenu">
                     <ul class="nav flex-column ms-1">
+                         @can('view_departments')
                         <li><a class="nav-link {{ request()->routeIs('departments.index') ? 'active' : '' }}" href="{{ route('departments.index') }}">Department List</a></li>
+                        @endcan
+                         @can('create_departments')
                         <li><a class="nav-link {{ request()->routeIs('departments.create') ? 'active' : '' }}" href="{{ route('departments.create') }}">Add Department</a></li>
+                        @endcan
                     </ul>
                 </div>
             </li>
@@ -427,8 +313,12 @@
                 </a>
                 <div class="collapse {{ request()->routeIs('disciplinary.*') ? 'show' : '' }}" id="disciplinarySubmenu">
                     <ul class="nav flex-column ms-1">
+                        @can('view_disciplinary')
                         <li><a class="nav-link {{ request()->routeIs('disciplinary.index') ? 'active' : '' }}" href="{{ route('disciplinary.index') }}">Disciplinary List</a></li>
+                        @endcan
+                         @can('create_disciplinary')
                         <li><a class="nav-link {{ request()->routeIs('disciplinary.create') ? 'active' : '' }}" href="{{ route('disciplinary.create') }}">Log Action</a></li>
+                        @endcan
                     </ul>
                 </div>
             </li>
@@ -441,8 +331,10 @@
                 </a>
                 <div class="collapse {{ request()->routeIs('retirements.*') ? 'show' : '' }}" id="retirementsSubmenu">
                     <ul class="nav flex-column ms-1">
+                         @can('view_retirement')
                         <li><a class="nav-link {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}">Retirement List</a></li>
-                        @can('manage_retirement')
+                        @endcan
+                        @can('create_retirement')
                         <li><a class="nav-link {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}">Add Retirement</a></li>
                         @endcan
                     </ul>
@@ -457,7 +349,7 @@
                 </a>
             </li>
             @endcan
-
+        
             @can('manage_sms')
             <li>
                 <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}" href="{{ route('sms.index') }}">
@@ -468,19 +360,35 @@
 
             @can('manage_payroll')
             <li>
-                <a class="nav-link dropdown-toggle {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'active' : '' }}" href="#payrollSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'true' : 'false' }}">
+                <a class="nav-link dropdown-toggle {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'active' : '' }}" href="#payrollSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*']) ? 'true' : 'false' }}">
                     <i class="fas fa-money-check-alt"></i> Payroll
                 </a>
                 <div class="collapse {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'show' : '' }}" id="payrollSubmenu">
                     <ul class="nav flex-column ms-1">
+                        @can('view_payroll')
                         <li><a class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}" href="{{ route('payroll.index') }}">Process Payroll</a></li>
+                        @endcan
+                        @can('create_additions')
                         <li><a class="nav-link {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}">Bulk Additions</a></li>
+                        @endcan
+                        @can('create_deductions')
                         <li><a class="nav-link {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}">Bulk Deductions</a></li>
+                        @endcan
+                        @can('manage_payroll_adjustments')
                         <li><a class="nav-link {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}">Employee Adjustments</a></li>
-                        <li><a class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}" href="{{ route('loans.index') }}">Loans Deduction</a></li>
+                        @endcan
+                        @can('view_addition_types')
                         <li><a class="nav-link {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}">Addition Types</a></li>
+                        @endcan
+                        @can('view_deduction_types')
                         <li><a class="nav-link {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}">Deduction Types</a></li>
+                        @endcan
+                        @can('view_loans')
+                        <li><a class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}" href="{{ route('loans.index') }}">Loan Deductions</a></li>
+                        @endcan
+                            @can('view_salary_scales')
                         <li><a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">Salary Scales</a></li>
+                        @endcan
                     </ul>
                 </div>
             </li>
@@ -494,7 +402,6 @@
             </li>
             @endcan
         </ul>
-        </div>
     </nav>
 
     <div id="content">
@@ -591,31 +498,6 @@
             localStorage.setItem('theme', newTheme);
             updateIcon(newTheme);
         });
-        
-        // Handle sidebar scrolling for small devices
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) {
-            // Ensure sidebar content is scrollable on small devices
-            sidebar.style.overflowY = 'auto';
-            
-            // Add touch support for better scrolling on mobile devices
-            sidebar.addEventListener('touchstart', function() {
-                this.style.overflowY = 'auto';
-            });
-            
-            // Ensure momentum scrolling on iOS devices
-            sidebar.style.webkitOverflowScrolling = 'touch';
-        }
-        
-        // Handle mobile sidebar toggle
-        const sidebarToggle = document.querySelector('[data-bs-toggle="offcanvas"]');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', function() {
-                if (sidebar) {
-                    sidebar.classList.toggle('show');
-                }
-            });
-        }
     });
 </script>
 @stack('scripts')

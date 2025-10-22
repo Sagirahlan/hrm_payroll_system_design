@@ -38,6 +38,11 @@ class PayrollController extends Controller
         $this->middleware(['permission:approve_payroll'], ['only' => ['approve', 'reject', 'bulkSendForReview', 'bulkMarkAsReviewed', 'bulkSendForApproval', 'bulkFinalApprove', 'sendForReview', 'markAsReviewed', 'sendForApproval', 'finalApprove']]);
         $this->middleware(['permission:view_payslips'], ['only' => ['generatePaySlip']]);
         $this->middleware(['permission:manage_payroll_adjustments'], ['only' => ['showDeductions', 'showAdditions', 'storeDeduction', 'storeAddition', 'manageAllAdjustments', 'storeBulkDeductions', 'storeBulkAdditions', 'additions', 'deductions', 'bulkDeductions']]);
+        $this->middleware(['permission:bulk_send_payroll_for_review'], ['only' => ['bulkSendForReview', 'sendForReview']]);
+        $this->middleware(['permission:bulk_mark_payroll_as_reviewed'], ['only' => ['bulkMarkAsReviewed', 'markAsReviewed']]);
+        $this->middleware(['permission:bulk_send_payroll_for_approval'], ['only' => ['bulkSendForApproval', 'sendForApproval']]);
+        $this->middleware(['permission:bulk_final_approve_payroll'], ['only' => ['bulkFinalApprove', 'finalApprove']]);
+        $this->middleware(['permission:bulk_update_payroll_status'], ['only' => ['bulkUpdateStatus']]);
         $this->payrollCalculationService = $payrollCalculationService;
     }
 

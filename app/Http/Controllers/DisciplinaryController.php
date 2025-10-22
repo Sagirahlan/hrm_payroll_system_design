@@ -12,9 +12,12 @@ class DisciplinaryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_disciplinary']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_disciplinary_actions'], ['only' => ['index', 'show']]);
+        $this->middleware(['permission:create_disciplinary_actions'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:edit_disciplinary_actions'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_disciplinary_actions'], ['only' => ['destroy']]);
     }
-
     public function index(Request $request)
     {
         $query = DisciplinaryAction::with('employee');

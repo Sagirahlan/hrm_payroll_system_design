@@ -13,9 +13,12 @@ class SalaryScaleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_payroll']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_salary_scales'], ['only' => ['index', 'showGradeLevels', 'getStepsForGradeLevel']]);
+        $this->middleware(['permission:create_salary_scales'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:edit_salary_scales'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_salary_scales'], ['only' => ['destroy']]);
     }
-
 
     public function index(Request $request)
     {

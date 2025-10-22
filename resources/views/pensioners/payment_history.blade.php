@@ -43,6 +43,7 @@
                                 </tr>
                             </table>
                         </div>
+                        @can('manage_pensioners')
                         <div class="col-md-6">
                             <h5>Payment Tracking</h5>
                             <form method="POST" action="{{ route('pensioners.trackPayment', $pensioner->pensioner_id) }}">
@@ -85,6 +86,7 @@
                                 </div>
                             </form>
                         </div>
+                        @endcan
                     </div>
 
                     <!-- Payment History Table -->

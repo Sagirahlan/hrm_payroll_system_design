@@ -90,6 +90,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Employee Change Management
             'approve_employee_changes',
             'manage_employee_changes',
+            'view_pending_employee_changes',
+            'approve_pending_employee_changes',
+            'reject_pending_employee_changes',
             
             // Deduction Management
             'view_deductions',
@@ -179,6 +182,20 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_profile',
             'edit_profile',
             'change_password',
+
+            // Payroll Bulk Actions
+            'bulk_send_payroll_for_review',
+            'bulk_mark_payroll_as_reviewed',
+            'bulk_send_payroll_for_approval',
+            'bulk_final_approve_payroll',
+            'bulk_update_payroll_status',
+
+            // Loan Management
+            'view_loans',
+            'create_loans',
+            'edit_loans',
+            'delete_loans',
+            'manage_loans',
         ];
 
         foreach ($permissions as $permission) {

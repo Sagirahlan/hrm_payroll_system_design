@@ -20,6 +20,7 @@ use App\Http\Controllers\PensionerController;
 use App\Http\Controllers\GradeLevelController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ComprehensiveReportController;
 use App\Http\Controllers\PendingEmployeeChangeController;
 use App\Http\Controllers\LoanController;
 use Illuminate\Support\Facades\Artisan;
@@ -33,6 +34,34 @@ Auth::routes();
 // Simple test route
 // Route::get('/test-page', [TestController::class, 'index'])->name('test.page');
 
+// Test route for the new report system
+Route::get('/test-reports', function () {
+    // Initialize the service
+    $reportService = new App\Services\ComprehensiveReportService();
+
+    try {
+        // Test generating a few reports to make sure they work
+        $masterReport = $reportService->generateEmployeeMasterReport();
+        $directoryReport = $reportService->generateEmployeeDirectoryReport();
+        $statusReport = $reportService->generateEmployeeStatusReport();
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All reports generated successfully!',
+            'reports_generated' => [
+                'employee_master' => count($masterReport['employees']),
+                'employee_directory' => count($directoryReport['employees']),
+                'employee_status' => count($statusReport['employees_by_status'])
+            ]
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ]);
+    }
+})->name('test.reports');
+
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible to all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -43,6 +72,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
     Route::post('/reports/generate-pensioners', [ReportController::class, 'generatePensionersReport'])->name('reports.generate_pensioners');
+    
+    // New Comprehensive Report System
+    Route::get('/comprehensive-reports', [ComprehensiveReportController::class, 'index'])->name('reports.comprehensive.index');
+    Route::get('/comprehensive-reports/create', [ComprehensiveReportController::class, 'create'])->name('reports.comprehensive.create');
+    Route::post('/comprehensive-reports/generate', [ComprehensiveReportController::class, 'generateReport'])->name('reports.comprehensive.generate');
+    Route::get('/comprehensive-reports/{id}', [ComprehensiveReportController::class, 'show'])->name('reports.comprehensive.show');
+    Route::get('/comprehensive-reports/{id}/download', [ComprehensiveReportController::class, 'download'])->name('reports.comprehensive.download');
     
     // Profile - accessible to authenticated users based on permission
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('permission:view_profile');

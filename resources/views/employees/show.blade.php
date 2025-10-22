@@ -140,10 +140,11 @@
             
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('employees.index') }}" class="btn btn-secondary rounded-pill px-4">Back</a>
+                @can('edit_employees')
                 <div>
-                    
                     <a href="{{ route('employees.edit', $employee) }}" class="btn btn-warning rounded-pill px-4">Edit</a>
                 </div>
+                @endcan
             </div>
         </div>
     </div>

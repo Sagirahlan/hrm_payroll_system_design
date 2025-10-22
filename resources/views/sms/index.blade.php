@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container">
+    @can('manage_sms')
     <h1>SMS Notifications</h1>
    
         <a href="{{ route('sms.create') }}" class="btn btn-primary mb-3">Send SMS</a>
@@ -34,5 +35,10 @@
         </tbody>
     </table>
     {{ $smsNotifications->links() }}
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to manage SMS notifications.
+    </div>
+    @endcan
 </div>
 @endsection

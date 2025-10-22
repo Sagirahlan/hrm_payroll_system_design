@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="container-fluid">
+    @can('generate_reports')
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="bg-light p-4 rounded mb-4">
@@ -46,6 +47,14 @@
                         </div>
                     </div>
                 </form>
+            </div>
+
+            <div class="mb-4">
+                @can('view_comprehensive_reports')
+                <a href="{{ route('reports.comprehensive.index') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-chart-bar"></i> Go to Comprehensive Reports System
+                </a>
+                @endcan
             </div>
 
             <!-- Retired Employees Reports Section -->
@@ -259,6 +268,11 @@
         </div>
     </div>
 </div>
+@else
+<div class="alert alert-warning">
+    You don't have permission to generate reports.
+</div>
+@endcan
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

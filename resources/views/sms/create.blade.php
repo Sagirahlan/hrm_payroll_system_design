@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container">
+    @can('manage_sms')
     <h1>Send SMS Notification</h1>
     <form action="{{ route('sms.store') }}" method="POST">
         @csrf
@@ -44,6 +45,11 @@
         </div>
         <button type="submit" class="btn btn-primary">Send SMS</button>
     </form>
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to send SMS notifications.
+    </div>
+    @endcan
 </div>
 
 <script>

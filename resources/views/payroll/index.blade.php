@@ -16,6 +16,7 @@
         <div class="card-body">
             
             <!-- Payroll Generation Form -->
+             @can('generate_payroll')
             <div class="card border-primary mb-4 shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <strong><i class="fas fa-calculator me-2"></i>Generate Payroll</strong>
@@ -45,6 +46,7 @@
                     </form>
                 </div>
             </div>
+            @endcan
 
             <!-- Search and Filter Section -->
             <div class="card border-info mb-4 shadow-sm">
@@ -257,18 +259,26 @@
                                 <i class="fas fa-table me-2"></i>Payroll Records
                             </h6>
                             <div class="d-flex gap-2">
+                                @can('bulk_send_payroll_for_review')
                                 <button class="btn btn-sm btn-warning" id="bulk-send-review">
                                     <i class="fas fa-paper-plane me-1"></i> Send for Review
                                 </button>
+                                @endcan
+                                @can('bulk_mark_payroll_as_reviewed')
                                 <button class="btn btn-sm btn-info" id="bulk-mark-reviewed">
                                     <i class="fas fa-check-circle me-1"></i> Mark as Reviewed
                                 </button>
+                                @endcan
+                                @can('bulk_send_payroll_for_approval')
                                 <button class="btn btn-sm btn-info" id="bulk-send-approval">
                                     <i class="fas fa-paper-plane me-1"></i> Send for Approval
                                 </button>
+                                @endcan
+                                @can('bulk_final_approve_payroll')
                                 <button class="btn btn-sm btn-success" id="bulk-final-approve">
                                     <i class="fas fa-thumbs-up me-1"></i> Final Approve
                                 </button>
+                                @endcan
                             </div>
                         </div>
                     </div>
@@ -534,10 +544,7 @@
                                                         <a href="{{ route('payroll.index') }}" class="btn btn-outline-primary">
                                                             <i class="fas fa-undo me-1"></i> Clear filters and view all records
                                                         </a>
-                                                    @else
-                                                        <a href="{{ route('payroll.generate') }}" class="btn btn-primary">
-                                                            <i class="fas fa-calculator me-1"></i> Generate Payroll
-                                                        </a>
+                                                   
                                                     @endif
                                                 </div>
                                             </td>
@@ -580,11 +587,21 @@
                                     <label for="bulk_action" class="form-label">Select Action</label>
                                     <select name="bulk_action" id="bulk_action" class="form-select">
                                         <option value="">Choose an action...</option>
+                                        @can('bulk_send_payroll_for_review')
                                         <option value="send-for-review">Send All for Review</option>
+                                        @endcan
+                                        @can('bulk_mark_payroll_as_reviewed')
                                         <option value="mark-as-reviewed">Mark All as Reviewed</option>
+                                        @endcan
+                                        @can('bulk_send_payroll_for_approval')
                                         <option value="send-for-approval">Send All for Final Approval</option>
+                                        @endcan
+                                        @can('bulk_final_approve_payroll')
                                         <option value="final-approve">Final Approve All</option>
+                                        @endcan
+                                        @can('bulk_update_payroll_status')
                                         <option value="bulk-update-status">Update All Status</option>
+                                        @endcan
                                     </select>
                                 </div>
                                 <div id="status-select-container" class="col-md-3" style="display: none;">
@@ -765,6 +782,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const bulkFinalApproveBtn = document.getElementById('bulk-final-approve');
         const bulkActionSelect = document.getElementById('bulk_action');
         const executeBulkActionBtn = document.getElementById('execute-bulk-action');
+        
+        // Hide buttons if user doesn't have permission
+        @cannot('bulk_send_payroll_for_review')
+        if (bulkSendReviewBtn) {
+            bulkSendReviewBtn.style.display = 'none';
+        }
+        @endcannot
+        
+        @cannot('bulk_mark_payroll_as_reviewed')
+        if (bulkMarkReviewedBtn) {
+            bulkMarkReviewedBtn.style.display = 'none';
+        }
+        @endcannot
+        
+        @cannot('bulk_send_payroll_for_approval')
+        if (bulkSendApprovalBtn) {
+            bulkSendApprovalBtn.style.display = 'none';
+        }
+        @endcannot
+        
+        @cannot('bulk_final_approve_payroll')
+        if (bulkFinalApproveBtn) {
+            bulkFinalApproveBtn.style.display = 'none';
+        }
+        @endcannot
         
         if (bulkSendReviewBtn) {
             bulkSendReviewBtn.addEventListener('click', function() {

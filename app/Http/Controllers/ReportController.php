@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use PDF;
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use App\Models\AuditTrail;
 
 class ReportController extends Controller
@@ -139,10 +139,6 @@ class ReportController extends Controller
             return $this->generateIndividualTypeReport($bulkRequest);
         }
 
-        // Handle special deduction/addition reports
-        if ($request->report_type === 'deduction' || $request->report_type === 'addition') {
-            return $this->generateSpecialReport($request);
-        }
 
         $employee = Employee::with([
             'disciplinaryRecords',
@@ -521,11 +517,15 @@ class ReportController extends Controller
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
         
-        $pdf = PDF::loadView('reports.pdf.deduction-report', [
+        // Render the view to HTML
+        $html = view('reports.pdf.deduction-report', [
             'data' => $processedReportData,
             'report' => $report,
             'deductionTypeName' => $deductionTypeName
-        ]);
+        ])->render();
+        
+        // Create PDF using Snappy
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "deduction_report_" . str_replace(' ', '_', strtolower($deductionTypeName)) . "_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
@@ -542,11 +542,14 @@ class ReportController extends Controller
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
         
-        $pdf = PDF::loadView('reports.pdf.addition-report', [
+        $html = view('reports.pdf.addition-report', [
             'data' => $processedReportData,
             'report' => $report,
             'additionTypeName' => $additionTypeName
-        ]);
+        ])->render();
+        
+        // Create PDF using Snappy
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "addition_report_" . str_replace(' ', '_', strtolower($additionTypeName)) . "_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
@@ -1123,10 +1126,12 @@ class ReportController extends Controller
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
         
-        $pdf = PDF::loadView('reports.pdf.retired-employees-report', [
+        $html = view('reports.pdf.retired-employees-report', [
             'data' => $processedReportData,
             'report' => $report
-        ]);
+        ])->render();
+        
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "retired_employees_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
@@ -1403,10 +1408,12 @@ class ReportController extends Controller
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
         
-        $pdf = PDF::loadView('reports.pdf.retired-employees-summary-report', [
+        $html = view('reports.pdf.retired-employees-summary-report', [
             'data' => $processedReportData,
             'report' => $report
-        ]);
+        ])->render();
+        
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "retired_employees_summary_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
@@ -1425,11 +1432,15 @@ class ReportController extends Controller
             $reportData = json_decode($reportData, true);
         }
         
-        $pdf = PDF::loadView('reports.pdf.employee-report', [
+        // Render the view to HTML
+        $html = view('reports.pdf.employee-report', [
             'employee' => $employee,
             'data' => $reportData,
             'report' => $report
-        ]);
+        ])->render();
+        
+        // Create PDF using Snappy
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "employee_report_{$employee->employee_id}_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
@@ -1534,10 +1545,12 @@ class ReportController extends Controller
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
         
-        $pdf = PDF::loadView('reports.pdf.pensioners-report', [
+        $html = view('reports.pdf.pensioners-report', [
             'data' => $processedReportData,
             'report' => $report
-        ]);
+        ])->render();
+        
+        $pdf = PDF::loadHTML($html);
 
         $fileName = "pensioners_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";

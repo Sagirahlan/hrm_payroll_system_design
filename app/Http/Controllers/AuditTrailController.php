@@ -8,6 +8,7 @@ use App\Models\User;
 
 class AuditTrailController extends Controller
 {
+    
     public function index(Request $request)
     {
         $query = AuditTrail::with(['user.roles']) // Eager load user and roles

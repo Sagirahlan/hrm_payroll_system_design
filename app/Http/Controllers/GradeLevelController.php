@@ -11,7 +11,11 @@ class GradeLevelController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_payroll']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_grade_levels'], ['only' => ['index']]);
+        $this->middleware(['permission:create_grade_levels'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:edit_grade_levels'], ['only' => ['edit', 'update']]);
+        $this->middleware(['permission:delete_grade_levels'], ['only' => ['destroy']]);
     }
 
     public function index(Request $request)

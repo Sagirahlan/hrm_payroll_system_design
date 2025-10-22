@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    @can('create_disciplinary')
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="card mb-4">
@@ -131,6 +132,11 @@
             </div>
         </div>
     </div>
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to create disciplinary actions.
+    </div>
+    @endcan
 </div>
 
 <script>

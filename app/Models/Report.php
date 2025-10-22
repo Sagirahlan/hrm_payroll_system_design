@@ -17,7 +17,8 @@ class Report extends Model
         'report_data',
         'export_format',
         'file_path',
-        'employee_id'
+        'employee_id',
+        'description'
     ];
 
     protected $casts = [

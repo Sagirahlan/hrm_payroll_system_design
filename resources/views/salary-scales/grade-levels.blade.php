@@ -23,9 +23,11 @@
                     <a href="{{ route('salary-scales.index') }}" class="btn btn-light me-2">
                         <i class="fas fa-arrow-left me-1"></i>Back
                     </a>
+                    @can('create_grade_levels')
                     <a href="{{ route('salary-scales.grade-levels.create', $salaryScale->id) }}" class="btn btn-success">
                         <i class="fas fa-plus me-1"></i>Add Grade Level
                     </a>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -194,17 +196,22 @@
                                                 </button>
                                                 <ul class="dropdown-menu" aria-labelledby="actionDropdown{{ $level->id }}">
                                                     <li>
+                                                        @can('edit_grade_levels')
                                                         <a class="dropdown-item" href="{{ route('salary-scales.grade-levels.edit', [$salaryScale->id, $level->id]) }}">
                                                             <i class="fas fa-edit text-primary me-2"></i>Edit
                                                         </a>
+                                                        @endcan
                                                     </li>
+                                                    @can('view_grade_levels')
                                                     <li>
                                                         <button class="dropdown-item" type="button" 
                                                                 data-bs-toggle="modal" data-bs-target="#stepsModal{{ $level->id }}">
                                                             <i class="fas fa-list text-info me-2"></i>View Steps
                                                         </button>
                                                     </li>
+                                                    @endcan
                                                     <li><hr class="dropdown-divider"></li>
+                                                    @can('delete_grade_levels')
                                                     <li>
                                                         <form action="{{ route('salary-scales.grade-levels.destroy', [$salaryScale->id, $level->id]) }}" 
                                                               method="POST" 
@@ -216,6 +223,7 @@
                                                             </button>
                                                         </form>
                                                     </li>
+                                                    @endcan
                                                 </ul>
                                             </div>
                                         </td>
@@ -244,9 +252,11 @@
                         @else
                             <p class="text-muted mb-4">Get started by adding the first grade level for this salary scale.</p>
                         @endif
+                        @can('create_grade_levels')
                         <a href="{{ route('salary-scales.grade-levels.create', $salaryScale->id) }}" class="btn btn-success btn-lg">
                             <i class="fas fa-plus me-2"></i>Add New Grade Level
                         </a>
+                        @endcan
                     </div>
                 @endif
             </div>

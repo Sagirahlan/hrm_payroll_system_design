@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    @can('manage_biometrics')
     <div class="card border-primary shadow">
         <div class="card-header" style="background-color: skyblue; color: white;">
             <h5 class="mb-0">Biometric Data</h5>
@@ -28,7 +29,9 @@
                     </form>
                 </div>
                 <div class="col-md-4 text-end">
+                    @can('create_biometrics')
                     <a href="{{ route('biometrics.create') }}" class="btn btn-primary">Add Biometric Data</a>
+                    @endcan
                 </div>
             </div>
 
@@ -81,11 +84,13 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @can('create_biometrics')
                                     @if ($employee->biometricData)
                                         <span class="text-muted">Registered</span>
                                     @else
                                         <a href="{{ route('biometrics.create', ['employee_id' => $employee->employee_id]) }}" class="btn btn-sm btn-primary">Register</a>
                                     @endif
+                                    @endcan
                                 </td>
                             </tr>
                         @empty
@@ -101,5 +106,10 @@
             </div>
         </div>
     </div>
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to manage biometric data.
+    </div>
+    @endcan
 </div>
 @endsection

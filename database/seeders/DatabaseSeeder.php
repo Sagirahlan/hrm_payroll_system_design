@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             LgaSeeder::class,
             WardSeeder::class,
             UserSeeder::class,
-            EmployeesSeeder::class, // Our new employee seeder
+            EmployeesSeeder::class,
             DeductionTypesSeeder::class,
             NonStatutoryItemsSeeder::class,
             AppointmentTypeSeeder::class,

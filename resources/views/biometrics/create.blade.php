@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    @can('create_biometrics')
     <div class="card border-primary shadow">
         <div class="card-header" style="background-color: skyblue; color: white;">
             <h5 class="mb-0">Add Biometric Data</h5>
@@ -57,6 +58,11 @@
             </div>
         </div>
     </div>
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to create biometric data.
+    </div>
+    @endcan
 </div>
 
 {{-- JavaScript to simulate fingerprint capture --}}

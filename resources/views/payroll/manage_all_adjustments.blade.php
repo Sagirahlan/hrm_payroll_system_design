@@ -114,6 +114,7 @@
                                     </span>
                                 </td>
                                 <td>
+                                    @can('manage_payroll_adjustments')
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="actionsDropdown{{ $employee->employee_id }}" data-bs-toggle="dropdown" aria-expanded="false">
                                             Manage
@@ -131,6 +132,9 @@
                                             </li>
                                         </ul>
                                     </div>
+                                    @else
+                                    <span class="text-muted">No permissions</span>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

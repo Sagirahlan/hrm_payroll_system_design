@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Auth;
 
 class GradeLevelAdjustmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_grade_level_adjustments'], ['only' => ['index']]);
+        $this->middleware(['permission:create_grade_level_adjustments'], ['only' => ['store']]);
+        $this->middleware(['permission:delete_grade_level_adjustments'], ['only' => ['destroy']]);
+    }
     public function index(GradeLevel $gradeLevel)
     {
         $deductionTypes = DeductionType::all();

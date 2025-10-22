@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="container">
+    @can('edit_disciplinary')
     <h1>Edit Disciplinary Action</h1>
     <div class="card">
         <div class="card-body">
@@ -85,5 +86,10 @@
             </form>
         </div>
     </div>
+    @else
+    <div class="alert alert-warning">
+        You don't have permission to edit disciplinary actions.
+    </div>
+    @endcan
 </div>
 @endsection

@@ -12,7 +12,9 @@
             <div class="card">
                 <div class="card-header" style="color: black;">
                     Roles
+                    @can('create_roles')
                     <a href="{{ route('roles.create') }}" class="btn btn-primary btn-sm float-right">Add Role</a>
+                    @endcan
                 </div>
                 <div class="card-body" style="color: black;">
                     <table class="table table-bordered">
@@ -33,12 +35,16 @@
                                     @endforeach
                                 </td>
                                 <td>
+                                    @can('edit_roles')
                                     <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-primary btn-sm">Edit</a>
+                                    @endcan
+                                    @can('delete_roles')
                                     <form action="{{ route('roles.destroy', $role->id) }}" method="POST" style="display: inline-block;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this role?')">Delete</button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                             @endforeach

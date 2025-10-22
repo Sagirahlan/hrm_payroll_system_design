@@ -11,7 +11,7 @@ class PensionerController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:manage_employees']);
+        $this->middleware(['auth', 'permission:manage_pensioners']);
     }
 
     public function index(Request $request)

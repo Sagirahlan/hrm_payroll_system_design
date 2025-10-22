@@ -64,8 +64,12 @@
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('pensioners.index') }}" class="btn btn-secondary rounded-pill px-4">Back to List</a>
                 <div>
+                    @can('view_pensioners')
                     <a href="{{ route('pensioners.paymentHistory', $pensioner->pensioner_id) }}" class="btn btn-info rounded-pill px-4 mx-1">Payment History</a>
+                    @endcan
+                    @can('edit_pensioners')
                     <a href="{{ route('pensioners.edit', $pensioner->pensioner_id) }}" class="btn btn-warning rounded-pill px-4">Edit</a>
+                    @endcan
                 </div>
             </div>
         </div>

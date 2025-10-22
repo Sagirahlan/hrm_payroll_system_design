@@ -24,7 +24,10 @@ class PendingEmployeeChangeController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'permission:approve_employee_changes']);
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_pending_employee_changes'], ['only' => ['index', 'show']]);
+        $this->middleware(['permission:approve_pending_employee_changes'], ['only' => ['approve']]);
+        $this->middleware(['permission:reject_pending_employee_changes'], ['only' => ['reject']]);
     }
 
     public function index(Request $request)

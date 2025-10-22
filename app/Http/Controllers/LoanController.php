@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\DB;
 
 class LoanController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth']);
+        $this->middleware(['permission:view_loans'], ['only' => ['index', 'show']]);
+        $this->middleware(['permission:create_loans'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:delete_loans'], ['only' => ['destroy']]);
+    }
     /**
      * Display a listing of the loans.
      */

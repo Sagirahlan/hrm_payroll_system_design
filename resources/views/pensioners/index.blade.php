@@ -60,7 +60,9 @@
                                         <th>Pension Start Date</th>
                                         <th>Pension Amount</th>
                                         <th>Status</th>
+                                        @canany(['view_pensioners', 'manage_pensioners'])
                                         <th>Actions</th>
+                                        @endcanany
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -83,9 +85,13 @@
                                                     {{ $pensioner->status }}
                                                 </span>
                                             </td>
+                                            @canany(['view_pensioners', 'manage_pensioners'])
                                             <td>
                                                 <div class="d-flex flex-column flex-sm-row gap-1">
+                                                    @can('view_pensioners')
                                                     <a href="{{ route('pensioners.show', $pensioner->pensioner_id) }}" class="btn btn-sm btn-primary mb-1 mb-sm-0 me-sm-1">View</a>
+                                                    @endcan
+                                                    @can('manage_pensioners')
                                                     <form action="{{ route('pensioners.updateStatus', $pensioner->pensioner_id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
@@ -93,8 +99,10 @@
                                                             <option value="Deceased" {{ $pensioner->status === 'Deceased' ? 'selected' : '' }}>Deceased</option>
                                                         </select>
                                                     </form>
+                                                    @endcan
                                                 </div>
                                             </td>
+                                            @endcanany
                                         </tr>
                                     @endforeach
                                 </tbody>

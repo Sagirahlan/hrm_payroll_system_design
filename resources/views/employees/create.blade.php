@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container py-4">
+    @can('create_employees')
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="card border-0 shadow-lg rounded-lg">
@@ -888,4 +889,5 @@
         @endif
     });
 </script>
+    @endcan
 @endsection
