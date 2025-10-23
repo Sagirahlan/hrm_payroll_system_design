@@ -249,7 +249,7 @@
     @endif
 
     <div style="margin-top: 30px; text-align: right;">
-        <p><em>Generated on: {{ now()->format('M d, Y H:i') }}</em></p>
+        <p><em>Generated on: {{ now('Africa/Lagos')->format('M d, Y H:i') }}</em></p>
         <p><em>Powered by HRM Payroll System</em></p>
     </div>
 </body>

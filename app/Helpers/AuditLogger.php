@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Request;
 use App\Models\AuditTrail;
 use App\Models\User;
 use App\Models\Role;
+use Carbon\Carbon;
 
 class AuditLogger
 {
@@ -20,7 +21,7 @@ class AuditLogger
             'role_id' => $user->roles->first()?->id ?? null,
             'action' => $action,
             'description' => $description,
-            'action_timestamp' => now(),
+            'action_timestamp' => now('Africa/Lagos'),
             'log_data' => [
                 'ip' => Request::ip(),
                 'agent' => Request::header('User-Agent'),

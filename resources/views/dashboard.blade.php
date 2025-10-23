@@ -396,30 +396,7 @@
                     </div>
 
                     {{-- Quick Actions --}}
-                    <div class="col-lg-4 col-12 mb-4">
-                        <div class="dashboard-card quick-action-card">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-bolt me-2"></i>
-                                    <span>Quick Actions</span>
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <a href="{{ route('profile') }}" class="quick-action-btn btn btn-outline-primary">
-                                    <i class="fas fa-user me-2"></i> View My Profile
-                                </a>
-                                <a href="#" class="quick-action-btn btn btn-outline-info">
-                                    <i class="fas fa-edit me-2"></i> Update Information
-                                </a>
-                                <a href="#" class="quick-action-btn btn btn-outline-warning">
-                                    <i class="fas fa-calendar-plus me-2"></i> Request Leave
-                                </a>
-                                <a href="#" class="quick-action-btn btn btn-outline-success">
-                                    <i class="fas fa-envelope me-2"></i> Contact HR
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                
                 </div>
             </div>
         </div>
@@ -649,46 +626,7 @@
                         </div>
                         
                         {{-- Quick Stats --}}
-                        <div class="chart-card mt-4">
-                            <div class="chart-header">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-clipboard-list me-2 text-info"></i>
-                                    <span>Quick Stats</span>
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <div class="quick-stats-item payroll d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-money-check me-2"></i>
-                                            <span>Payroll Processed</span>
-                                        </div>
-                                        <span class="badge bg-success">98%</span>
-                                    </div>
-                                    <div class="quick-stats-item leaves d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-calendar-times me-2"></i>
-                                            <span>Pending Leaves</span>
-                                        </div>
-                                        <span class="badge bg-warning text-dark">12</span>
-                                    </div>
-                                    <div class="quick-stats-item disciplinary d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                            <span>Disciplinary Cases</span>
-                                        </div>
-                                        <span class="badge bg-danger">3</span>
-                                    </div>
-                                    <div class="quick-stats-item hires d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-user-plus me-2"></i>
-                                            <span>New Hires (This Month)</span>
-                                        </div>
-                                        <span class="badge bg-primary">7</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                       
                     </div>
                 </div>
             </div>

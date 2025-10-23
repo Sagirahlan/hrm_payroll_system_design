@@ -26,12 +26,18 @@
                         <li><a class="dropdown-item" href="{{ route('employees.export.excel') }}">
                             <i class="fas fa-file-excel me-2 text-success"></i>Export to Excel
                         </a></li>
+                        <li><a class="dropdown-item" href="{{ route('employees.export.csv') }}">
+                            <i class="fas fa-file-csv me-2 text-primary"></i>Export to CSV
+                        </a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="exportFiltered('pdf')">
                             <i class="fas fa-filter me-2 text-info"></i>Export Filtered (PDF)
                         </a></li>
                         <li><a class="dropdown-item" href="#" onclick="exportFiltered('excel')">
                             <i class="fas fa-filter me-2 text-info"></i>Export Filtered (Excel)
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportFiltered('csv')">
+                            <i class="fas fa-filter me-2 text-primary"></i>Export Filtered (CSV)
                         </a></li>
                     </ul>
                 </div>
@@ -80,7 +86,14 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center" style="background: #f1f8ff;">
                             <h6 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-search me-2"></i>Search & Filter Options
+                                <div class="d-flex align-items-center">
+                                    
+                                    <span class="me-3"></span>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters"
+                                        aria-expanded="{{ request()->hasAny(['department', 'cadre', 'status', 'gender', 'appointment_type_id', 'state_of_origin', 'age_from', 'age_to', 'appointment_from', 'appointment_to']) ? 'true' : 'false' }}"
+                                        aria-controls="advancedFilters">
+                                        <i class="fas fa-filter me-1"></i>Search &amp; Filter Options
+                                </div>
                             </h6>
                             <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters">
                                 <i class="fas fa-chevron-down"></i>
@@ -445,13 +458,13 @@ function changeSorting(value) {
 }
 
 function exportFiltered(format) {
-    const form = document.getElementById('filterForm');
-    const formData = new FormData(form);
-    
     // Build the export URL with all current filter parameters
     const exportUrl = new URL('{{ route("employees.export.filtered") }}', window.location.origin);
     
-    // Add all form parameters to the URL
+    // Get all form parameters and add them to the URL
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    
     for (let [key, value] of formData.entries()) {
         if (value) {
             exportUrl.searchParams.append(key, value);

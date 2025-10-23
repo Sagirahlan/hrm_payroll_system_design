@@ -340,6 +340,211 @@ class EmployeeController extends Controller
         return $pdf->download("filtered_employees_{$timestamp}.pdf");
     }
 }
+
+    /**
+     * Export employees to CSV format
+     */
+    public function exportCsv(Request $request)
+    {
+        // Apply same filters as exportFiltered method
+        $query = Employee::with([
+            'department', 
+            'gradeLevel', 
+            'step', 
+            'appointmentType', 
+            'state', 
+            'lga', 
+            'bank'
+        ]);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('employee_id', 'like', "%{$search}%")
+                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('mobile_no', 'like', "%{$search}%")
+                  ->orWhere('nin', 'like', "%{$search}%")
+                  ->orWhere(DB::raw("CONCAT_WS(' ', first_name, middle_name, surname)"), 'like', "%{$search}%")
+                  ->orWhere(DB::raw("CONCAT_WS(' ', first_name, surname)"), 'like', "%{$search}%");
+            });
+        }
+
+        // Department filter
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
+        // Cadre filter
+        if ($request->filled('cadre')) {
+            $query->where('cadre_id', $request->cadre);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Gender filter
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
+        // Appointment type filter
+        if ($request->filled('appointment_type_id')) {
+            $query->where('appointment_type_id', $request->appointment_type_id);
+        }
+
+        // State of origin filter
+        if ($request->filled('state_of_origin')) {
+            $state = State::where('name', $request->state_of_origin)->first();
+            if ($state) {
+                $query->where('state_id', $state->state_id);
+            }
+        }
+
+        // Age range filter
+        if ($request->filled('age_from') || $request->filled('age_to')) {
+            $today = Carbon::now();
+            
+            if ($request->filled('age_from')) {
+                $dateFrom = $today->copy()->subYears($request->age_from)->endOfYear();
+                $query->where('date_of_birth', '<=', $dateFrom);
+            }
+            
+            if ($request->filled('age_to')) {
+                $dateTo = $today->copy()->subYears($request->age_to)->startOfYear();
+                $query->where('date_of_birth', '>=', $dateTo);
+            }
+        }
+
+        // Date of appointment range filter
+        if ($request->filled('appointment_from')) {
+            $query->where('date_of_first_appointment', '>=', $request->appointment_from);
+        }
+
+        if ($request->filled('appointment_to')) {
+            $query->where('date_of_first_appointment', '<=', $request->appointment_to);
+        }
+
+        // Retirement date range filter
+        if ($request->filled('retirement_from')) {
+            $query->where('expected_retirement_date', '>=', $request->retirement_from);
+        }
+
+        if ($request->filled('retirement_to')) {
+            $query->where('expected_retirement_date', '<=', $request->retirement_to);
+        }
+
+        // Salary scale filter
+        if ($request->filled('grade_level_id')) {
+            $query->where('grade_level_id', $request->grade_level_id);
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        $allowedSorts = ['first_name', 'surname', 'employee_id', 'date_of_first_appointment', 'expected_retirement_date', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $employees = $query->get();
+
+        // Create CSV content
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="employees_' . now()->format('Y_m_d_H_i_s') . '.csv"',
+        ];
+
+        $callback = function() use ($employees) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for proper UTF-8 encoding in Excel
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Add headers
+            fputcsv($file, [
+                'Employee ID',
+                'Registration Number',
+                'First Name',
+                'Middle Name',
+                'Surname',
+                'Gender',
+                'Date of Birth',
+                'Email',
+                'Mobile Number',
+                'Department',
+                'Grade Level',
+                'Step',
+                'Appointment Type',
+                'Date of First Appointment',
+                'Years of Service',
+                'Status',
+                'State',
+                'LGA',
+                'Bank Name',
+                'Account Number',
+                'Account Name'
+            ]);
+
+            // Add data rows
+            foreach ($employees as $employee) {
+                fputcsv($file, [
+                    $employee->employee_id,
+                    $employee->reg_no,
+                    $employee->first_name,
+                    $employee->middle_name,
+                    $employee->surname,
+                    $employee->gender,
+                    $employee->date_of_birth,
+                    $employee->email,
+                    $employee->mobile_no,
+                    $employee->department->department_name ?? '',
+                    $employee->gradeLevel->name ?? '',
+                    $employee->step->name ?? '',
+                    $employee->appointmentType->name ?? '',
+                    $employee->date_of_first_appointment,
+                    $employee->years_of_service,
+                    $employee->status,
+                    $employee->state->state_name ?? '',
+                    $employee->lga->lga_name ?? '',
+                    $employee->bank->bank_name ?? '',
+                    $employee->bank->account_no ?? '',
+                    $employee->bank->account_name ?? ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'exported',
+            'description' => 'Exported employee list as CSV with ' . $employees->count() . ' records',
+            'action_timestamp' => now(),
+            'log_data' => json_encode([
+                'entity_type' => 'Employee', 
+                'entity_id' => null, 
+                'format' => 'CSV', 
+                'count' => $employees->count(), 
+                'filters' => $request->only([
+                    'search', 
+                    'department', 
+                    'cadre', 
+                    'status', 
+                    'gender', 
+                    'appointment_type_id'
+                ])
+            ]),
+        ]);
+
+        return response()->stream($callback, 200, $headers);
+    }
     // Keep all your existing methods (store, show, edit, update, destroy, etc.)
     public function create()
     {

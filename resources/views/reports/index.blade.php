@@ -10,7 +10,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Generated Reports</h3>
                     <div class="btn-group">
-                        @can('view_comprehensive_reports')
+                        @can('generate_reports')
                         <a href="{{ route('reports.comprehensive.index') }}" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i> Comprehensive Reports
                         </a>
@@ -72,7 +72,7 @@
                                                 {{ $report->export_format }}
                                             </span>
                                         </td>
-                                        @can('download_reports')
+                                        @can('generate_reports')
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 

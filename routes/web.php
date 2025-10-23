@@ -341,3 +341,6 @@ Route::get('/clear-cache', function() {
     Artisan::call('config:clear');
     return "Cache cleared!";
 });
+
+// Employee CSV Export Route
+Route::get('/employees/export/csv', [EmployeeController::class, 'exportCsv'])->name('employees.export.csv')->middleware('permission:manage_employees');

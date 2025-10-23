@@ -68,6 +68,8 @@
             background: var(--primary-color-darker);
             color: var(--text-color-light);
             transition: margin-left var(--transition-speed) ease;
+            height: 100vh; /* Ensure sidebar takes full viewport height */
+            overflow-y: auto; /* Add scroll for overflow content */
         }
         
         .sidebar .sidebar-header {
@@ -247,7 +249,7 @@
                         <li><a class="nav-link {{ request()->routeIs('pending-changes.*') ? 'active' : '' }}" href="{{ route('pending-changes.index') }}">Pending Changes</a></li>
                         @endcan
                         @can('view_promotions')
-                        <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions/Demotions</a></li>
                         @endcan
                     </ul>
                 </div>

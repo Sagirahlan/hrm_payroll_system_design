@@ -59,6 +59,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_biometrics',
             'delete_biometrics',
             'manage_biometrics', // existing - for backward compatibility
+            // Specific biometric permissions used in controller
+            'view_biometric_data',
+            'create_biometric_data',
             
             // Disciplinary Management
             'view_disciplinary',
@@ -66,11 +69,19 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_disciplinary',
             'delete_disciplinary',
             'manage_disciplinary', // existing - for backward compatibility
+            // Specific disciplinary permissions used in controller
+            'view_disciplinary_actions',
+            'create_disciplinary_actions',
+            'edit_disciplinary_actions',
+            'delete_disciplinary_actions',
             
             // SMS Management
             'view_sms',
             'send_sms',
             'manage_sms', // existing - for backward compatibility
+            // Specific SMS permissions used in controller
+            'view_sms_notifications',
+            'create_sms_notifications',
             
             // Retirement Management
             'view_retirement',
@@ -78,6 +89,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_retirement',
             'delete_retirement',
             'manage_retirement', // existing - for backward compatibility
+            // Specific retirement permissions used in controller
+            'view_retirements',
+            'create_retirements',
             
             // Report Management
             'view_reports',
@@ -177,7 +191,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_promotions',
             'delete_promotions',
             'manage_promotions',
-
+            'approve_promotions',
+            'reject_promotions',
+            
             // Profile Management
             'view_profile',
             'edit_profile',
@@ -196,6 +212,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_loans',
             'delete_loans',
             'manage_loans',
+            
+            // Grade Level Adjustment Management
+            'view_grade_level_adjustments',
+            'create_grade_level_adjustments',
+            'delete_grade_level_adjustments',
         ];
 
         foreach ($permissions as $permission) {
