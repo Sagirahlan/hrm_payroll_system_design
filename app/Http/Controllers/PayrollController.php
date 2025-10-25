@@ -635,7 +635,7 @@ class PayrollController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('first_name', 'like', "%{$search}%")
                   ->orWhere('middle_name', 'like', "%{$search}%")
                   ->orWhere('surname', 'like', "%{$search}%")

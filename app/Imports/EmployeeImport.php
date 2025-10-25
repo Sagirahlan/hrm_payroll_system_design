@@ -34,7 +34,7 @@ class EmployeeImport implements ToModel
 
             'date_of_first_appointment' => $this->transformDate($row[12]),
             'cadre_id' => $row[13],
-            'reg_no' => $row[14],
+            'staff_no' => $row[14],
             'scale_id' => $row[15],
             'department_id' => $row[16],
 

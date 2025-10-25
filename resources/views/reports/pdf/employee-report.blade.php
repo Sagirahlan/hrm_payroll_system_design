@@ -148,7 +148,7 @@
                 <table class="info-table">
                     <tr><th>Date of First Appointment</th><td>{{ $data['employee_info']['date_of_first_appointment'] ?? 'N/A' }}</td></tr>
                     <tr><th>Cadre</th><td>{{ $data['employee_info']['cadre'] ?? 'N/A' }}</td></tr>
-                    <tr><th>Registration No</th><td>{{ $data['employee_info']['reg_no'] ?? 'N/A' }}</td></tr>
+                    <tr><th>Registration No</th><td>{{ $data['employee_info']['staff_no'] ?? 'N/A' }}</td></tr>
                     <tr><th>Grade Level</th><td>{{ $data['employee_info']['grade_level'] ?? 'N/A' }}</td></tr>
                     <tr><th>Department</th><td>{{ $data['employee_info']['department'] ?? 'N/A' }}</td></tr>
                     <tr><th>Expected Next Promotion</th><td>{{ $data['employee_info']['expected_next_promotion'] ?? 'N/A' }}</td></tr>

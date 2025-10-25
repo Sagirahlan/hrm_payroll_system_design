@@ -169,7 +169,7 @@ hrm_payroll_system_design/
 - `address`: Physical address
 - `date_of_first_appointment`: Employment start date (Y-m-d format)
 - `cadre_id`: Employee cadre classification
-- `reg_no`: Registration number
+- `staff_no`: Registration number
 - `grade_level_id`, `step_id`, `rank_id`: Position classification
 - `department_id`: Department assignment
 - `expected_next_promotion`: Expected promotion date
@@ -416,7 +416,7 @@ The Employee Management module serves as the foundation of the entire system, co
 
 #### Validation and Business Rules
 - Date validation for date of birth, appointment date, etc.
-- Unique constraints on employee_id and reg_no
+- Unique constraints on employee_id and staff_no
 - Mandatory fields validation for critical information
 - Automatic years of service calculation
 - Retirement date calculation based on grade level parameters

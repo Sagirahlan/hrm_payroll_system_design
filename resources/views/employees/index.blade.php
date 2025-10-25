@@ -334,7 +334,7 @@
                             <tr>
                                 <td>{{ $loop->iteration + ($employees->firstItem() ? $employees->firstItem() - 1 : 0) }}</td>
                                 <td>
-                                    <span class="badge bg-secondary">{{ $employee->reg_no }}</span>
+                                    <span class="badge bg-secondary">{{ $employee->staff_no }}</span>
                                 </td>
                                 <td>
                                     @if($employee->photo_path)

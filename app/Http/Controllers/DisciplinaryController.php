@@ -28,7 +28,7 @@ class DisciplinaryController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereHas('employee', function ($q) use ($search) {
                     $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
-                      ->orWhere('reg_no', 'like', "%{$search}%");
+                      ->orWhere('staff_no', 'like', "%{$search}%");
                 })
                 ->orWhere('action_type', 'like', "%{$search}%")
                 ->orWhere('status', 'like', "%{$search}%");
@@ -96,7 +96,7 @@ class DisciplinaryController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
-                  ->orWhere('reg_no', 'like', "%{$search}%");
+                  ->orWhere('staff_no', 'like', "%{$search}%");
             });
         }
         
@@ -317,7 +317,7 @@ class DisciplinaryController extends Controller
         $employees = Employee::with('department')
             ->where(function ($query) use ($search) {
                 $query->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
-                      ->orWhere('reg_no', 'like', "%{$search}%");
+                      ->orWhere('staff_no', 'like', "%{$search}%");
             })
             ->where('status', '!=', 'Retired')
             ->get();

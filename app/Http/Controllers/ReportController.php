@@ -1163,7 +1163,7 @@ class ReportController extends Controller
         // Process each retired employee to match the specific format
         foreach ($retiredEmployees as $employee) {
             $employeeData = [
-                'employee_id' => $employee->reg_no ?: $employee->employee_id, // Use reg_no as Staff ID if available
+                'employee_id' => $employee->staff_no ?: $employee->employee_id, // Use staff_no as Staff ID if available
                 'name' => trim($employee->first_name . ' ' . $employee->surname), // Name field
                 'date_of_birth' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : 'N/A', // Date of Birth
                 'age' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->age : 'N/A', // Age

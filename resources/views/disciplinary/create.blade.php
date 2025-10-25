@@ -104,7 +104,7 @@
                                         @foreach ($employees as $employee)
                                         <tr>
                                             <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
-                                            <td>{{ $employee->reg_no }}</td>
+                                            <td>{{ $employee->staff_no }}</td>
                                             <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                             <td>
                                                 <span class="badge bg-success">{{ $employee->status }}</span>

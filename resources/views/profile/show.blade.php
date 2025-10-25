@@ -82,7 +82,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Registration No') }}</strong></td>
-                                    <td>{{ $user->employee ? $user->employee->reg_no : 'N/A' }}</td>
+                                    <td>{{ $user->employee ? $user->employee->staff_no : 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Full Name') }}</strong></td>

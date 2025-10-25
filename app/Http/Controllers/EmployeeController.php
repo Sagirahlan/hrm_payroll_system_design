@@ -48,7 +48,7 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
                   ->orWhere('nin', 'like', "%{$search}%")
@@ -182,7 +182,7 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
                   ->orWhere('nin', 'like', "%{$search}%")
@@ -221,7 +221,7 @@ class EmployeeController extends Controller
         $search = $request->input('search');
         $query->where(function ($q) use ($search) {
             $q->where('employee_id', 'like', "%{$search}%")
-              ->orWhere('reg_no', 'like', "%{$search}%")
+              ->orWhere('staff_no', 'like', "%{$search}%")
               ->orWhere('email', 'like', "%{$search}%")
               ->orWhere('mobile_no', 'like', "%{$search}%")
               ->orWhere('nin', 'like', "%{$search}%")
@@ -362,7 +362,7 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
                   ->orWhere('nin', 'like', "%{$search}%")
@@ -496,7 +496,7 @@ class EmployeeController extends Controller
             foreach ($employees as $employee) {
                 fputcsv($file, [
                     $employee->employee_id,
-                    $employee->reg_no,
+                    $employee->staff_no,
                     $employee->first_name,
                     $employee->middle_name,
                     $employee->surname,
@@ -587,7 +587,7 @@ class EmployeeController extends Controller
                 'ward_id' => 'nullable|exists:wards,ward_id',
                 'nationality' => 'required|string|max:50',
                 'nin' => 'required|string|max:50',
-                'reg_no' => 'required|string|max:50',
+                'staff_no' => 'required|string|max:50',
                 'mobile_no' => 'required|string|max:15',
                 'email' => 'nullable|email|max:100',
                 'pay_point' => 'required|string|max:100',
@@ -662,7 +662,7 @@ class EmployeeController extends Controller
             \Illuminate\Support\Facades\Log::error('Validation errors: ' . json_encode($errors));
             $step = 1;
 
-            $step1_fields = ['first_name', 'surname', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'nationality', 'reg_no', 'mobile_no'];
+            $step1_fields = ['first_name', 'surname', 'gender', 'date_of_birth', 'state_id', 'lga_id', 'nationality', 'staff_no', 'mobile_no'];
             $step2_fields = ['address'];
             $step3_fields = ['date_of_first_appointment', 'cadre_id', 'salary_scale_id', 'grade_level_id', 'step_id', 'step_level', 'department_id', 'rank_id', 'expected_retirement_date', 'contract_start_date', 'contract_end_date', 'amount', 'appointment_type_id'];
             $step4_fields = ['status'];

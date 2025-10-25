@@ -13,6 +13,7 @@ class DashboardController extends Controller
         $employeeCount = Employee::count();
         $activeEmployees = Employee::where('status', 'Active')->count();
         $suspendedEmployees = Employee::where('status', 'Suspended')->count();
+        $terminatedEmployees = Employee::where('status', 'Terminated')->count();
         $deceasedEmployees = Employee::where('status', 'Deceased')->count();
         $retiredEmployees = Employee::where('status', 'Retired')->count();
         
@@ -23,10 +24,12 @@ class DashboardController extends Controller
         $recentAudits = AuditTrail::with('user')->latest()->take(5)->get();
         $departments = Department::withCount('employees')->get();
 
+        // Ensure terminatedEmployees is included in compact
         return view('dashboard', compact(
             'employeeCount', 
             'activeEmployees', 
             'suspendedEmployees',
+            'terminatedEmployees',
             'deceasedEmployees',
             'retiredEmployees', 
             'permanentEmployees',

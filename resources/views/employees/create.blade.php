@@ -99,8 +99,8 @@
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">Staff ID <span class="text-danger">*</span></label>
-                                    <input type="text" name="reg_no" class="form-control" required value="{{ old('reg_no') }}">
-                                    @error('reg_no') <small class="text-danger">{{ $message }}</small> @enderror
+                                    <input type="text" name="staff_no" class="form-control" required value="{{ old('staff_no') }}">
+                                    @error('staff_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">NIN <span class="text-danger">*</span></label>

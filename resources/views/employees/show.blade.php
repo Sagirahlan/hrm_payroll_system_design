@@ -52,7 +52,7 @@
                         <div class="col-md-6"><p><strong>State of Origin:</strong> {{ $employee->state->name ?? 'N/A' }}</p></div>
                         <div class="col-md-6"><p><strong>LGA:</strong> {{ $employee->lga->name ?? 'N/A' }}</p></div>
                         <div class="col-md-6"><p><strong>Ward:</strong> {{ $employee->ward->ward_name ?? 'N/A' }}</p></div>
-                        <div class="col-md-6"><p><strong>Staff ID:</strong> {{ $employee->reg_no ?? 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Staff ID:</strong> {{ $employee->staff_no ?? 'N/A' }}</p></div>
                         <div class="col-md-6"><p><strong>NIN:</strong> {{ $employee->nin ?? 'N/A' }}</p></div>
                     </div>
                 </div>

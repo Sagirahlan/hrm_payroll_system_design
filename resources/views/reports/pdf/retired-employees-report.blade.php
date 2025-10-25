@@ -81,7 +81,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Retireddd Employees Report</h1>
+        <h1>Retired Employees Report</h1>
         <p>Generated on {{ date('F j, Y') }}</p>
     </div>
 

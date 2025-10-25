@@ -38,7 +38,7 @@
                     @forelse($eligibleEmployees as $employee)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $employee->reg_no }}</td>
+                            <td>{{ $employee->staff_no }}</td>
                             <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                             <td>{{ \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') }}</td>
                             <td>{{ \Carbon\Carbon::parse($employee->date_of_birth)->age }}</td>

@@ -41,7 +41,7 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
                   ->orWhere('nin', 'like', "%{$search}%")
@@ -242,7 +242,7 @@ class EmployeeController extends Controller
                 'ward_id' => 'nullable|exists:wards,ward_id',
                 'nationality' => 'required|string|max:50',
                 'nin' => 'required|string|max:50',
-                'reg_no' => 'required|string|max:50',
+                'staff_no' => 'required|string|max:50',
                 'mobile_no' => 'required|string|max:15',
                 'email' => 'nullable|email|max:100',
                 'pay_point' => 'required|string|max:100',
@@ -685,7 +685,7 @@ class EmployeeController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('employee_id', 'like', "%{$search}%")
-                  ->orWhere('reg_no', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('mobile_no', 'like', "%{$search}%")
                   ->orWhere('nin', 'like', "%{$search}%")

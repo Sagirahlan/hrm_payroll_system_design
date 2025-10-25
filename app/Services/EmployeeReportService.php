@@ -69,7 +69,7 @@ class EmployeeReportService
             'address' => $employee->address,
             'date_of_first_appointment' => $employee->date_of_first_appointment,
             'cadre' => optional($employee->cadre)->name,
-            'reg_no' => $employee->reg_no,
+            'staff_no' => $employee->staff_no,
             'grade_level' => optional($employee->gradeLevel)->name,
             'department' => optional($employee->department)->department_name,
             'expected_next_promotion' => $employee->expected_next_promotion,

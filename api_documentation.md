@@ -169,7 +169,7 @@
     "ward_id": "integer",
     "nationality": "string",
     "nin": "string",
-    "reg_no": "string",
+    "staff_no": "string",
     "mobile_no": "string",
     "email": "string",
     "pay_point": "string",

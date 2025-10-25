@@ -96,7 +96,7 @@ class EmployeesSeeder extends Seeder
             // Initialize the employee array with all possible fields for consistency
             $employee = [
                 'employee_id' => $i,
-                'reg_no' => 'REG' . str_pad($i, 5, '0', STR_PAD_LEFT),
+                'staff_no' => 'REG' . str_pad($i, 5, '0', STR_PAD_LEFT),
                 'first_name' => $firstName,
                 'surname' => $surname,
                 'middle_name' => $middleName,

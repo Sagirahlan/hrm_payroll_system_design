@@ -310,7 +310,7 @@
                                                 <input type="checkbox" name="payroll_ids[]" value="{{ $payroll->payroll_id }}" class="payroll-checkbox form-check-input">
                                             </td>
                                             <td>
-                                                {{ $payroll->employee && $payroll->employee->reg_no ? $payroll->employee->reg_no : 'N/A' }}
+                                                {{ $payroll->employee && $payroll->employee->staff_no ? $payroll->employee->staff_no : 'N/A' }}
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">

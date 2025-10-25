@@ -1,968 +1,715 @@
 @extends('layouts.app')
 
 @section('styles')
-<!-- Additional styles for the dashboard -->
 <style>
-    .dashboard-card {
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        border: none;
-        margin-bottom: 24px;
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #34495e;
+        --accent-blue: #3498db;
+        --accent-green: #27ae60;
+        --accent-orange: #e67e22;
+        --accent-red: #e74c3c;
+        --text-primary: #2c3e50;
+        --text-secondary: #7f8c8d;
+        --border-color: #ecf0f1;
+        --bg-light: #f8f9fa;
+        --white: #ffffff;
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
-    .dashboard-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+
+    body {
+        background: #f4f6f8;
+        font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: var(--text-primary);
     }
-    
-    .dashboard-card .card-header {
-        border-radius: 12px 12px 0 0 !important;
-        padding: 18px 24px;
+
+    .dashboard-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    /* Header Section */
+    .page-header {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 2rem 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
+        border-left: 4px solid var(--accent-blue);
+    }
+
+    .page-title {
+        font-size: 1.75rem;
         font-weight: 600;
-        border: none;
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.5px;
     }
-    
-    .stat-card {
-        border-radius: 10px;
-        overflow: hidden;
-        border: none;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    .page-subtitle {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin: 0;
+        font-weight: 400;
     }
-    
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+    /* Statistics Grid */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
     }
-    
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        font-size: 24px;
-    }
-    
-    .welcome-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
-        color: white;
-        padding: 25px;
-        margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+    .stat-box {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 1.75rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
         position: relative;
-        overflow: hidden;
     }
-    
-    .welcome-banner::before {
+
+    .stat-box:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .stat-box::before {
         content: '';
         position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: float 6s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); }
-        50% { transform: translate(-20px, -20px) rotate(180deg); }
-    }
-    
-    .welcome-banner h4 {
-        font-weight: 700;
-        margin-bottom: 10px;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .welcome-banner .lead {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .quick-action-card {
+        top: 0;
+        left: 0;
+        width: 4px;
         height: 100%;
+        border-radius: 8px 0 0 8px;
     }
-    
-    .quick-action-btn {
+
+    .stat-box.primary::before { background: var(--accent-blue); }
+    .stat-box.success::before { background: var(--accent-green); }
+    .stat-box.warning::before { background: var(--accent-orange); }
+    .stat-box.danger::before { background: var(--accent-red); }
+    .stat-box.secondary::before { background: var(--secondary-color); }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        transition: all 0.3s;
-        text-decoration: none;
-        font-weight: 500;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        font-size: 1.25rem;
+        color: var(--white);
     }
-    
-    .quick-action-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .activity-table th {
-        font-weight: 600;
-        color: #495057;
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 350px;
-    }
-    
-    .chart-card {
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        border: none;
-        margin-bottom: 24px;
-        overflow: hidden;
-    }
-    
-    .chart-header {
-        padding: 20px 24px 10px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    }
-    
-    .chart-body {
-        padding: 20px;
-    }
-    
-    .department-chart-container {
-        height: 300px;
-        position: relative;
-    }
-    
+
+    .stat-icon.primary { background: var(--accent-blue); }
+    .stat-icon.success { background: var(--accent-green); }
+    .stat-icon.warning { background: var(--accent-orange); }
+    .stat-icon.danger { background: var(--accent-red); }
+    .stat-icon.secondary { background: var(--secondary-color); }
+
     .stat-number {
-        font-size: 1.8rem;
+        font-size: 2rem;
         font-weight: 700;
-        margin-bottom: 5px;
+        color: var(--text-primary);
+        line-height: 1;
+        margin-bottom: 0.5rem;
     }
-    
-    .stat-label {
-        font-size: 0.9rem;
-        color: #6c757d;
+
+    .stat-title {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
-    .bg-primary-light {
-        background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(23, 162, 184, 0.05) 100%);
-        color: #17a2b8;
+
+    /* Content Cards */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
     }
-    
-    .bg-success-light {
-        background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
-        color: #28a745;
+
+    .card-professional {
+        background: var(--white);
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
     }
-    
-    .bg-warning-light {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
-        color: #ffc107;
+
+    .card-professional-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 2px solid var(--border-color);
+        background: var(--bg-light);
     }
-    
-    .bg-info-light {
-        background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(23, 162, 184, 0.05) 100%);
-        color: #17a2b8;
-    }
-    
-    .bg-purple-light {
-        background: linear-gradient(135deg, rgba(111, 66, 193, 0.1) 0%, rgba(111, 66, 193, 0.05) 100%);
-        color: #6f42c1;
-    }
-    
-    .bg-danger-light {
-        background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
-        color: #dc3545;
-    }
-    
-    .bg-secondary-light {
-        background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.05) 100%);
-        color: #6c757d;
-    }
-    
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    
-    .chart-loading {
+
+    .card-professional-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
         display: flex;
         align-items: center;
-        justify-content: center;
-        height: 300px;
-        color: #6c757d;
     }
-    
-    .chart-loading i {
-        animation: spin 1s linear infinite;
-        margin-right: 10px;
+
+    .card-professional-title i {
+        margin-right: 0.75rem;
+        color: var(--accent-blue);
+        font-size: 1rem;
     }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+
+    .card-professional-body {
+        padding: 0;
     }
-    
-    .quick-stats-item {
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-left: 4px solid;
-        transition: all 0.3s ease;
+
+    /* Tables */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
     }
-    
-    .quick-stats-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+    .data-table thead th {
+        background: var(--bg-light);
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        border-bottom: 2px solid var(--border-color);
     }
-    
-    .quick-stats-item.payroll { border-left-color: #28a745; }
-    .quick-stats-item.leaves { border-left-color: #ffc107; }
-    .quick-stats-item.disciplinary { border-left-color: #dc3545; }
-    .quick-stats-item.hires { border-left-color: #007bff; }
-    
+
+    .data-table tbody td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .data-table tbody tr:hover {
+        background: #fafbfc;
+    }
+
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-pro {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        line-height: 1;
+    }
+
+    .badge-pro.primary {
+        background: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #bbdefb;
+    }
+
+    .badge-pro.success {
+        background: #e8f5e9;
+        color: #388e3c;
+        border: 1px solid #c8e6c9;
+    }
+
+    .badge-pro.warning {
+        background: #fff3e0;
+        color: #e65100;
+        border: 1px solid #ffe0b2;
+    }
+
+    .badge-pro.danger {
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+    }
+
+    .badge-pro.secondary {
+        background: #f5f5f5;
+        color: #616161;
+        border: 1px solid #e0e0e0;
+    }
+
+    .badge-pro.info {
+        background: #e0f7fa;
+        color: #00838f;
+        border: 1px solid #b2ebf2;
+    }
+
+    /* Department List */
+    .department-list {
+        padding: 1.5rem;
+    }
+
+    .department-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+
+    .department-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .department-row:hover {
+        background: #f0f3f5;
+        border-color: #d5dce3;
+    }
+
+    .department-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+
+    .department-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--accent-blue);
+    }
+
+    /* Employee Info Section */
+    .info-section {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .section-heading {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .info-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-detail-item {
+        padding: 1.25rem;
+        background: var(--bg-light);
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        border-left: 3px solid;
+    }
+
+    .info-detail-item.primary { border-left-color: var(--accent-blue); }
+    .info-detail-item.success { border-left-color: var(--accent-green); }
+    .info-detail-item.warning { border-left-color: var(--accent-orange); }
+    .info-detail-item.info { border-left-color: #00bcd4; }
+
+    .info-detail-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .info-detail-value {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Empty State */
+    .empty-state-container {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state-container i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+        color: var(--text-secondary);
+    }
+
+    .empty-state-container p {
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .content-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 768px) {
-        .stat-card {
-            margin-bottom: 20px;
+        .dashboard-wrapper {
+            padding: 1rem;
         }
-        
-        .welcome-banner {
-            padding: 20px 15px;
+
+        .page-header {
+            padding: 1.5rem;
         }
-        
-        .chart-container {
-            height: 250px;
+
+        .page-title {
+            font-size: 1.5rem;
         }
-        
-        .department-chart-container {
-            height: 250px;
+
+        .stats-container {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
         }
+
+        .stat-box {
+            padding: 1.25rem;
+        }
+
+        .stat-number {
+            font-size: 1.75rem;
+        }
+
+        .info-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .data-table thead th,
+        .data-table tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Utility Classes */
+    .mb-0 { margin-bottom: 0; }
+    .mb-2 { margin-bottom: 1rem; }
+    .mb-3 { margin-bottom: 1.5rem; }
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="dashboard-wrapper">
     @if(auth()->user()->hasRole('employee'))
         {{-- Employee View --}}
-        <div class="dashboard-card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0 d-flex align-items-center">
-                    <i class="fas fa-user-circle me-2"></i>
-                    <span>My Employee Dashboard</span>
-                </h5>
-            </div>
-            <div class="card-body">
-                {{-- Welcome Section --}}
-                <div class="welcome-banner">
-                    <h4><i class="fas fa-hand-wave me-2"></i>Welcome back, {{ auth()->user()->username }}!</h4>
-                    <p class="lead mb-0">Here's your personal overview and recent activities.</p>
-                </div>
+        <div class="page-header">
+            <h1 class="page-title">Welcome, {{ auth()->user()->username }}</h1>
+            <p class="page-subtitle">Employee Dashboard - Personal Overview</p>
+        </div>
 
-                {{-- Employee Stats Cards --}}
-                <div class="row mb-4">
-                    <div class="col-xl-3 col-md-6 col-12 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">
-                                            {{ auth()->user()->employee->department->department_name ?? 'N/A' }}
-                                        </div>
-                                        <div class="stat-label">My Department</div>
-                                    </div>
-                                    <div class="stat-icon bg-primary-light text-primary">
-                                        <i class="fas fa-building"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-3 col-md-6 col-12 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">
-                                            <span class="badge bg-success">{{ auth()->user()->employee->employment_status ?? 'Active' }}</span>
-                                        </div>
-                                        <div class="stat-label">Employment Status</div>
-                                    </div>
-                                    <div class="stat-icon bg-success-light text-success">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-3 col-md-6 col-12 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">
-                                            {{ auth()->user()->employee->cadre->name ?? 'N/A' }}
-                                        </div>
-                                        <div class="stat-label">Position</div>
-                                    </div>
-                                    <div class="stat-icon bg-warning-light text-warning">
-                                        <i class="fas fa-briefcase"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-3 col-md-6 col-12 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">
-                                            {{ auth()->user()->employee->date_of_first_appointment ? \Carbon\Carbon::parse(auth()->user()->employee->date_of_first_appointment)->format('M Y') : 'N/A' }}
-                                        </div>
-                                        <div class="stat-label">Appointment Date</div>
-                                    </div>
-                                    <div class="stat-icon bg-info-light text-info">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        {{-- Employee Information --}}
+        <div class="info-section">
+            <h2 class="section-heading">
+                <i class="fas fa-id-card"></i> Employment Information
+            </h2>
+            <div class="info-details-grid">
+                <div class="info-detail-item primary">
+                    <div class="info-detail-label">Department</div>
+                    <div class="info-detail-value">
+                        {{ auth()->user()->employee->department->department_name ?? 'N/A' }}
                     </div>
                 </div>
 
-                <div class="row">
-                    {{-- My Recent Activities --}}
-                    <div class="col-lg-8 col-12 mb-4">
-                        <div class="dashboard-card h-100">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-history me-2"></i>
-                                    <span>My Recent Activities</span>
-                                </h6>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover activity-table mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Action</th>
-                                                <th>Description</th>
-                                                <th>Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse (($myRecentActivities ?? collect())->where('user_id', auth()->id())->take(5) as $activity)
-                                                <tr>
-                                                    <td>
-                                                        <span class="badge bg-info">{{ $activity->action }}</span>
-                                                    </td>
-                                                    <td class="text-muted">{{ Str::limit($activity->description, 50) }}</td>
-                                                    <td>
-                                                        <span class="badge bg-secondary">
-                                                            {{ $activity->action_timestamp ? \Carbon\Carbon::parse($activity->action_timestamp)->diffForHumans() : 'N/A' }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="3" class="text-center py-5 text-muted">
-                                                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                                                        <p class="mb-0">No recent activities found</p>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                <div class="info-detail-item success">
+                    <div class="info-detail-label">Employment Status</div>
+                    <div class="info-detail-value">
+                        {{ auth()->user()->employee->employment_status ?? 'Active' }}
                     </div>
+                </div>
 
-                    {{-- Quick Actions --}}
-                
+                <div class="info-detail-item warning">
+                    <div class="info-detail-label">Position/Cadre</div>
+                    <div class="info-detail-value">
+                        {{ auth()->user()->employee->cadre->name ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="info-detail-item info">
+                    <div class="info-detail-label">Date of Appointment</div>
+                    <div class="info-detail-value">
+                        {{ auth()->user()->employee->date_of_first_appointment ? \Carbon\Carbon::parse(auth()->user()->employee->date_of_first_appointment)->format('M d, Y') : 'N/A' }}
+                    </div>
                 </div>
             </div>
         </div>
 
-    @else
-        {{-- Admin/Manager View (Enhanced Dashboard) --}}
-        <div class="dashboard-card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 d-flex align-items-center">
-                    <i class="fas fa-tachometer-alt me-2"></i>
-                    <span>Management Dashboard Overview</span>
-                </h5>
+        {{-- Recent Activities --}}
+        <div class="card-professional">
+            <div class="card-professional-header">
+                <h3 class="card-professional-title">
+                    <i class="fas fa-clock"></i> Recent Activities
+                </h3>
             </div>
-            <div class="card-body">
-                {{-- Stats Summary --}}
-                <div class="row mb-4">
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $employeeCount ?? 0 }}</div>
-                                        <div class="stat-label">Total Employees</div>
+            <div class="card-professional-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse (($myRecentActivities ?? collect())->where('user_id', auth()->id())->take(10) as $activity)
+                            <tr>
+                                <td>
+                                    <span class="badge-pro info">{{ $activity->action }}</span>
+                                </td>
+                                <td>{{ Str::limit($activity->description, 65) }}</td>
+                                <td>
+                                    <span class="badge-pro secondary">
+                                        {{ $activity->action_timestamp ? \Carbon\Carbon::parse($activity->action_timestamp)->format('M d, Y g:i A') : 'N/A' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3">
+                                    <div class="empty-state-container">
+                                        <i class="fas fa-folder-open"></i>
+                                        <p>No recent activities recorded</p>
                                     </div>
-                                    <div class="stat-icon bg-primary-light text-primary">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $activeEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Active</div>
-                                    </div>
-                                    <div class="stat-icon bg-success-light text-success">
-                                        <i class="fas fa-user-check"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    @else
+        {{-- Admin/Manager View --}}
+        <div class="page-header">
+            <h1 class="page-title">Management Dashboard</h1>
+            <p class="page-subtitle">Workforce Overview & Analytics</p>
+        </div>
 
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $suspendedEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Suspended</div>
-                                    </div>
-                                    <div class="stat-icon bg-warning-light text-warning">
-                                        <i class="fas fa-pause-circle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        {{-- Statistics Summary --}}
+        <div class="stats-container">
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $employeeCount ?? 0 }}</div>
+                        <div class="stat-title">Total Employees</div>
                     </div>
-
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $deceasedEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Deceased</div>
-                                    </div>
-                                    <div class="stat-icon bg-secondary-light text-secondary">
-                                        <i class="fas fa-heartbeat"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $retiredEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Retired</div>
-                                    </div>
-                                    <div class="stat-icon bg-info-light text-info">
-                                        <i class="fas fa-user-clock"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Contract and Permanent Employee Stats -->
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $permanentEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Permanent</div>
-                                    </div>
-                                    <div class="stat-icon bg-purple-light text-purple">
-                                        <i class="fas fa-id-card"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-4">
-                        <div class="stat-card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="stat-number">{{ $contractEmployees ?? 0 }}</div>
-                                        <div class="stat-label">Contract</div>
-                                    </div>
-                                    <div class="stat-icon bg-info-light text-info">
-                                        <i class="fas fa-file-contract"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    {{-- Employee Status Chart --}}
-                    <div class="col-xl-8 col-12 mb-4">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-chart-bar me-2 text-primary"></i>
-                                    <span>Employee Status Overview</span>
-                                </h6>
-                            </div>
-                            <div class="chart-body">
-                                <div class="chart-container">
-                                    <canvas id="employeeStatusChart"></canvas>
-                                    <div id="statusChartLoading" class="chart-loading">
-                                        <i class="fas fa-spinner"></i>
-                                        <span>Loading chart...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {{-- Recent Audit Trail --}}
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-history me-2 text-success"></i>
-                                    <span>Recent Audit Trail</span>
-                                    <span id="audit-refresh-indicator" class="ms-auto" style="display:none;">
-                                        <i class="fas fa-sync-alt fa-spin"></i>
-                                    </span>
-                                </h6>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover activity-table mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Action</th>
-                                                <th>Description</th>
-                                                <th>Timestamp</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="audit-table-body">
-                                            @forelse (($recentAudits ?? collect())->take(5) as $audit)
-                                                <tr>
-                                                    <td>
-                                                        <span class="badge bg-primary">
-                                                            {{ $audit->user?->username ?? 'User ' . $audit->user_id }}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-success">
-                                                            {{ $audit->action }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-muted">{{ Str::limit($audit->description, 50) }}</td>
-                                                    <td>
-                                                        <span class="badge bg-secondary">
-                                                            {{ $audit->action_timestamp ? \Carbon\Carbon::parse($audit->action_timestamp)->diffForHumans() : 'N/A' }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="4" class="text-center py-5 text-muted">
-                                                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                                                        <p class="mb-0">No recent audit records found</p>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+            <div class="stat-box success">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $activeEmployees ?? 0 }}</div>
+                        <div class="stat-title">Active Employees</div>
                     </div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
 
-                    {{-- Department Pie Chart and Quick Stats --}}
-                    <div class="col-xl-4 col-12 mb-4">
-                        <div class="chart-card h-100">
-                            <div class="chart-header">
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <i class="fas fa-building me-2 text-warning"></i>
-                                    <span>Department Distribution</span>
-                                </h6>
-                            </div>
-                            <div class="chart-body">
-                                <div class="department-chart-container">
-                                    <canvas id="departmentPieChart"></canvas>
-                                    <div id="deptChartLoading" class="chart-loading">
-                                        <i class="fas fa-spinner"></i>
-                                        <span>Loading chart...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {{-- Quick Stats --}}
-                       
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $suspendedEmployees ?? 0 }}</div>
+                        <div class="stat-title">Suspended</div>
                     </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-user-minus"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $permanentEmployees ?? 0 }}</div>
+                        <div class="stat-title">Permanent Staff</div>
+                    </div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-id-badge"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box secondary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $contractEmployees ?? 0 }}</div>
+                        <div class="stat-title">Contract Staff</div>
+                    </div>
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box secondary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $retiredEmployees ?? 0 }}</div>
+                        <div class="stat-title">Retired</div>
+                    </div>
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box danger">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $deceasedEmployees ?? 0 }}</div>
+                        <div class="stat-title">Deceased</div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-heart-broken"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Main Content Grid --}}
+        <div class="content-layout">
+            {{-- Department Distribution --}}
+            <div class="card-professional">
+                <div class="card-professional-header">
+                    <h3 class="card-professional-title">
+                        <i class="fas fa-sitemap"></i> Department Distribution
+                    </h3>
+                </div>
+                <div class="card-professional-body">
+                    <div class="department-list">
+                        @if(isset($departments) && $departments->count() > 0)
+                            @foreach ($departments as $department)
+                                <div class="department-row">
+                                    <span class="department-title">{{ $department->department_name }}</span>
+                                    <span class="department-value">{{ $department->employees_count ?? 0 }}</span>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="empty-state-container">
+                                <i class="fas fa-building"></i>
+                                <p>No departments available</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Audit Trail --}}
+            <div class="card-professional">
+                <div class="card-professional-header">
+                    <h3 class="card-professional-title">
+                        <i class="fas fa-clipboard-list"></i> Recent Audit Trail
+                    </h3>
+                </div>
+                <div class="card-professional-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Activity</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse (($recentAudits ?? collect())->take(8) as $audit)
+                                <tr>
+                                    <td>
+                                        <span class="badge-pro primary">
+                                            {{ $audit->user?->username ?? 'User ' . $audit->user_id }}
+                                        </span>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 250px;">
+                                        {{ Str::limit($audit->description, 45) }}
+                                    </td>
+                                    <td>
+                                        <span class="badge-pro secondary">
+                                            {{ $audit->action_timestamp ? \Carbon\Carbon::parse($audit->action_timestamp)->format('M d, g:i A') : 'N/A' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="empty-state-container">
+                                            <i class="fas fa-clipboard"></i>
+                                            <p>No audit records available</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     @endif
 </div>
-
 @endsection
 
 @section('scripts')
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Chart configuration options
-    const chartDefaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true
-            }
-        }
-    };
-
-    // Get data with fallbacks
-    const employeeData = {
-        total: {{ $employeeCount ?? 210 }},
-        active: {{ $activeEmployees ?? 64 }},
-        suspended: {{ $suspendedEmployees ?? 40 }},
-        terminated: {{ $terminatedEmployees ?? 0 }},
-        deceased: {{ $deceasedEmployees ?? 57 }},
-        retired: {{ $retiredEmployees ?? 49 }}
-    };
-
-    // Department data with fallbacks
-    const departmentData = [
-        @if(isset($departments) && $departments->count() > 0)
-            @foreach ($departments as $department)
-                {
-                    name: "{{ $department->department_name }}",
-                    count: {{ $department->employees_count ?? 0 }}
-                },
-            @endforeach
-        @else
-            { name: "Human Resources", count: 25 },
-            { name: "Finance", count: 18 },
-            { name: "IT Department", count: 32 },
-            { name: "Operations", count: 45 },
-            { name: "Marketing", count: 22 },
-            { name: "Sales", count: 38 },
-            { name: "Administration", count: 30 }
-        @endif
-    ];
-
-    // Employee Status Chart
-    const statusCtx = document.getElementById('employeeStatusChart');
-    if (statusCtx) {
-        // Hide loading indicator
-        document.getElementById('statusChartLoading').style.display = 'none';
-        
-        const employeeStatusChart = new Chart(statusCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Active', 'Suspended', 'Terminated', 'Deceased', 'Retired'],
-                datasets: [{
-                    label: 'Employee Count',
-                    data: [
-                        employeeData.active,
-                        employeeData.suspended,
-                        employeeData.terminated,
-                        employeeData.deceased,
-                        employeeData.retired
-                    ],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(255, 193, 7, 0.8)',
-                        'rgba(220, 53, 69, 0.8)',
-                        'rgba(108, 117, 125, 0.8)',
-                        'rgba(23, 162, 184, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(255, 193, 7, 1)',
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(108, 117, 125, 1)',
-                        'rgba(23, 162, 184, 1)'
-                    ],
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleFont: {
-                            size: 14,
-                            weight: 'bold'
-                        },
-                        bodyFont: {
-                            size: 13
-                        },
-                        cornerRadius: 8,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                const total = employeeData.total;
-                                const value = context.parsed.y;
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${context.label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            stepSize: Math.ceil(Math.max(...Object.values(employeeData)) / 10),
-                            color: '#666'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#666'
-                        }
-                    }
-                },
-                animation: {
-                    duration: 1500,
-                    easing: 'easeInOutCubic'
-                }
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth hover effects
+    const statBoxes = document.querySelectorAll('.stat-box');
+    statBoxes.forEach(box => {
+        box.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#d5dce3';
         });
-    }
-
-    // Department Pie Chart
-    const deptCtx = document.getElementById('departmentPieChart');
-    if (deptCtx && departmentData.length > 0) {
-        // Hide loading indicator
-        document.getElementById('deptChartLoading').style.display = 'none';
-        
-        // Generate colors
-        const colors = [
-            { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgba(54, 162, 235, 1)' },
-            { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgba(255, 99, 132, 1)' },
-            { bg: 'rgba(255, 205, 86, 0.8)', border: 'rgba(255, 205, 86, 1)' },
-            { bg: 'rgba(75, 192, 192, 0.8)', border: 'rgba(75, 192, 192, 1)' },
-            { bg: 'rgba(153, 102, 255, 0.8)', border: 'rgba(153, 102, 255, 1)' },
-            { bg: 'rgba(255, 159, 64, 0.8)', border: 'rgba(255, 159, 64, 1)' },
-            { bg: 'rgba(199, 199, 199, 0.8)', border: 'rgba(199, 199, 199, 1)' },
-            { bg: 'rgba(83, 102, 255, 0.8)', border: 'rgba(83, 102, 255, 1)' }
-        ];
-
-        const departmentPieChart = new Chart(deptCtx, {
-            type: 'doughnut',
-            data: {
-                labels: departmentData.map(dept => dept.name),
-                datasets: [{
-                    data: departmentData.map(dept => dept.count),
-                    backgroundColor: departmentData.map((_, i) => colors[i % colors.length].bg),
-                    borderColor: departmentData.map((_, i) => colors[i % colors.length].border),
-                    borderWidth: 2,
-                    hoverOffset: 15,
-                    hoverBorderWidth: 3
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            font: {
-                                size: 11
-                            },
-                            generateLabels: function(chart) {
-                                const data = chart.data;
-                                if (data.labels.length && data.datasets.length) {
-                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                    return data.labels.map((label, i) => {
-                                        const value = data.datasets[0].data[i];
-                                        const percentage = ((value / total) * 100).toFixed(1);
-                                        return {
-                                            text: `${label} (${percentage}%)`,
-                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                            strokeStyle: data.datasets[0].borderColor[i],
-                                            lineWidth: data.datasets[0].borderWidth,
-                                            hidden: false,
-                                            index: i
-                                        };
-                                    });
-                                }
-                                return [];
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} employees (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    animateRotate: true,
-                    animateScale: true,
-                    duration: 1500,
-                    easing: 'easeInOutCubic'
-                }
-            }
-        });
-    }
-    
-    // Live update function for audit trail
-    function fetchAuditTrail() {
-        const indicator = document.getElementById('audit-refresh-indicator');
-        if (indicator) {
-            indicator.style.display = 'inline';
-            
-            // Simulate API call - replace with actual endpoint
-            setTimeout(() => {
-                indicator.style.display = 'none';
-                // You can add actual AJAX call here to refresh audit data
-            }, 1500);
-        }
-    }
-    
-    // Auto-refresh audit trail every 30 seconds
-    setInterval(fetchAuditTrail, 30000);
-    
-    // Add click handlers for quick stats
-    document.querySelectorAll('.quick-stats-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const type = this.classList.contains('payroll') ? 'payroll' :
-                        this.classList.contains('leaves') ? 'leaves' :
-                        this.classList.contains('disciplinary') ? 'disciplinary' : 'hires';
-            
-            // Add visual feedback
-            this.style.transform = 'scale(0.98)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-            
-            // You can add navigation logic here
-            console.log(`Clicked on ${type} stats`);
+        box.addEventListener('mouseleave', function() {
+            this.style.borderColor = 'var(--border-color)';
         });
     });
-    
-    // Add hover effects to stat cards
-    document.querySelectorAll('.stat-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-    
-    // Initialize tooltips if Bootstrap is available
-    if (typeof bootstrap !== 'undefined') {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    }
-    
-    // Add loading states management
-    function showChartLoading(chartId) {
-        const loading = document.getElementById(chartId + 'Loading');
-        if (loading) loading.style.display = 'flex';
-    }
-    
-    function hideChartLoading(chartId) {
-        const loading = document.getElementById(chartId + 'Loading');
-        if (loading) loading.style.display = 'none';
-    }
-    
-    // Add refresh functionality
-    function refreshDashboard() {
-        showChartLoading('statusChart');
-        showChartLoading('deptChart');
-        
-        // Simulate data refresh
-        setTimeout(() => {
-            hideChartLoading('statusChart');
-            hideChartLoading('deptChart');
-        }, 2000);
-    }
-    
-    // Add keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Ctrl + R or F5 for refresh
-        if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
-            e.preventDefault();
-            refreshDashboard();
+
+    // Table row highlighting
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    tableRows.forEach(row => {
+        if (row.querySelector('td:not([colspan])')) {
+            row.style.cursor = 'pointer';
         }
+    });
+
+    // Department row interactions
+    const deptRows = document.querySelectorAll('.department-row');
+    deptRows.forEach(row => {
+        row.addEventListener('click', function() {
+            // Add any click handler logic here
+            console.log('Department clicked:', this.querySelector('.department-title').textContent);
+        });
     });
 });
-
-// Export chart instances for external access
-window.dashboardCharts = {
-    statusChart: null,
-    departmentChart: null,
-    refresh: function() {
-        location.reload();
-    }
-};
 </script>
 @endsection

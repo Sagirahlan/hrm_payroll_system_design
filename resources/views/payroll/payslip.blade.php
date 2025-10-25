@@ -110,7 +110,7 @@
             </tr>
             <tr>
                 <td><strong>Registration No:</strong></td>
-                <td>{{ $payroll->employee->reg_no ?? 'N/A' }}</td>
+                <td>{{ $payroll->employee->staff_no ?? 'N/A' }}</td>
                 <td><strong>Department:</strong></td>
                 <td>{{ $payroll->employee->department->department_name ?? 'N/A' }}</td>
             </tr>
