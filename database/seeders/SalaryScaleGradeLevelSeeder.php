@@ -24,12 +24,12 @@ class SalaryScaleGradeLevelSeeder extends Seeder
         $hapScale = SalaryScale::updateOrCreate(
             ['acronym' => 'HAP'],
             [
-                'full_name' => 'Harmonized Academic Pay',
-                'sector_coverage' => 'Academic staff in universities and tertiary institutions',
+                'full_name' => 'Harmonized Public Service Structure ',
+                'sector_coverage' => 'Harmonized salary structure for public sevices',
                 'grade_levels' => 'GL 01 – GL 17',
                 'max_retirement_age' => '65 years',
                 'max_years_of_service' => '35 years',
-                'notes' => 'Harmonized salary structure for academic staff'
+                'notes' => 'Harmonized salary structure for public sevices'
             ]
         );
         

@@ -12,7 +12,7 @@ class NextOfKinImport implements ToModel
 {
     public function model(array $row)
     {
-        if ($row[0] === 'employee_id' || $row[0] === null) {
+        if ($row[0] === 'employee_id' || $row[0] === null || trim($row[0]) === '') {
             return null;
         }
 
@@ -23,16 +23,20 @@ class NextOfKinImport implements ToModel
         }
 
         return new NextOfKin([
-            'employee_id' => $row[0],
-            'name' => $row[1],
-            'relationship' => $row[2],
-            'mobile_no' => $this->transformPhone($row[3]),
-            'address' => $row[4],
+            'employee_id' => $row[0] ?? null,
+            'name' => $row[1] ?? null,
+            'relationship' => $row[2] ?? null,
+            'mobile_no' => $this->transformPhone($row[3] ?? null),
+            'address' => $row[4] ?? null,
         ]);
     }
 
     private function transformPhone($value)
     {
+        if ($value === null) {
+            return null;
+        }
+        
         return preg_replace('/[^0-9]/', '', $value);
     }
 }

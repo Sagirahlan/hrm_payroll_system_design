@@ -26,10 +26,41 @@ class EmployeesSeeder extends Seeder
         $gradeLevels = DB::table('grade_levels')->pluck('id');
         $steps = DB::table('steps')->pluck('id');
         $ranks = DB::table('ranks')->pluck('id');
-        $states = DB::table('states')->pluck('state_id');
-        $lgas = DB::table('lgas')->pluck('id');
-        $wards = DB::table('wards')->pluck('ward_id');
         $appointmentTypes = DB::table('appointment_types')->pluck('id');
+
+        // Get Katsina state ID
+        $katsinaState = DB::table('states')->where('name', 'katsina')->first();
+        $katsinaStateId = $katsinaState ? $katsinaState->state_id : null;
+        
+        // Get all LGAs for Katsina state only
+        $katsinaLgas = $katsinaStateId ? DB::table('lgas')->where('state_id', $katsinaStateId)->pluck('id') : collect([]);
+        
+        // Get all wards (this will be filtered per LGA when creating each employee)
+        $wards = DB::table('wards')->pluck('ward_id');
+
+        // If no data, create some sample ones
+        if ($departments->isEmpty()) {
+            $departments = collect([1, 2, 3, 4, 5]);
+        }
+        if ($cadres->isEmpty()) {
+            $cadres = collect([1, 2, 3, 4, 5]);
+        }
+        if ($salaryScales->isEmpty()) {
+            $salaryScales = collect([1, 2, 3, 4, 5, 15]);
+        }
+        if ($gradeLevels->isEmpty()) {
+            $gradeLevels = collect([1, 2, 3, 4, 5]);
+        }
+        if ($steps->isEmpty()) {
+            $steps = collect([1, 2, 3, 4, 5]);
+        }
+        if ($ranks->isEmpty()) {
+            $ranks = collect([1, 2, 3, 4, 5]);
+        }
+        if ($appointmentTypes->isEmpty()) {
+            // Only use appointment types with IDs 1 and 2 as requested
+            $appointmentTypes = collect([1, 2]);
+        }
 
         // If no data, create some sample ones
         if ($departments->isEmpty()) {
@@ -93,6 +124,13 @@ class EmployeesSeeder extends Seeder
             // Generate pay point
             $payPoint = $this->getRandomPayPoint();
 
+            // Select random LGA from Katsina state
+            $lgaId = $katsinaLgas->isNotEmpty() ? $katsinaLgas->random() : null;
+            
+            // Get wards for the selected LGA
+            $lgaWards = $lgaId ? DB::table('wards')->where('lga_id', $lgaId)->pluck('ward_id') : $wards;
+            $wardId = $lgaWards->isNotEmpty() ? $lgaWards->random() : $wards->random();
+
             // Initialize the employee array with all possible fields for consistency
             $employee = [
                 'employee_id' => $i,
@@ -102,9 +140,9 @@ class EmployeesSeeder extends Seeder
                 'middle_name' => $middleName,
                 'gender' => rand(0, 1) ? 'Male' : 'Female',
                 'date_of_birth' => $dateOfBirth,
-                'state_id' => $states->random(),
-                'lga_id' => $lgas->random(),
-                'ward_id' => $wards->random(),
+                'state_id' => $katsinaStateId,
+                'lga_id' => $lgaId,
+                'ward_id' => $wardId,
                 'nationality' => 'Nigeria',
                 'nin' => $this->generateNIN(),
                 'mobile_no' => $mobileNo,

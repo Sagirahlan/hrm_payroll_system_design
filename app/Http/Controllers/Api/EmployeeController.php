@@ -34,7 +34,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['department', 'cadre', 'gradeLevel']);
+        $query = Employee::with(['department', 'cadre', 'gradeLevel.salaryScale', 'step', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga', 'ward', 'rank', 'additions', 'deductions']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -565,7 +565,7 @@ class EmployeeController extends Controller
      */
     public function exportPdf()
     {
-        $employees = Employee::with(['department', 'cadre', 'gradeLevel'])->get();
+        $employees = Employee::with(['department', 'cadre', 'gradeLevel.salaryScale', 'step', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga', 'ward', 'rank', 'additions', 'deductions'])->get();
 
         // Log audit trail
         AuditTrail::create([
@@ -678,7 +678,7 @@ class EmployeeController extends Controller
     public function exportFiltered(Request $request)
     {
         // Apply same filters as index method for export    
-        $query = Employee::with(['department', 'cadre', 'gradeLevel']);
+        $query = Employee::with(['department', 'cadre', 'gradeLevel.salaryScale', 'step', 'nextOfKin', 'biometricData', 'bank', 'state', 'lga', 'ward', 'rank', 'additions', 'deductions']);
 
         // Search functionality
         if ($request->filled('search')) {

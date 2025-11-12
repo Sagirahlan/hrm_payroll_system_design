@@ -67,7 +67,7 @@ class Employee extends Model
     // App.Models.Employee.php
     public function gradeLevel()
     {
-        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id')->with('steps');
+        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
     }
 
     public function step()
@@ -96,7 +96,6 @@ class Employee extends Model
     }
 
     public function bank()
-    
     {
         return $this->hasOne(Bank::class, 'employee_id', 'employee_id');
     }

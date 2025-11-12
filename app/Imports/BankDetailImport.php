@@ -12,14 +12,18 @@ class BankDetailImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
             // Check if the employee_id exists in the employees table before creating Bank
-            if (\App\Models\Employee::where('employee_id', $row['employee_id'])->exists()) {
-                Bank::create([
-                    'employee_id' => $row['employee_id'],
-                    'bank_name' => $row['bank_name'],
-                                        'bank_code' => $row['bank_code'],
-                    'account_name' => $row['account_name'],
-                    'account_no' => $row['account_no'],
-                ]);
+            if (isset($row['employee_id']) && \App\Models\Employee::where('employee_id', $row['employee_id'])->exists()) {
+                Bank::updateOrCreate(
+                    [
+                        'employee_id' => $row['employee_id']
+                    ],
+                    [
+                        'bank_name' => $row['bank_name'] ?? null,
+                        'bank_code' => $row['bank_code'] ?? null,
+                        'account_name' => $row['account_name'] ?? null,
+                        'account_no' => $row['account_no'] ?? null,
+                    ]
+                );
             }
         }
     }

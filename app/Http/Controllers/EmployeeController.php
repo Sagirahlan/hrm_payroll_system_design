@@ -926,18 +926,79 @@ class EmployeeController extends Controller
 
     public function importEmployees(Request $request)
     {
-        $file = $request->file('import_file');
-        Excel::import(new EmployeesMultiSheetImport, $file);
+        try {
+            $request->validate([
+                'import_file' => 'required|file|mimes:xlsx,xls,csv',
+            ]);
 
-        AuditTrail::create([
-            'user_id' => auth()->id(),
-            'action' => 'imported',
-            'description' => 'Imported employee data from Excel',
-            'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
-        ]);
+            $file = $request->file('import_file');
+            
+            // Determine the number of sheets in the Excel file
+            $fileExtension = $file->getClientOriginalExtension();
+            
+            if (in_array($fileExtension, ['xlsx', 'xls'])) {
+                // Use PhpSpreadsheet to read the file and get the number of sheets
+                $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                $reader->setReadDataOnly(true); // Read only cell values, not formulas
+                $spreadsheet = $reader->load($file->getPathname());
+                $sheetCount = $spreadsheet->getSheetCount();
+                
+                // Create a dynamic import based on the number of sheets
+                $import = new class($sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                    private $sheetCount;
+                    
+                    public function __construct($sheetCount) {
+                        $this->sheetCount = $sheetCount;
+                    }
+                    
+                    public function sheets(): array
+                    {
+                        $sheets = [
+                            0 => new \App\Imports\EmployeeImport(),      // Always import first sheet (Employees)
+                        ];
+                        
+                        // Import Next of Kin sheet if it exists
+                        if ($this->sheetCount >= 2) {
+                            $sheets[1] = new \App\Imports\NextOfKinImport();
+                        }
+                        
+                        // Import Bank Details sheet if it exists
+                        if ($this->sheetCount >= 3) {
+                            $sheets[2] = new \App\Imports\BankDetailImport();
+                        }
+                        
+                        return $sheets;
+                    }
+                };
+                
+                Excel::import($import, $file);
+            } else {
+                // For CSV files, use single sheet import
+                Excel::import(new \App\Imports\EmployeeImport(), $file);
+            }
 
-        return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');
+            AuditTrail::create([
+                'user_id' => auth()->id(),
+                'action' => 'imported',
+                'description' => 'Imported employee data from Excel',
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
+            ]);
+
+            return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+
+            $errors = [];
+            foreach ($failures as $failure) {
+                $errors[] = 'Row ' . $failure->row() . ': ' . implode(', ', $failure->errors());
+            }
+            
+            return redirect()->back()->with('error', 'Import failed with validation errors: ' . implode('; ', $errors));
+        } catch (\Exception $e) {
+            \Log::error('Employee import error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred during import: ' . $e->getMessage());
+        }
     }
 
     public function getLgasByState(Request $request)

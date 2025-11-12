@@ -46,7 +46,7 @@ class AuthController extends Controller
                 'username' => $user->username,
                 'email' => $user->email,
                 'roles' => $user->roles->pluck('name'),
-                'permissions' => $user->permissions->pluck('name'),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
             ],
             'token' => $token,
             'token_type' => 'Bearer',

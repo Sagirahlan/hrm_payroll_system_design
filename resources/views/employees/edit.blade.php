@@ -896,4 +896,5 @@
         @endif
     });
 </script>
+@endcan
 @endsection

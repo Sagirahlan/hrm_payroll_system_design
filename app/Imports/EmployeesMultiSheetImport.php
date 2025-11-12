@@ -6,18 +6,14 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class EmployeesMultiSheetImport implements WithMultipleSheets
 {
-    protected $employeeMap = [];
-
     public function sheets(): array
     {
-        $employeeImport = new EmployeeImport();
-        $nextOfKinImport = new NextOfKinImport($employeeImport);
-        $bankDetailImport = new BankDetailImport($employeeImport);
-
+        // This will now be handled dynamically in the controller
+        // For now, return the default mapping but the controller will override this
         return [
-            'Employees' => $employeeImport,
-            'NextOfKin' => $nextOfKinImport,
-            'BankDetails' => $bankDetailImport,
+            0 => new EmployeeImport(),      // First sheet for Employees
+            1 => new NextOfKinImport(),     // Second sheet for Next of Kin  
+            2 => new BankDetailImport(),    // Third sheet for Bank Details
         ];
     }
 }
