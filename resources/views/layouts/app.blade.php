@@ -251,6 +251,10 @@
                         @can('view_promotions')
                         <li><a class="nav-link {{ request()->routeIs('promotions.index') ? 'active' : '' }}" href="{{ route('promotions.index') }}">Promotions/Demotions</a></li>
                         @endcan
+                        @can('view_leaves')
+                        <li><a class="nav-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}" href="{{ route('leaves.index') }}">Leave Management</a></li>
+                        @endcan
+                       
                     </ul>
                 </div>
             </li>

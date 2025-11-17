@@ -98,15 +98,15 @@
                                             </tr>
                                             <tr>
                                                 <th>Department:</th>
-                                                <td>{{ $action->employee->department->department_name ?? 'N/A' }}</td>
+                                                <td>{{ $action->employee->department ? $action->employee->department->department_name : 'N/A' }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Grade Level:</th>
-                                                <td>{{ $action->employee->gradeLevel->name ?? 'N/A' }}</td>
+                                                <td>{{ $action->employee->gradeLevel ? $action->employee->gradeLevel->name : 'N/A' }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Step:</th>
-                                                <td>{{ $action->employee->step->name ?? 'N/A' }}</td>
+                                                <td>{{ $action->employee->step ? $action->employee->step->name : 'N/A' }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Status:</th>

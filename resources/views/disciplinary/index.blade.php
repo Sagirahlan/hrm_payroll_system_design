@@ -80,7 +80,7 @@
                             <tbody>
                                 @forelse ($actions as $action)
                                     <tr>
-                                        <td>{{ $action->employee ? $action->employee->first_name . ' ' . $action->action->surname : 'N/A' }}</td>
+                                        <td>{{ $action->employee ? $action->employee->first_name . ' ' . $action->employee->surname : 'N/A' }}</td>
                                         <td>{{ $action->employee ? $action->employee->department->department_name : 'N/A' }}</td>
                                         <td>{{ $action->action_type }}</td>
                                         <td>{{ $action->description ?? 'N/A' }}</td>

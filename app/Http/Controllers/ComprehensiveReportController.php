@@ -50,8 +50,15 @@ class ComprehensiveReportController extends Controller
         $departments = Department::all();
         $deductionTypes = DeductionType::all();
         $additionTypes = AdditionType::all();
+        // Get deduction types that are associated with loans
+        $loanDeductionTypes = \App\Models\DeductionType::whereHas('loans')->get();
+        
+        // If no loan-associated deduction types found, return all deduction types
+        if ($loanDeductionTypes->isEmpty()) {
+            $loanDeductionTypes = \App\Models\DeductionType::all();
+        }
 
-        return view('reports.new.index', compact('reports', 'departments', 'deductionTypes', 'additionTypes'));
+        return view('reports.new.index', compact('reports', 'departments', 'deductionTypes', 'additionTypes', 'loanDeductionTypes'));
     }
 
     public function create()
@@ -61,13 +68,21 @@ class ComprehensiveReportController extends Controller
         $additionTypes = \App\Models\AdditionType::all();
         $employees = \App\Models\Employee::select('employee_id', 'first_name', 'surname')->get();
         $users = \App\Models\User::select('user_id', 'username')->get();
+        // Get deduction types that are associated with loans
+        $loanDeductionTypes = \App\Models\DeductionType::whereHas('loans')->get();
+        
+        // If no loan-associated deduction types found, return all deduction types
+        if ($loanDeductionTypes->isEmpty()) {
+            $loanDeductionTypes = \App\Models\DeductionType::all();
+        }
 
         return view('reports.new.create', [
             'departments_json' => json_encode($departments),
             'deduction_types_json' => json_encode($deductionTypes),
             'addition_types_json' => json_encode($additionTypes),
             'employees_json' => json_encode($employees),
-            'users_json' => json_encode($users)
+            'users_json' => json_encode($users),
+            'loanDeductionTypes_json' => json_encode($loanDeductionTypes)
         ]);
     }
 
@@ -315,7 +330,7 @@ class ComprehensiveReportController extends Controller
     {
         fputcsv($file, [
             'Employee ID', 'Full Name', 'Department', 'Cadre', 'Grade Level', 'Step', 
-            'Status', 'Date of Appointment', 'Years of Service', 'Basic Salary', 
+            'Status', 'Appointment Type', 'Date of Appointment', 'Years of Service', 'Basic Salary', 
             'Email', 'Mobile', 'Address', 'Disciplinary Count', 'Total Deductions', 
             'Total Additions', 'Loan Count', 'Promotion Count', 'Last Payroll Date'
         ]);
@@ -329,6 +344,7 @@ class ComprehensiveReportController extends Controller
                 $employee['grade_level'],
                 $employee['step'],
                 $employee['status'],
+                $employee['appointment_type'],
                 $employee['date_of_first_appointment'],
                 $employee['years_of_service'],
                 '₦' . number_format($employee['basic_salary'], 2),
@@ -581,6 +597,27 @@ class ComprehensiveReportController extends Controller
                 '₦' . number_format($loan['remaining_balance'], 2),
                 $loan['status'],
                 $loan['application_date']
+            ]);
+        }
+    }
+
+    private function writeAuditTrailExcel($file, $reportData)
+    {
+        fputcsv($file, ['Total Activities', $reportData['total_activities']]);
+        fputcsv($file, []);
+
+        fputcsv($file, [
+            'User Name', 'Action', 'Description', 'Timestamp', 'Entity Type', 'Entity ID'
+        ]);
+
+        foreach ($reportData['activities'] as $activity) {
+            fputcsv($file, [
+                $activity['user_name'],
+                $activity['action'],
+                $activity['description'],
+                $activity['timestamp'],
+                $activity['entity_type'],
+                $activity['entity_id']
             ]);
         }
     }

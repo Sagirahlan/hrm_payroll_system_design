@@ -13,11 +13,11 @@
                         <i class="fas fa-arrow-left"></i> Back to Reports
                     </a>
                 </div>
-                
+
                 <div class="card-body">
                     <form id="report-form" method="POST" action="{{ route('reports.comprehensive.generate') }}">
                         @csrf
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label for="report_type" class="form-label">Report Type</label>
@@ -51,7 +51,7 @@
                                     </optgroup>
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label for="export_format" class="form-label">Export Format</label>
                                 <select class="form-select" id="export_format" name="export_format" required>
@@ -61,10 +61,10 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <!-- Filters Section -->
                         <div id="filters-section" class="mb-4"></div>
-                        
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-file-export"></i> Generate Report
@@ -88,22 +88,23 @@ document.addEventListener('DOMContentLoaded', function() {
         deductionTypes: {!! $deduction_types_json !!},
         additionTypes: {!! $addition_types_json !!},
         employees: {!! $employees_json !!},
-        users: {!! $users_json !!}
+        users: {!! $users_json !!},
+        loanDeductionTypes: {!! $loanDeductionTypes_json !!}
     };
 
     reportTypeSelect.addEventListener('change', function() {
         const reportType = this.value;
         filtersSection.innerHTML = ''; // Clear previous filters
-        
+
         if (!reportType) return;
-        
+
         // Add specific filters based on report type
         addFiltersForReportType(reportType);
     });
-    
+
     function addFiltersForReportType(reportType) {
         let filtersHtml = '';
-        
+
         switch(reportType) {
             case 'employee_directory':
                 filtersHtml = `
@@ -128,14 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
             case 'payroll_summary':
             case 'payroll_analysis':
                 filtersHtml = `
                     <div class="row">
                         <div class="col-md-6">
                             <label for="year_filter" class="form-label">Year</label>
-                            <input type="number" class="form-control" name="filters[year]" 
+                            <input type="number" class="form-control" name="filters[year]"
                                    min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
                         </div>
                         <div class="col-md-6">
@@ -159,51 +160,123 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
             case 'deduction_summary':
+                // Render deduction type + year + month together so the date fields always show
                 filtersHtml = `
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="deduction_type_filter" class="form-label">Deduction Type</label>
                             <select class="form-select" name="filters[deduction_type_id]">
                                 <option value="">All Deduction Types</option>
                                 ${jsonData.deductionTypes.map(type => `<option value="${type.id}">${type.name}</option>`).join('')}
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
                     </div>
                 `;
                 break;
-                
+
             case 'addition_summary':
                 filtersHtml = `
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="addition_type_filter" class="form-label">Addition Type</label>
                             <select class="form-select" name="filters[addition_type_id]">
                                 <option value="">All Addition Types</option>
                                 ${jsonData.additionTypes.map(type => `<option value="${type.id}">${type.name}</option>`).join('')}
                             </select>
                         </div>
-                    </div>
-                `;
-                break;
-                
-            case 'promotion_history':
-            case 'disciplinary':
-            case 'loan_status':
-                filtersHtml = `
-                    <div class="row">
-                        <div class="col-md-12">
-                            <label for="employee_filter" class="form-label">Employee (Optional)</label>
-                            <select class="form-select" name="filters[employee_id]">
-                                <option value="">All Employees</option>
-                                ${jsonData.employees.map(emp => `<option value="${emp.employee_id}">${emp.first_name} ${emp.surname}</option>`).join('')}
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
                             </select>
                         </div>
                     </div>
                 `;
                 break;
-                
+
+            case 'promotion_history':
+            case 'disciplinary':
+            case 'loan_status':
+                filtersHtml = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="loan_deduction_type_filter" class="form-label">Loan Deduction Type</label>
+                            <select class="form-select" name="filters[loan_type]">
+                                <option value="">All Loan Types</option>
+                                ${jsonData.loanDeductionTypes.map(type => \`
+                                    <option value="\${type.id}">\${type.name}</option>
+                                \`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
             case 'audit_trail':
                 filtersHtml = `
                     <div class="row">
@@ -239,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 break;
         }
-        
+
         if (filtersHtml) {
             filtersSection.innerHTML = filtersHtml;
         }

@@ -92,10 +92,28 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/export/pdf', [EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
         Route::get('/employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::get('/employees/{employeeId}/export', [EmployeeController::class, 'exportSingle'])->name('employee.export');
-        Route::post('/employees/import', [EmployeeController::class, 'importEmployees'])->name('employees.import');   
-        Route::get('/employees/export/filtered', [EmployeeController::class, 'exportFiltered'])->name('employees.export.filtered');   
+        Route::post('/employees/import', [EmployeeController::class, 'importEmployees'])->name('employees.import');
+        Route::get('/employees/export/filtered', [EmployeeController::class, 'exportFiltered'])->name('employees.export.filtered');
         Route::resource('roles', RoleController::class);
+
+        // Leave Management Routes
+        // Keep only the store and update methods under manage_employees middleware for admin functions
+        Route::post('leaves/{leave}/approve', [\App\Http\Controllers\LeaveController::class, 'approve'])->name('leaves.approve');
     });
+
+    // Routes for employee to manage their own leaves - outside manage_employees middleware
+    Route::get('/my-leaves', [\App\Http\Controllers\LeaveController::class, 'myLeaves'])->name('leaves.my');
+    Route::get('/my-leaves/create', [\App\Http\Controllers\LeaveController::class, 'createMyLeave'])->name('leaves.create.my');
+    Route::post('/my-leaves', [\App\Http\Controllers\LeaveController::class, 'storeMyLeave'])->name('leaves.store.my');
+
+    // Main leave resource with specific permissions
+    Route::get('/leaves', [\App\Http\Controllers\LeaveController::class, 'index'])->name('leaves.index')->middleware('permission:view_leaves');
+    Route::get('/leaves/create', [\App\Http\Controllers\LeaveController::class, 'create'])->name('leaves.create')->middleware('permission:manage_leaves');
+    Route::post('/leaves', [\App\Http\Controllers\LeaveController::class, 'store'])->name('leaves.store')->middleware('permission:manage_leaves');
+    Route::get('/leaves/{leave}', [\App\Http\Controllers\LeaveController::class, 'show'])->name('leaves.show')->middleware('permission:view_leaves');
+    Route::get('/leaves/{leave}/edit', [\App\Http\Controllers\LeaveController::class, 'edit'])->name('leaves.edit')->middleware('permission:manage_leaves');
+    Route::put('/leaves/{leave}', [\App\Http\Controllers\LeaveController::class, 'update'])->name('leaves.update')->middleware('permission:manage_leaves');
+    Route::delete('/leaves/{leave}', [\App\Http\Controllers\LeaveController::class, 'destroy'])->name('leaves.destroy')->middleware('permission:manage_leaves');
     
     // AJAX routes for location dropdowns (outside permission middleware so they can be accessed by anyone creating employees)
     Route::get('/employees/lgas-by-state', [EmployeeController::class, 'getLgasByState'])->name('employees.lgas-by-state');

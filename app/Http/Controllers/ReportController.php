@@ -35,20 +35,20 @@ class ReportController extends Controller
     {
         // Use a more optimized query to avoid loading large report_data JSON field
         $reports = Report::select([
-                'report_id', 
-                'report_type', 
-                'generated_by', 
-                'generated_date', 
-                'export_format', 
-                'file_path', 
-                'employee_id', 
-                'created_at', 
+                'report_id',
+                'report_type',
+                'generated_by',
+                'generated_date',
+                'export_format',
+                'file_path',
+                'employee_id',
+                'created_at',
                 'updated_at'
             ])
             ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname']) // Only load necessary columns from relationships
-            ->orderBy('generated_date', 'desc') 
+            ->orderBy('generated_date', 'desc')
             ->paginate(20);
-        
+
         // Process report types to show actual names instead of ID formats
         foreach ($reports as $report) {
             if (strpos($report->report_type, 'deduction_') === 0) {
@@ -78,7 +78,7 @@ class ReportController extends Controller
     public function create(Request $request)
     {
         $query = Employee::with('department');
-        
+
         // Apply search filter
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
@@ -88,24 +88,32 @@ class ReportController extends Controller
                   ->orWhere(DB::raw("CONCAT(first_name, ' ', surname)"), 'like', "%{$searchTerm}%");
             });
         }
-        
+
         // Apply department filter
         if ($request->has('department') && $request->department) {
             $query->where('department_id', $request->department);
         }
-        
+
         // Apply status filter
         if ($request->has('status') && $request->status) {
             $query->where('status', $request->status);
         }
-        
+
+        // Apply appointment type filter
+        if ($request->has('appointment_type') && $request->appointment_type) {
+            $query->where('appointment_type_id', $request->appointment_type);
+        }
+
         // Order and paginate
         $employees = $query->orderBy('first_name')->paginate(20);
-        
+
         // Get all departments for the filter dropdown
         $departments = Department::all();
-        
-        return view('reports.create', compact('employees', 'departments'));
+
+        // Get all appointment types for the filter dropdown
+        $appointmentTypes = \App\Models\AppointmentType::all();
+
+        return view('reports.create', compact('employees', 'departments', 'appointmentTypes'));
     }
 
     public function generateEmployeeReport(Request $request)
@@ -124,7 +132,7 @@ class ReportController extends Controller
                 'report_type' => 'required|string',
                 'export_format' => 'required|in:PDF,Excel',
             ]);
-            
+
             // Create a new request object with the required fields to pass to bulk generation
             $bulkRequest = new Request();
             $bulkRequest->merge([
@@ -134,7 +142,7 @@ class ReportController extends Controller
                 'end_date' => $request->end_date ?? null,
                 'employee_id' => $request->employee_id
             ]);
-            
+
             // Generate the individual type report
             return $this->generateIndividualTypeReport($bulkRequest);
         }
@@ -145,7 +153,10 @@ class ReportController extends Controller
             'payrollRecords',
             'deductions',
             'additions',
-            'promotionHistory'
+            'promotionHistory',
+            'state',
+            'lga',
+            'ward'
         ])->findOrFail($request->employee_id);
 
         // Generate report data
@@ -185,23 +196,23 @@ class ReportController extends Controller
         if ($request->report_type === 'retired_employees') {
             return $this->generateRetiredEmployeesReport($request);
         }
-        
+
         // Check if this is a retired employees summary report (tabular format)
         if ($request->report_type === 'retired_employees_summary') {
             return $this->generateRetiredEmployeesSummaryReport($request);
         }
-        
+
         // Check if this is an individual deduction or addition report
         if (strpos($request->report_type, 'deduction_') === 0 || strpos($request->report_type, 'addition_') === 0) {
             $request->validate([
                 'report_type' => 'required|string',
                 'export_format' => 'required|in:PDF,Excel',
             ]);
-            
+
             // Handle individual deduction/addition reports
             return $this->generateIndividualTypeReport($request);
         }
-        
+
         // For regular employee reports, we need employee_ids
         $request->validate([
             'employee_ids' => 'required|string',
@@ -221,7 +232,10 @@ class ReportController extends Controller
                 'disciplinaryRecords',
                 'payrollRecords',
                 'deductions',
-                'additions'
+                'additions',
+                'state',
+                'lga',
+                'ward'
             ])->find($employeeId);
 
             if ($employee) {
@@ -261,7 +275,7 @@ class ReportController extends Controller
         $parts = explode('_', $request->report_type);
         $type = $parts[0]; // "deduction" or "addition"
         $typeId = $parts[1]; // The ID of the deduction or addition type
-        
+
         if ($type === 'deduction') {
             return $this->generateIndividualDeductionReport($request, $typeId);
         } elseif ($type === 'addition') {
@@ -273,19 +287,19 @@ class ReportController extends Controller
     {
         // Get the deduction type
         $deductionType = DeductionType::find($deductionTypeId);
-        
 
-        
+
+
         // Check if this deduction type is related to loans
         $isLoanRelated = Loan::where('deduction_type_id', $deductionTypeId)->exists();
-        
+
         $deductions = collect();
-        
+
         if ($isLoanRelated) {
             // For loan-related deduction reports, we should distinguish between:
             // 1. Report showing overall loan information (when no specific date range is provided)
             // 2. Report showing actual monthly deductions (when date range is provided)
-            
+
             if (($request->has('start_date') && $request->start_date) || ($request->has('end_date') && $request->end_date)) {
                 // When a date range is specified, show actual monthly loan deductions
                 $loanIdsQuery = Loan::where('deduction_type_id', $deductionTypeId);
@@ -293,12 +307,12 @@ class ReportController extends Controller
                     $loanIdsQuery->where('employee_id', $request->employee_id);
                 }
                 $loanIds = $loanIdsQuery->pluck('loan_id');
-                
+
                 if ($loanIds->isNotEmpty()) {
                     // Get actual loan deductions (loan_deductions table) for these loans within the date range
                     $loanDeductionQuery = \App\Models\LoanDeduction::with(['loan', 'employee', 'loan.deductionType'])
                                           ->whereIn('loan_id', $loanIds);
-                    
+
                     // Apply date range filter if provided
                     if ($request->has('start_date') && $request->start_date) {
                         $loanDeductionQuery = $loanDeductionQuery->where('deduction_date', '>=', $request->start_date);
@@ -306,9 +320,9 @@ class ReportController extends Controller
                     if ($request->has('end_date') && $request->end_date) {
                         $loanDeductionQuery = $loanDeductionQuery->where('deduction_date', '<=', $request->end_date);
                     }
-                    
+
                     $loanDeductions = $loanDeductionQuery->get();
-                    
+
                     // Convert loan deductions to the same format as regular deductions for reporting
                     $deductions = $loanDeductions->map(function($loanDeduction) use ($deductionType) {
                         return [
@@ -333,7 +347,7 @@ class ReportController extends Controller
                     $loanIdsQuery->where('employee_id', $request->employee_id);
                 }
                 $loanIds = $loanIdsQuery->pluck('loan_id');
-                
+
                 if ($loanIds->isNotEmpty()) {
                     // Get the template deductions (main deductions table) for these loans
                     $deductions = Deduction::with(['employee', 'deductionType', 'loan'])
@@ -358,11 +372,11 @@ class ReportController extends Controller
             }
             $deductions = $deductionsQuery->get();
         }
-        
+
         // Process deductions to include loan details when applicable
         $processedDeductions = $deductions->map(function($deduction) use ($isLoanRelated) {
             $deductionData = is_array($deduction) ? $deduction : $deduction->toArray();
-            
+
             // Add loan details if this is a loan-related deduction and has a loan
             if ($isLoanRelated && (isset($deductionData['loan']) || isset($deduction['loan']))) {
                 $loan = isset($deductionData['loan']) ? $deductionData['loan'] : $deduction['loan'];
@@ -376,7 +390,7 @@ class ReportController extends Controller
                     'remaining_months' => $loan['remaining_months'] ?? $loan->remaining_months ?? 0,
                     'status' => $loan['status'] ?? $loan->status ?? 'N/A'
                 ];
-                
+
                 // Calculate totals from loan deductions if available
                 if (isset($loan['loanDeductions']) || isset($loan->loanDeductions)) {
                     $loanDeductionsCollection = isset($loan['loanDeductions']) ? $loan['loanDeductions'] : $loan->loanDeductions;
@@ -390,7 +404,7 @@ class ReportController extends Controller
                 $employeeLoan = Loan::where('employee_id', $employeeId)
                                   ->where('deduction_type_id', $deductionData['deduction_type_id'] ?? $deduction['deduction_type_id'])
                                   ->first();
-                                  
+
                 if ($employeeLoan) {
                     $deductionData['loan_details'] = [
                         'loan_type' => $employeeLoan->loan_type,
@@ -402,20 +416,20 @@ class ReportController extends Controller
                         'remaining_months' => $employeeLoan->remaining_months,
                         'status' => $employeeLoan->status
                     ];
-                    
+
                     // Also include loan deduction details
                     $loanDeductionsCollection = $employeeLoan->loanDeductions()->get();
                     $totalPaid = $loanDeductionsCollection->sum('amount_deducted');
                     $remainingBalance = $employeeLoan->remaining_balance; // Use remaining balance from loan record
-                    
+
                     $deductionData['loan_details']['total_paid'] = $totalPaid;
                     $deductionData['loan_details']['remaining_balance_calculated'] = $remainingBalance;
                 }
             }
-            
+
             return $deductionData;
         });
-        
+
         $reportData = [
             'deduction_type' => $deductionType->name,
             'deductions' => $processedDeductions->toArray(),
@@ -456,16 +470,16 @@ class ReportController extends Controller
     {
         // Get the addition type
         $additionType = AdditionType::find($additionTypeId);
-        
 
-        
+
+
         // Start building the query
         $query = Addition::with(['employee', 'additionType'])->where('addition_type_id', $additionTypeId);
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
-        
+
         // Apply date range filter if provided
         if ($request->has('start_date') && $request->start_date) {
             $query = $query->where('start_date', '>=', $request->start_date);
@@ -473,10 +487,10 @@ class ReportController extends Controller
         if ($request->has('end_date') && $request->end_date) {
             $query = $query->where('end_date', '<=', $request->end_date);
         }
-        
+
         // Get all additions of this type with their employees
         $additions = $query->get();
-        
+
         $reportData = [
             'addition_type' => $additionType->name,
             'additions' => $additions->toArray(),
@@ -516,14 +530,14 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         // Render the view to HTML
         $html = view('reports.pdf.deduction-report', [
             'data' => $processedReportData,
             'report' => $report,
             'deductionTypeName' => $deductionTypeName
         ])->render();
-        
+
         // Create PDF using Snappy
         $pdf = PDF::loadHTML($html);
 
@@ -541,13 +555,13 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $html = view('reports.pdf.addition-report', [
             'data' => $processedReportData,
             'report' => $report,
             'additionTypeName' => $additionTypeName
         ])->render();
-        
+
         // Create PDF using Snappy
         $pdf = PDF::loadHTML($html);
 
@@ -565,7 +579,7 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $fileName = "deduction_report_" . str_replace(' ', '_', strtolower($deductionTypeName)) . "_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -578,15 +592,15 @@ class ReportController extends Controller
 
         // Check if this is a loan-related deduction to include loan details
         $isLoanRelated = $processedReportData['is_loan_related'] ?? false;
-        
+
         if ($isLoanRelated) {
             // Include loan details in column headers
             fputcsv($file, [
-                'Employee ID', 
-                'Employee Name', 
-                'Amount', 
-                'Start Date', 
-                'End Date', 
+                'Employee ID',
+                'Employee Name',
+                'Amount',
+                'Start Date',
+                'End Date',
                 'Loan Type',
                 'Principal Amount',
                 'Total Repaid',
@@ -599,7 +613,7 @@ class ReportController extends Controller
 
             foreach ($processedReportData['deductions'] ?? [] as $deduction) {
                 $loanDetails = $deduction['loan_details'] ?? [];
-                
+
                 fputcsv($file, [
                     $deduction['employee']['employee_id'] ?? '',
                     ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? ''),
@@ -646,7 +660,7 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $fileName = "addition_report_" . str_replace(' ', '_', strtolower($additionTypeName)) . "_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -695,31 +709,31 @@ class ReportController extends Controller
     {
         // Get all deduction types
         $deductionTypes = DeductionType::all();
-        
+
         // Generate a separate report for each deduction type
         foreach ($deductionTypes as $deductionType) {
             // Check if this deduction type is related to loans
             $isLoanRelated = Loan::where('deduction_type_id', $deductionType->id)->exists();
-            
+
             $deductions = collect();
             $loanDeductions = collect(); // Store loan deductions separately
-            
+
             if ($isLoanRelated) {
                 // Get loans associated with this deduction type
                 $loanIds = Loan::where('deduction_type_id', $deductionType->id)
                               ->pluck('loan_id');
-                
+
                 if ($loanIds->isNotEmpty()) {
                     // Get the template deductions (main deductions table) for these loans
                     $templateDeductions = Deduction::with(['employee', 'deductionType', 'loan'])
                                         ->whereIn('loan_id', $loanIds)
                                         ->get();
-                    
+
                     // Get actual loan deductions (loan_deductions table) for these loans
                     $loanDeductions = \App\Models\LoanDeduction::with(['loan', 'employee', 'loan.deductionType'])
                                           ->whereIn('loan_id', $loanIds)
                                           ->get();
-                    
+
                     // Apply date range filter to loan deductions if provided
                     if ($request->has('start_date') && $request->start_date) {
                         $loanDeductions = $loanDeductions->filter(function ($loanDeduction) use ($request) {
@@ -731,7 +745,7 @@ class ReportController extends Controller
                             return $loanDeduction->deduction_date <= $request->end_date;
                         });
                     }
-                    
+
                     // Convert loan deductions to the same format as regular deductions for reporting
                     $loanDeductions = $loanDeductions->map(function($loanDeduction) use ($deductionType) {
                         return [
@@ -748,7 +762,7 @@ class ReportController extends Controller
                             'deduction_date' => $loanDeduction->deduction_date
                         ];
                     });
-                    
+
                     // Merge template deductions with actual loan deductions
                     $deductions = $templateDeductions->concat($loanDeductions);
                 } else {
@@ -763,12 +777,12 @@ class ReportController extends Controller
                              ->where('deduction_type_id', $deductionType->id)
                              ->get();
             }
-            
+
             // Skip if no deductions of this type
             if ($deductions->isEmpty()) {
                 continue;
             }
-            
+
             // Apply date range filter to regular deductions if provided
             if (!$isLoanRelated && $request->has('start_date') && $request->start_date) {
                 $deductions = $deductions->filter(function ($deduction) use ($request) {
@@ -780,11 +794,11 @@ class ReportController extends Controller
                     return $deduction->end_date <= $request->end_date;
                 });
             }
-            
+
             // Process deductions to include loan details when applicable
             $processedDeductions = $deductions->map(function($deduction) use ($isLoanRelated) {
                 $deductionData = is_array($deduction) ? $deduction : $deduction->toArray();
-                
+
                 // Add loan details if this is a loan-related deduction and has a loan
                 if ($isLoanRelated && (isset($deductionData['loan']) || isset($deduction['loan']))) {
                     $loan = isset($deductionData['loan']) ? $deductionData['loan'] : $deduction['loan'];
@@ -798,7 +812,7 @@ class ReportController extends Controller
                         'remaining_months' => $loan['remaining_months'] ?? $loan->remaining_months ?? 0,
                         'status' => $loan['status'] ?? $loan->status ?? 'N/A'
                     ];
-                    
+
                     // Calculate totals from loan deductions if available
                     if (isset($loan['loanDeductions']) || isset($loan->loanDeductions)) {
                         $loanDeductionsCollection = isset($loan['loanDeductions']) ? $loan['loanDeductions'] : $loan->loanDeductions;
@@ -806,10 +820,10 @@ class ReportController extends Controller
                         $deductionData['loan_details']['total_deductions_from_records'] = $totalDeductions;
                     }
                 }
-                
+
                 return $deductionData;
             });
-            
+
             $reportData = [
                 'deduction_type' => $deductionType->name,
                 'deductions' => $processedDeductions->toArray(),
@@ -849,19 +863,19 @@ class ReportController extends Controller
     {
         // Get all addition types
         $additionTypes = AdditionType::all();
-        
+
         // Generate a separate report for each addition type
         foreach ($additionTypes as $additionType) {
             // Get all additions of this type with their employees
             $additions = Addition::with(['employee', 'additionType'])
                 ->where('addition_type_id', $additionType->id)
                 ->get();
-            
+
             // Skip if no additions of this type
             if ($additions->isEmpty()) {
                 continue;
             }
-            
+
             $reportData = [
                 'addition_type' => $additionType->name,
                 'additions' => $additions->toArray()
@@ -896,7 +910,7 @@ class ReportController extends Controller
         return redirect()->route('reports.index')->with('success', 'Individual addition reports generated successfully.');
     }
 
-    
+
     private function generateRetiredEmployeesReport(Request $request)
     {
         // Get all retired employees with their details
@@ -932,7 +946,7 @@ class ReportController extends Controller
                 $dateOfFirstAppointment = \Carbon\Carbon::parse($employee->date_of_first_appointment);
                 $yearsOfService = $dateOfFirstAppointment ? $dateOfFirstAppointment->diffInYears(now()) : 'N/A';
             }
-            
+
             // Handle date parsing for date_of_retirement
             $dateOfRetirement = null;
             if ($employee->date_of_retirement) {
@@ -949,13 +963,13 @@ class ReportController extends Controller
                 'date_of_retirement' => $dateOfRetirement ? $dateOfRetirement->format('Y-m-d') : 'N/A',
                 'years_of_service' => $yearsOfService,
                 'bank_details' => $employee->bank ? $employee->bank->bank_name . ' (' . $employee->account_number . ')' : 'N/A',
-                'basic_salary' => $employee->isContractEmployee() ? 
-                    ('₦' . number_format($employee->amount ?? 0, 2)) : 
+                'basic_salary' => $employee->isContractEmployee() ?
+                    ('₦' . number_format($employee->amount ?? 0, 2)) :
                     ('₦' . number_format($employee->basic_salary ?? 0, 2)),
                 'deductions' => [],
                 'additions' => [],
                 'disciplinary_records' => $employee->disciplinaryRecords ? $employee->disciplinaryRecords->count() : 0,
-                'last_payroll_date' => $employee->payrollRecords && $employee->payrollRecords->last() ? 
+                'last_payroll_date' => $employee->payrollRecords && $employee->payrollRecords->last() ?
                     ($employee->payrollRecords->last()->payroll_month ?? 'N/A') . ' ' . ($employee->payrollRecords->last()->payroll_year ?? 'N/A') : 'N/A'
             ];
 
@@ -971,7 +985,7 @@ class ReportController extends Controller
                     if ($deduction->end_date) {
                         $deductionEndDate = \Carbon\Carbon::parse($deduction->end_date);
                     }
-                    
+
                     $employeeData['deductions'][] = [
                         'type' => $deduction->deductionType ? ($deduction->deductionType->name ?? 'N/A') : 'N/A',
                         'amount' => '₦' . number_format($deduction->amount ?? 0, 2),
@@ -993,7 +1007,7 @@ class ReportController extends Controller
                     if ($addition->end_date) {
                         $additionEndDate = \Carbon\Carbon::parse($addition->end_date);
                     }
-                    
+
                     $employeeData['additions'][] = [
                         'type' => $addition->additionType ? ($addition->additionType->name ?? 'N/A') : 'N/A',
                         'amount' => '₦' . number_format($addition->amount ?? 0, 2),
@@ -1060,13 +1074,13 @@ class ReportController extends Controller
         // Process each pensioner
         foreach ($pensioners as $pensioner) {
             $employee = $pensioner->employee;
-            
+
             // Handle date parsing for pension start date
             $pensionStartDate = null;
             if ($pensioner->pension_start_date) {
                 $pensionStartDate = \Carbon\Carbon::parse($pensioner->pension_start_date);
             }
-            
+
             // Handle date parsing for retirement date
             $retirementDate = null;
             if ($pensioner->retirement && $pensioner->retirement->retirement_date) {
@@ -1125,12 +1139,12 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $html = view('reports.pdf.retired-employees-report', [
             'data' => $processedReportData,
             'report' => $report
         ])->render();
-        
+
         $pdf = PDF::loadHTML($html);
 
         $fileName = "retired_employees_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
@@ -1167,17 +1181,17 @@ class ReportController extends Controller
                 'name' => trim($employee->first_name . ' ' . $employee->surname), // Name field
                 'date_of_birth' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : 'N/A', // Date of Birth
                 'age' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->age : 'N/A', // Age
-                'years_of_service' => $employee->date_of_first_appointment ? 
+                'years_of_service' => $employee->date_of_first_appointment ?
                     round(\Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(
                         \Carbon\Carbon::parse($employee->retirement->retirement_date ?? now())
                     ), 1) : 'N/A', // Years of Service
                 'rank' => $employee->rank ? $employee->rank->name : 'N/A', // Rank
-                'grade_level_step' => $employee->gradeLevel ? 
+                'grade_level_step' => $employee->gradeLevel ?
                     $employee->gradeLevel->name . '-Step ' . ($employee->step ? $employee->step->name : 'N/A') : 'N/A', // Grade Level/Step
                 'department' => $employee->department ? $employee->department->department_name : 'N/A', // Department
-                'retirement_date' => $employee->retirement && $employee->retirement->retirement_date ? 
+                'retirement_date' => $employee->retirement && $employee->retirement->retirement_date ?
                     \Carbon\Carbon::parse($employee->retirement->retirement_date)->format('Y-m-d') : 'N/A', // Retirement Date
-                'retire_reason' => $employee->retirement && $employee->retirement->retire_reason ? 
+                'retire_reason' => $employee->retirement && $employee->retirement->retire_reason ?
                     $employee->retirement->retire_reason : 'N/A', // Retire Reason
             ];
 
@@ -1216,12 +1230,12 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         // Ensure processedReportData is an array
         if (!is_array($processedReportData)) {
             $processedReportData = [];
         }
-        
+
         $fileName = "retired_employees_report_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -1235,15 +1249,15 @@ class ReportController extends Controller
 
         // Column headers
         fputcsv($file, [
-            'Employee ID', 
-            'Full Name', 
-            'Department', 
-            'Cadre', 
-            'Grade Level', 
-            'Date of First Appointment', 
-            'Date of Retirement', 
-            'Years of Service', 
-            'Bank Details', 
+            'Employee ID',
+            'Full Name',
+            'Department',
+            'Cadre',
+            'Grade Level',
+            'Date of First Appointment',
+            'Date of Retirement',
+            'Years of Service',
+            'Bank Details',
             'Basic Salary',
             'Disciplinary Records',
             'Last Payroll Date'
@@ -1257,7 +1271,7 @@ class ReportController extends Controller
                 if (!is_array($employee)) {
                     $employee = [];
                 }
-                
+
                 fputcsv($file, [
                     $employee['employee_id'] ?? '',
                     $employee['full_name'] ?? '',
@@ -1272,7 +1286,7 @@ class ReportController extends Controller
                     $employee['disciplinary_records'] ?? '',
                     $employee['last_payroll_date'] ?? ''
                 ]);
-                
+
                 // Add deductions section if any
                 if (!empty($employee['deductions']) && is_array($employee['deductions'])) {
                     fputcsv($file, ['', '', '', 'Deductions:', '', '', '', '', '', '', '', '']);
@@ -1282,18 +1296,18 @@ class ReportController extends Controller
                         if (!is_array($deduction)) {
                             $deduction = [];
                         }
-                        
+
                         fputcsv($file, [
-                            '', '', '', 
-                            $deduction['type'] ?? '', 
-                            $deduction['amount'] ?? '', 
-                            $deduction['start_date'] ?? '', 
-                            $deduction['end_date'] ?? '', 
+                            '', '', '',
+                            $deduction['type'] ?? '',
+                            $deduction['amount'] ?? '',
+                            $deduction['start_date'] ?? '',
+                            $deduction['end_date'] ?? '',
                             '', '', '', '', ''
                         ]);
                     }
                 }
-                
+
                 // Add additions section if any
                 if (!empty($employee['additions']) && is_array($employee['additions'])) {
                     fputcsv($file, ['', '', '', 'Additions:', '', '', '', '', '', '', '', '']);
@@ -1303,18 +1317,18 @@ class ReportController extends Controller
                         if (!is_array($addition)) {
                             $addition = [];
                         }
-                        
+
                         fputcsv($file, [
-                            '', '', '', 
-                            $addition['type'] ?? '', 
-                            $addition['amount'] ?? '', 
-                            $addition['start_date'] ?? '', 
-                            $addition['end_date'] ?? '', 
+                            '', '', '',
+                            $addition['type'] ?? '',
+                            $addition['amount'] ?? '',
+                            $addition['start_date'] ?? '',
+                            $addition['end_date'] ?? '',
                             '', '', '', '', ''
                         ]);
                     }
                 }
-                
+
                 // Add blank line between employees
                 fputcsv($file, []);
             }
@@ -1335,12 +1349,12 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         // Ensure processedReportData is an array
         if (!is_array($processedReportData)) {
             $processedReportData = [];
         }
-        
+
         $fileName = "retired_employees_summary_report_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -1355,14 +1369,14 @@ class ReportController extends Controller
         // Column headers matching the format you requested
         fputcsv($file, [
             'Staff ID',
-            'Name', 
+            'Name',
             'Date of Birth',
-            'Age', 
+            'Age',
             'Years of Service',
             'Rank',
-            'Grade Level/Step', 
+            'Grade Level/Step',
             'Department',
-            'Retirement Date', 
+            'Retirement Date',
             'Retire Reason',
             'Actions' // This column will be empty in the Excel file
         ]);
@@ -1375,7 +1389,7 @@ class ReportController extends Controller
                 if (!is_array($employee)) {
                     $employee = [];
                 }
-                
+
                 fputcsv($file, [
                     $employee['employee_id'] ?? '',
                     $employee['name'] ?? '',
@@ -1407,12 +1421,12 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $html = view('reports.pdf.retired-employees-summary-report', [
             'data' => $processedReportData,
             'report' => $report
         ])->render();
-        
+
         $pdf = PDF::loadHTML($html);
 
         $fileName = "retired_employees_summary_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
@@ -1431,14 +1445,14 @@ class ReportController extends Controller
         if (is_string($reportData)) {
             $reportData = json_decode($reportData, true);
         }
-        
+
         // Render the view to HTML
         $html = view('reports.pdf.employee-report', [
             'employee' => $employee,
             'data' => $reportData,
             'report' => $report
         ])->render();
-        
+
         // Create PDF using Snappy
         $pdf = PDF::loadHTML($html);
 
@@ -1529,27 +1543,27 @@ class ReportController extends Controller
     public function show($id)
     {
         $report = Report::with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname'])->findOrFail($id);
-    
+
         // Decode report_data JSON to array if it's a string
         if (is_string($report->report_data)) {
             $report->report_data = json_decode($report->report_data, true);
         } elseif (is_string($report->report_data ?? null)) {
             $report->report_data = json_decode($report->report_data, true);
         }
-    
+
         return view('reports.show', compact('report'));
     }
-    
+
     private function generatePensionersPDF($report, $reportData)
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         $html = view('reports.pdf.pensioners-report', [
             'data' => $processedReportData,
             'report' => $report
         ])->render();
-        
+
         $pdf = PDF::loadHTML($html);
 
         $fileName = "pensioners_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
@@ -1566,12 +1580,12 @@ class ReportController extends Controller
     {
         // Ensure reportData is an array if it's a JSON string
         $processedReportData = is_string($reportData) ? json_decode($reportData, true) : $reportData;
-        
+
         // Ensure processedReportData is an array
         if (!is_array($processedReportData)) {
             $processedReportData = [];
         }
-        
+
         $fileName = "pensioners_report_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -1585,16 +1599,16 @@ class ReportController extends Controller
 
         // Column headers
         fputcsv($file, [
-            'Employee ID', 
-            'Full Name', 
-            'Department', 
-            'Cadre', 
-            'Grade Level', 
-            'Retirement Date', 
-            'Pension Start Date', 
+            'Employee ID',
+            'Full Name',
+            'Department',
+            'Cadre',
+            'Grade Level',
+            'Retirement Date',
+            'Pension Start Date',
             'Pension Type',
-            'Pension Amount', 
-            'RSA Balance at Retirement', 
+            'Pension Amount',
+            'RSA Balance at Retirement',
             'Lump Sum Amount',
             'Expected Lifespan (Months)',
             'Status',
@@ -1609,7 +1623,7 @@ class ReportController extends Controller
                 if (!is_array($pensioner)) {
                     $pensioner = [];
                 }
-                
+
                 fputcsv($file, [
                     $pensioner['employee_id'] ?? '',
                     $pensioner['full_name'] ?? '',
@@ -1643,7 +1657,7 @@ class ReportController extends Controller
     public function download($id)
     {
         $report = Report::findOrFail($id);
-        
+
         if ($report->file_path && Storage::exists($report->file_path)) {
             AuditTrail::create([
                 'user_id' => Auth::id(),
@@ -1654,7 +1668,7 @@ class ReportController extends Controller
             ]);
             return Storage::download($report->file_path);
         }
-        
+
         return redirect()->back()->with('error', 'Report file not found');
     }
 }

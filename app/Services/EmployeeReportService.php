@@ -60,8 +60,9 @@ class EmployeeReportService
             'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
             'gender' => $employee->gender,
             'date_of_birth' => $employee->date_of_birth,
-            'state_of_origin' => $employee->state_of_origin,
-            'lga' => $employee->lga,
+            'state_of_origin' => optional($employee->state)->name ?? 'N/A',
+            'lga' => optional($employee->lga)->name ?? 'N/A',
+            'ward' => optional($employee->ward)->name ?? 'N/A',
             'nationality' => $employee->nationality,
             'nin' => $employee->nin,
             'mobile_no' => $employee->mobile_no,
@@ -78,9 +79,10 @@ class EmployeeReportService
             'highest_certificate' => $employee->highest_certificate,
             'grade_level_limit' => $employee->grade_level_limit,
             'appointment_type' => $employee->appointmentType->name ?? null,
+            'pay_point' => $employee->pay_point,
             'service_years' => $employee->years_of_service,
         ];
-    
+
     }
 
     private function getDisciplinaryData(Employee $employee): array
@@ -175,7 +177,7 @@ class EmployeeReportService
 
     private function getRetirementInfo(Employee $employee): array
     {
-        $yearsToRetirement = $employee->expected_retirement_date 
+        $yearsToRetirement = $employee->expected_retirement_date
             ? abs(round(now()->floatDiffInYears($employee->expected_retirement_date, false), 1))
             : null;
 
@@ -189,7 +191,7 @@ class EmployeeReportService
             'estimated_gratuity' => optional($employee->retirement)->gratuity_amount,
             'retirement_status' => $yearsToRetirement <= 2 ? 'retired' : 'active'
         ];
-    }   
+    }
     private function getStatistics(Employee $employee): array
     {
         $totalDeductions = $employee->deductions()
@@ -222,7 +224,7 @@ class EmployeeReportService
         return [
             'total_service_years' => $employee->service_years,
             'disciplinary_actions' => $employee->disciplinaryRecords()->count(),
-            
+
         ];
     }
 

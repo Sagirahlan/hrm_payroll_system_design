@@ -22,4 +22,9 @@ class DeductionType extends Model
     {
         return $this->morphToMany(GradeLevel::class, 'adjustable', 'grade_level_adjustments')->withPivot('percentage');
     }
+
+    public function loans()
+    {
+        return $this->hasMany(\App\Models\Loan::class, 'deduction_type_id');
+    }
 }

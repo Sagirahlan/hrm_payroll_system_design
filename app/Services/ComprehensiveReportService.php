@@ -16,9 +16,9 @@ class ComprehensiveReportService
 {
     public function generateEmployeeMasterReport($employeeId = null)
     {
-        $employees = $employeeId 
-            ? Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement'])->where('employee_id', $employeeId)->get()
-            : Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement'])->get();
+        $employees = $employeeId
+            ? Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement', 'appointmentType'])->where('employee_id', $employeeId)->get()
+            : Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement', 'appointmentType'])->get();
 
         $reportData = [
             'report_title' => 'Employee Master Report',
@@ -44,11 +44,12 @@ class ComprehensiveReportService
             'grade_level' => $employee->gradeLevel->name ?? 'N/A',
             'step' => $employee->step->name ?? 'N/A',
             'status' => $employee->status,
+            'appointment_type' => $employee->appointmentType->name ?? 'N/A',
             'date_of_first_appointment' => $employee->date_of_first_appointment,
             'years_of_service' => $employee->getYearsOfServiceAttribute(),
-            'basic_salary' => $employee->isContractEmployee() ? 
-                ($employee->amount ?? 0) : 
-                ($employee->basic_salary ?? 0),
+            'basic_salary' => $employee->isContractEmployee() ?
+                ($employee->amount ?? $employee->basic_salary ?? 0) :
+                ($employee->basic_salary ?? $employee->amount ?? $employee->step?->basic_salary ?? 0),
             'email' => $employee->email,
             'mobile_no' => $employee->mobile_no,
             'address' => $employee->address,
@@ -64,11 +65,11 @@ class ComprehensiveReportService
     public function generateEmployeeDirectoryReport($filters = [])
     {
         $query = Employee::with(['department', 'gradeLevel', 'step']);
-        
+
         if (isset($filters['department_id']) && $filters['department_id']) {
             $query->where('department_id', $filters['department_id']);
         }
-        
+
         if (isset($filters['status']) && $filters['status']) {
             $query->where('status', $filters['status']);
         }
@@ -124,6 +125,7 @@ class ComprehensiveReportService
                     'department' => $employee->department->department_name ?? 'N/A',
                     'grade_level' => $employee->gradeLevel->name ?? 'N/A',
                     'step' => $employee->step->name ?? 'N/A',
+                    'status' => $employee->status, // Add the status field
                     'date_of_first_appointment' => $employee->date_of_first_appointment,
                     'years_of_service' => $employee->getYearsOfServiceAttribute(),
                 ];
@@ -140,7 +142,7 @@ class ComprehensiveReportService
         if ($year) {
             $query->whereYear('payroll_month', $year);
         }
-        
+
         if ($month) {
             // Convert month name to number if needed
             $monthNumber = $this->convertMonthToNumber($month);
@@ -206,7 +208,7 @@ class ComprehensiveReportService
         if (is_numeric($month)) {
             return date('F', mktime(0, 0, 0, $month, 1));
         }
-        
+
         // If it's already a month name, return it
         return ucfirst(strtolower($month));
     }
@@ -221,6 +223,17 @@ class ComprehensiveReportService
 
         if (isset($filters['deduction_type_id']) && $filters['deduction_type_id']) {
             $query->where('deduction_type_id', $filters['deduction_type_id']);
+        }
+
+        // Apply year and month filters if provided
+        if (isset($filters['year']) && $filters['year']) {
+            $year = $filters['year'];
+            $query->whereYear('start_date', $year);
+        }
+
+        if (isset($filters['month']) && $filters['month']) {
+            $month = $filters['month'];
+            $query->whereMonth('start_date', $month);
         }
 
         $deductions = $query->get();
@@ -259,6 +272,17 @@ class ComprehensiveReportService
 
         if (isset($filters['addition_type_id']) && $filters['addition_type_id']) {
             $query->where('addition_type_id', $filters['addition_type_id']);
+        }
+
+        // Apply year and month filters if provided
+        if (isset($filters['year']) && $filters['year']) {
+            $year = $filters['year'];
+            $query->whereYear('start_date', $year);
+        }
+
+        if (isset($filters['month']) && $filters['month']) {
+            $month = $filters['month'];
+            $query->whereMonth('start_date', $month);
         }
 
         $additions = $query->get();
@@ -403,6 +427,25 @@ class ComprehensiveReportService
             $query->where('status', $filters['status']);
         }
 
+        if (isset($filters['loan_type']) && $filters['loan_type']) {
+            // This handles the loan_type filter from the dropdown, which could be either loan_type or deduction_type_id
+            // First, let's check if it's a deduction type ID
+            if (is_numeric($filters['loan_type'])) {
+                $query->where('deduction_type_id', $filters['loan_type']);
+            } else {
+                // Otherwise, treat it as loan type name
+                $query->where('loan_type', $filters['loan_type']);
+            }
+        }
+
+        if (isset($filters['year']) && $filters['year']) {
+            $query->whereYear('created_at', $filters['year']);
+        }
+
+        if (isset($filters['month']) && $filters['month']) {
+            $query->whereMonth('created_at', $filters['month']);
+        }
+
         $loans = $query->get();
 
         $reportData = [
@@ -420,7 +463,7 @@ class ComprehensiveReportService
                 'employee_id' => $loan->employee->employee_id,
                 'employee_name' => trim($loan->employee->first_name . ' ' . $loan->employee->middle_name . ' ' . $loan->employee->surname),
                 'department' => $loan->employee->department->department_name ?? 'N/A',
-                'loan_type' => $loan->loan_type ?? 'N/A',
+                'loan_type' => ($loan->loan_type ?? 'N/A') . ($loan->deductionType ? ' (' . $loan->deductionType->name . ')' : ''),
                 'principal_amount' => $loan->principal_amount,
                 'monthly_deduction' => $loan->monthly_deduction,
                 'total_months' => $loan->total_months,
@@ -448,7 +491,7 @@ class ComprehensiveReportService
         foreach ($departments as $department) {
             $employees = $department->employees;
             $activeEmployees = $employees->where('status', 'Active');
-            
+
             $reportData['departments'][] = [
                 'department_id' => $department->department_id,
                 'department_name' => $department->department_name,
@@ -480,7 +523,7 @@ class ComprehensiveReportService
         foreach ($gradeLevels as $gradeLevel) {
             $employees = $gradeLevel->employees;
             $activeEmployees = $employees->where('status', 'Active');
-            
+
             $reportData['grade_levels'][] = [
                 'grade_level_id' => $gradeLevel->id,
                 'grade_level_name' => $gradeLevel->name ?? $gradeLevel->grade_level,
@@ -499,7 +542,7 @@ class ComprehensiveReportService
 
     public function generateAuditTrailReport($filters = [])
     {
-        $query = \App\Models\AuditTrail::with(['user']);
+        $query = \App\Models\AuditTrail::with(['user.employee']);
 
         if (isset($filters['user_id']) && $filters['user_id']) {
             $query->where('user_id', $filters['user_id']);
@@ -527,8 +570,12 @@ class ComprehensiveReportService
         ];
 
         foreach ($auditTrails as $activity) {
+            $employeeName = $activity->user->employee
+                ? trim($activity->user->employee->first_name . ' ' . $activity->user->employee->middle_name . ' ' . $activity->user->employee->surname)
+                : null;
+
             $reportData['activities'][] = [
-                'user_name' => $activity->user->name ?? 'System',
+                'user_name' => $employeeName ?: $activity->user->username ?? 'System',
                 'action' => $activity->action,
                 'description' => $activity->description,
                 'timestamp' => $activity->action_timestamp->format('Y-m-d H:i:s'),
@@ -547,7 +594,7 @@ class ComprehensiveReportService
         if ($year) {
             $query->whereYear('payroll_month', $year);
         }
-        
+
         if ($month) {
             $monthNumber = $this->convertMonthToNumber($month);
             $query->whereMonth('payroll_month', $monthNumber);

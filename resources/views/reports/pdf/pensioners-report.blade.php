@@ -4,100 +4,167 @@
     <title>{{ $data['report_title'] ?? 'Pensioners Report' }}</title>
     <meta charset="utf-8">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .page {
+                margin: 0;
+                padding: 0;
+                page-break-after: always;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 10px auto;
+            padding: 15mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
         }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-            color: #000;
-        }
-        
-        .header p {
-            margin: 5px 0;
-            font-size: 12px;
-        }
-        
-        .info-section {
-            margin-bottom: 20px;
-        }
-        
-        .info-section table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .info-section th, .info-section td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-        
-        .info-section th {
-            background-color: #f5f5f5;
+
+        .report-title {
+            font-size: 14px;
             font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
         }
-        
-        .summary {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
+
+        .generated-date {
+            font-size: 9px;
             color: #666;
+            margin-bottom: 2px;
+            line-height: 1.3;
         }
-        
-        .page-break {
-            page-break-after: always;
+
+        .summary-info {
+            font-size: 9px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 4px;
         }
-        
-        .text-right {
-            text-align: right;
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
-        
-        .text-center {
-            text-align: center;
+
+        .table-wrapper {
+            flex: 1;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            font-size: 8px;
+            line-height: 1.2;
         }
-        
-        th, td {
-            padding: 6px;
-            text-align: left;
-            vertical-align: top;
-            border: 1px solid #ddd;
+
+        thead {
+            background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
         }
-        
+
         th {
-            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 4px 3px;
+            text-align: left;
             font-weight: bold;
+            color: #333;
+            white-space: nowrap;
         }
-        
+
+        td {
+            border: 1px solid #ddd;
+            padding: 3px;
+            text-align: left;
+        }
+
         tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .amount {
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: #e8f4f8;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 11px;
+        }
+
+        .footer {
+            border-top: 1px solid #ddd;
+            padding-top: 6px;
+            margin-top: 8px;
+            font-size: 8px;
+            color: #666;
+            text-align: right;
+        }
+
+        @media (max-width: 800px) {
+            .page {
+                width: 100%;
+                height: auto;
+                margin: 5px 0;
+                padding: 10px;
+            }
+        }
+    </style>
             background-color: #f9f9f9;
         }
         

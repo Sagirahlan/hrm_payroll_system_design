@@ -217,6 +217,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_grade_level_adjustments',
             'create_grade_level_adjustments',
             'delete_grade_level_adjustments',
+
+            // Leave Management
+            'view_leaves',
+            'create_leaves',
+            'edit_leaves',
+            'delete_leaves',
+            'manage_leaves',
+            'approve_leaves',
         ];
 
         foreach ($permissions as $permission) {
@@ -235,6 +243,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'change_password',
             'view_payroll',
             'view_payslips',
+            'create_leaves',  // Allow employees to create their own leave requests
+            'view_leaves',    // Allow employees to view their own leave requests
         ]);
     }
 }

@@ -174,6 +174,11 @@ public function getCalculatedRetirementDateAttribute()
     {
         return $this->promotionHistory()->latest('created_at')->first();
     }
+
+    public function leaves()
+    {
+        return $this->hasMany(\App\Models\Models\Leave::class, 'employee_id', 'employee_id');
+    }
     
     /**
      * Check if employee is a contract employee

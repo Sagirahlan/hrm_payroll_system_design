@@ -4,58 +4,147 @@
     <title>Retired Employees Report</title>
     <meta charset="utf-8">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .page {
+                margin: 0;
+                padding: 0;
+                page-break-after: always;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 10px auto;
+            padding: 15mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
         .header {
             text-align: center;
-            border-bottom: 2px solid #333;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
-            margin-bottom: 20px;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .header p {
-            margin: 5px 0 0 0;
+
+        .report-title {
             font-size: 14px;
-        }
-        .summary-section {
-            background-color: #f0f0f0;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .section {
-            margin-bottom: 20px;
-        }
-        .section-title {
-            background-color: #f0f0f0;
-            padding: 8px;
             font-weight: bold;
-            border: 1px solid #ddd;
-            margin-bottom: 10px;
+            color: #333;
+            margin-bottom: 4px;
         }
+
+        .generated-date {
+            font-size: 9px;
+            color: #666;
+            margin-bottom: 2px;
+            line-height: 1.3;
+        }
+
+        .summary-info {
+            font-size: 9px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            font-size: 8px;
+            line-height: 1.2;
         }
-        th, td {
+
+        thead {
+            background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
             border: 1px solid #ddd;
-            padding: 6px;
+            padding: 4px 3px;
+            text-align: left;
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 3px;
             text-align: left;
         }
-        th {
-            background-color: #f8f8f8;
-            font-weight: bold;
-        }
+
         tr:nth-child(even) {
             background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .amount {
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: #e8f4f8;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 11px;
         }
         .text-right {
             text-align: right;

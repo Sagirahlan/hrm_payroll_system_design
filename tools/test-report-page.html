@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Test Report Page</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container py-4">
+  <h4>Generate New Report - Test Page</h4>
+  <form id="report-form">
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <label for="report_type" class="form-label">Report Type</label>
+        <select class="form-select" id="report_type" name="report_type" required>
+          <option value="">Select Report Type</option>
+          <option value="payroll_summary">Payroll Summary Report</option>
+          <option value="deduction_summary">Deduction Summary Report</option>
+          <option value="addition_summary">Addition Summary Report</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="export_format" class="form-label">Export Format</label>
+        <select class="form-select" id="export_format" name="export_format" required>
+          <option value="">Select Format</option>
+          <option value="PDF">PDF</option>
+          <option value="Excel">Excel</option>
+        </select>
+      </div>
+    </div>
+    <div id="filters-section" class="mb-4"></div>
+  </form>
+</div>
+
+<script>
+// Minimal copy of the page's JS with injected sample JSON data
+const jsonData = {
+  departments: [{department_id:1,department_name:'HR'},{department_id:2,department_name:'Finance'}],
+  deductionTypes: [{id:1,name:'Tax'},{id:2,name:'Loan'}],
+  additionTypes: [{id:1,name:'Allowance'},{id:2,name:'Bonus'}],
+  employees: [{employee_id:101,first_name:'John',surname:'Doe'},{employee_id:102,first_name:'Jane',surname:'Smith'}],
+  users: [{user_id:1,username:'admin'},{user_id:2,username:'user1'}]
+};
+
+const reportTypeSelect = document.getElementById('report_type');
+const filtersSection = document.getElementById('filters-section');
+
+reportTypeSelect.addEventListener('change', function() {
+  const reportType = this.value;
+  filtersSection.innerHTML = '';
+  if (!reportType) return;
+  addFiltersForReportType(reportType);
+});
+
+function addFiltersForReportType(reportType) {
+  let filtersHtml = '';
+  switch(reportType) {
+    case 'payroll_summary':
+      filtersHtml = `
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label">Year</label>
+            <input type="number" class="form-control" name="filters[year]" min="2000" max="2099" value="2025">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Month</label>
+            <select class="form-select" name="filters[month]"><option value="">All Months</option><option value="1">January</option></select>
+          </div>
+        </div>`;
+      break;
+    case 'deduction_summary':
+      filtersHtml = `
+        <div class="row">
+          <div class="col-md-4">
+            <label class="form-label">Deduction Type</label>
+            <select class="form-select" name="filters[deduction_type_id]">
+              <option value="">All Deduction Types</option>
+              ${jsonData.deductionTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Year</label>
+            <input type="number" class="form-control" name="filters[year]" min="2000" max="2099" value="2025">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Month</label>
+            <select class="form-select" name="filters[month]"><option value="">All Months</option><option value="1">January</option></select>
+          </div>
+        </div>`;
+      break;
+    case 'addition_summary':
+      filtersHtml = `
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label">Addition Type</label>
+            <select class="form-select" name="filters[addition_type_id]">
+              <option value="">All Addition Types</option>
+              ${jsonData.additionTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+            </select>
+          </div>
+        </div>`;
+      break;
+  }
+  if (filtersHtml) filtersSection.innerHTML = filtersHtml;
+}
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@
                         @endcan
                         @can('generate_reports')
                         <a href="{{ route('reports.create') }}" class="btn btn-secondary">
-                            <i class="fas fa-plus"></i> Generate Old Report
+                            <i class="fas fa-plus"></i> Generate individual Report
                         </a>
                         @endcan
                     </div>

@@ -11,56 +11,56 @@
                     <h3 class="card-title">Comprehensive Reports</h3>
                     <div class="btn-group">
                         <a href="{{ route('reports.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Generate New Report
+                            <i class="fas fa-plus"></i> Generate individual Report
                         </a>
                         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
                             <i class="fas fa-list"></i> View All Reports
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="card-body">
                     <!-- Employee Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-users"></i> Employee Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-primary">
                                 <div class="card-body">
                                     <h5 class="card-title">Employee Master Report</h5>
                                     <p class="card-text text-muted">Complete employee information with all details</p>
-                                    <button class="btn btn-primary generate-report-btn" 
-                                            data-report-type="employee_master" 
+                                    <button class="btn btn-primary generate-report-btn"
+                                            data-report-type="employee_master"
                                             data-title="Employee Master Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-success">
                                 <div class="card-body">
                                     <h5 class="card-title">Employee Directory</h5>
                                     <p class="card-text text-muted">Employee contact information and basic details</p>
-                                    <button class="btn btn-success generate-report-btn" 
-                                            data-report-type="employee_directory" 
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="employee_directory"
                                             data-title="Employee Directory Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h5 class="card-title">Employee Status Report</h5>
                                     <p class="card-text text-muted">Employee status breakdown by category</p>
-                                    <button class="btn btn-info generate-report-btn" 
-                                            data-report-type="employee_status" 
+                                    <button class="btn btn-info generate-report-btn"
+                                            data-report-type="employee_status"
                                             data-title="Employee Status Report">
                                         Generate Report
                                     </button>
@@ -68,48 +68,48 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Compensation Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-money-bill-wave"></i> Compensation Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-warning">
                                 <div class="card-body">
                                     <h5 class="card-title">Payroll Summary</h5>
                                     <p class="card-text text-muted">Payroll records summary by period</p>
-                                    <button class="btn btn-warning generate-report-btn" 
-                                            data-report-type="payroll_summary" 
+                                    <button class="btn btn-warning generate-report-btn"
+                                            data-report-type="payroll_summary"
                                             data-title="Payroll Summary Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-danger">
                                 <div class="card-body">
                                     <h5 class="card-title">Deduction Summary</h5>
                                     <p class="card-text text-muted">All employee deductions by type</p>
-                                    <button class="btn btn-danger generate-report-btn" 
-                                            data-report-type="deduction_summary" 
+                                    <button class="btn btn-danger generate-report-btn"
+                                            data-report-type="deduction_summary"
                                             data-title="Deduction Summary Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-success">
                                 <div class="card-body">
                                     <h5 class="card-title">Addition Summary</h5>
                                     <p class="card-text text-muted">All employee additions by type</p>
-                                    <button class="btn btn-success generate-report-btn" 
-                                            data-report-type="addition_summary" 
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="addition_summary"
                                             data-title="Addition Summary Report">
                                         Generate Report
                                     </button>
@@ -117,48 +117,48 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Performance & Career Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-chart-line"></i> Performance & Career Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-primary">
                                 <div class="card-body">
                                     <h5 class="card-title">Promotion History</h5>
                                     <p class="card-text text-muted">All employee promotions with details</p>
-                                    <button class="btn btn-primary generate-report-btn" 
-                                            data-report-type="promotion_history" 
+                                    <button class="btn btn-primary generate-report-btn"
+                                            data-report-type="promotion_history"
                                             data-title="Promotion History Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-warning">
                                 <div class="card-body">
                                     <h5 class="card-title">Disciplinary Actions</h5>
                                     <p class="card-text text-muted">All disciplinary records by employee</p>
-                                    <button class="btn btn-warning generate-report-btn" 
-                                            data-report-type="disciplinary" 
+                                    <button class="btn btn-warning generate-report-btn"
+                                            data-report-type="disciplinary"
                                             data-title="Disciplinary Action Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h5 class="card-title">Retirement Planning</h5>
                                     <p class="card-text text-muted">Employees approaching retirement</p>
-                                    <button class="btn btn-info generate-report-btn" 
-                                            data-report-type="retirement_planning" 
+                                    <button class="btn btn-info generate-report-btn"
+                                            data-report-type="retirement_planning"
                                             data-title="Retirement Planning Report">
                                         Generate Report
                                     </button>
@@ -166,20 +166,20 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Financial Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-credit-card"></i> Financial Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-success">
                                 <div class="card-body">
                                     <h5 class="card-title">Loan Status Report</h5>
                                     <p class="card-text text-muted">Complete loan tracking and status</p>
-                                    <button class="btn btn-success generate-report-btn" 
-                                            data-report-type="loan_status" 
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="loan_status"
                                             data-title="Loan Status Report">
                                         Generate Report
                                     </button>
@@ -187,48 +187,48 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Organizational Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-building"></i> Organizational Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-primary">
                                 <div class="card-body">
                                     <h5 class="card-title">Department Summary</h5>
                                     <p class="card-text text-muted">Employee breakdown by department</p>
-                                    <button class="btn btn-primary generate-report-btn" 
-                                            data-report-type="department_summary" 
+                                    <button class="btn btn-primary generate-report-btn"
+                                            data-report-type="department_summary"
                                             data-title="Department Summary Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-success">
                                 <div class="card-body">
                                     <h5 class="card-title">Grade Level Summary</h5>
                                     <p class="card-text text-muted">Employee breakdown by grade level</p>
-                                    <button class="btn btn-success generate-report-btn" 
-                                            data-report-type="grade_level_summary" 
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="grade_level_summary"
                                             data-title="Grade Level Summary Report">
                                         Generate Report
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-warning">
                                 <div class="card-body">
                                     <h5 class="card-title">Payroll Analysis</h5>
                                     <p class="card-text text-muted">Detailed payroll analysis by period</p>
-                                    <button class="btn btn-warning generate-report-btn" 
-                                            data-report-type="payroll_analysis" 
+                                    <button class="btn btn-warning generate-report-btn"
+                                            data-report-type="payroll_analysis"
                                             data-title="Payroll Analysis Report">
                                         Generate Report
                                     </button>
@@ -236,20 +236,20 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Audit Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="text-primary mb-3"><i class="fas fa-clipboard-list"></i> Audit Reports</h4>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h5 class="card-title">Audit Trail Report</h5>
                                     <p class="card-text text-muted">System activity and audit logs</p>
-                                    <button class="btn btn-info generate-report-btn" 
-                                            data-report-type="audit_trail" 
+                                    <button class="btn btn-info generate-report-btn"
+                                            data-report-type="audit_trail"
                                             data-title="Audit Trail Report">
                                         Generate Report
                                     </button>
@@ -274,7 +274,7 @@
                     @csrf
                     <div class="modal-body">
                         <input type="hidden" id="report_type" name="report_type" value="">
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="export_format" class="form-label">Export Format</label>
@@ -285,7 +285,7 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <!-- Filters will be dynamically added here -->
                         <div id="filters-section"></div>
                     </div>
@@ -308,40 +308,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportFormat = document.getElementById('export_format');
     const filtersSection = document.getElementById('filters-section');
     const form = document.getElementById('generateReportForm');
-    
+
     generateButtons.forEach(button => {
         button.addEventListener('click', function() {
             const reportType = this.getAttribute('data-report-type');
             const title = this.getAttribute('data-title');
-            
+
             modalTitle.textContent = title;
             reportTypeInput.value = reportType;
-            
+
             // Clear previous filters
             filtersSection.innerHTML = '';
-            
+
             // Add specific filters based on report type
             addFiltersForReportType(reportType);
-            
+
             // Show modal
             const bsModal = new bootstrap.Modal(modal);
             bsModal.show();
         });
     });
-    
+
     // Prevent default form submission and handle it with AJAX
     form.addEventListener('submit', function(e) {
         e.preventDefault(); // Prevent default form submission
-        
+
         // Get form data
         const formData = new FormData(form);
-        
+
         // Show loading state
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
         submitBtn.disabled = true;
-        
+
         // Send AJAX request
         fetch(form.getAttribute('action'), {
             method: 'POST',
@@ -369,10 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Close modal and show success message
                 const bsModal = bootstrap.Modal.getInstance(modal);
                 bsModal.hide();
-                
+
                 // Show success message
                 alert('Report generated successfully!');
-                
+
                 // Optionally reload the page or redirect
                 window.location.href = data.redirect || "{{ route('reports.comprehensive.index') }}";
             } else {
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = false;
         });
     });
-    
+
     function addFiltersForReportType(reportType) {
         switch(reportType) {
             case 'employee_directory':
@@ -426,14 +426,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
             case 'payroll_summary':
             case 'payroll_analysis':
                 filtersSection.innerHTML = `
                     <div class="row">
                         <div class="col-md-6">
                             <label for="year_filter" class="form-label">Year</label>
-                            <input type="number" class="form-control" id="year_filter" name="filters[year]" 
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
                                    min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
                         </div>
                         <div class="col-md-6">
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
             case 'deduction_summary':
                 filtersSection.innerHTML = `
                     <div class="row">
@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
             case 'addition_summary':
                 filtersSection.innerHTML = `
                     <div class="row">
@@ -489,28 +489,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 break;
-                
+
+            case 'employee_status':
+                // No additional filters needed for employee status report
+                filtersSection.innerHTML = '';
+                break;
+
             case 'promotion_history':
             case 'disciplinary':
             case 'loan_status':
                 filtersSection.innerHTML = `
                     <div class="row">
-                        <div class="col-md-12">
-                            <label for="employee_filter" class="form-label">Employee (Optional)</label>
-                            <select class="form-select" id="employee_filter" name="filters[employee_id]">
-                                <option value="">All Employees</option>
-                                @php
-                                    $employees = App\Models\Employee::select('employee_id', 'first_name', 'surname')->get();
-                                @endphp
-                                @foreach($employees as $employee)
-                                    <option value="{{ $employee->employee_id }}">{{ $employee->first_name }} {{ $employee->surname }}</option>
+                        <div class="col-md-4">
+                            <label for="loan_deduction_type_filter" class="form-label">Loan Deduction Type</label>
+                            <select class="form-select" id="loan_deduction_type_filter" name="filters[loan_type]">
+                                <option value="">All Loan Types</option>
+                                @foreach($loanDeductionTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
                             </select>
                         </div>
                     </div>
                 `;
                 break;
-                
+
             case 'audit_trail':
                 filtersSection.innerHTML = `
                     <div class="row">

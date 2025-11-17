@@ -462,6 +462,83 @@
             </div>
         </div>
 
+        {{-- Leave Section for Employees --}}
+        <div class="info-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-heading">
+                    <i class="fas fa-calendar-check"></i> Leave Management
+                </h2>
+                <a href="{{ route('leaves.create.my') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Request Leave
+                </a>
+            </div>
+
+            <!-- Recent Leave Requests -->
+            <div class="card-professional">
+                <div class="card-professional-header">
+                    <h3 class="card-professional-title">
+                        <i class="fas fa-list"></i> My Recent Leave Requests
+                    </h3>
+                </div>
+                <div class="card-professional-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Period</th>
+                                <th>Days</th>
+                                <th>Status</th>
+                                <th>Date Requested</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                $employeeId = auth()->user()->employee->employee_id ?? null;
+                                $recentLeaves = $employeeId ? \App\Models\Models\Leave::where('employee_id', $employeeId)->latest()->take(5)->get() : collect();
+                            @endphp
+                            @forelse ($recentLeaves as $leave)
+                                <tr>
+                                    <td>{{ $leave->leave_type }}</td>
+                                    <td>
+                                        {{ \Carbon\Carbon::parse($leave->start_date)->format('M d') }} - {{ \Carbon\Carbon::parse($leave->end_date)->format('M d, Y') }}
+                                    </td>
+                                    <td>{{ $leave->days_requested }}</td>
+                                    <td>
+                                        @if($leave->status === 'pending')
+                                            <span class="badge-pro warning">Pending</span>
+                                        @elseif($leave->status === 'approved')
+                                            <span class="badge-pro success">Approved</span>
+                                        @else
+                                            <span class="badge-pro danger">Rejected</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($leave->created_at)->format('M d, Y') }}</td>
+                                    <td>
+                                        <a href="{{ route('leaves.show', $leave->id) }}" class="btn btn-sm btn-info">View</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state-container">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            <p>No leave requests found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @if($recentLeaves->count() > 0)
+                        <div class="p-3 text-center">
+                            <a href="{{ route('leaves.my') }}" class="btn btn-outline-primary">View All Leave Requests</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         {{-- Recent Activities --}}
         <div class="card-professional">
             <div class="card-professional-header">
@@ -595,6 +672,54 @@
                     </div>
                     <div class="stat-icon danger">
                         <i class="fas fa-heart-broken"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box info">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $totalLeaveRequests ?? 0 }}</div>
+                        <div class="stat-title">Total Leave Requests</div>
+                    </div>
+                    <div class="stat-icon info">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingLeaveRequests ?? 0 }}</div>
+                        <div class="stat-title">Pending Leaves</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box success">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $approvedLeaveRequests ?? 0 }}</div>
+                        <div class="stat-title">Approved Leaves</div>
+                    </div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box danger">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $rejectedLeaveRequests ?? 0 }}</div>
+                        <div class="stat-title">Rejected Leaves</div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-times-circle"></i>
                     </div>
                 </div>
             </div>
