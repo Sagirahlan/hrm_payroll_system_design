@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use App\Models\GradeLevel;
 use App\Models\DeductionType;
 use App\Models\AdditionType;
+use App\Models\AppointmentType;
 use App\Models\Department;
 use App\Models\AuditTrail;
 
@@ -190,6 +191,20 @@ class PayrollController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Employee status filter (Active/Suspended - from employee table)
+        if ($request->filled('employee_status')) {
+            $query->whereHas('employee', function($employeeQuery) use ($request) {
+                $employeeQuery->where('status', $request->employee_status);
+            });
+        }
+
+        // Appointment type filter (Contract/Permanent - from employee table)
+        if ($request->filled('appointment_type')) {
+            $query->whereHas('employee', function($employeeQuery) use ($request) {
+                $employeeQuery->where('appointment_type_id', $request->appointment_type);
+            });
+        }
+
         // Month filter
         if ($request->filled('month_filter')) {
             $monthFilter = $request->month_filter . '-01';
@@ -325,6 +340,20 @@ class PayrollController extends Controller
         // Status filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Employee status filter (Active/Suspended - from employee table)
+        if ($request->filled('employee_status')) {
+            $query->whereHas('employee', function($employeeQuery) use ($request) {
+                $employeeQuery->where('status', $request->employee_status);
+            });
+        }
+
+        // Appointment type filter (Contract/Permanent - from employee table)
+        if ($request->filled('appointment_type')) {
+            $query->whereHas('employee', function($employeeQuery) use ($request) {
+                $employeeQuery->where('appointment_type_id', $request->appointment_type);
+            });
         }
 
         // Month filter

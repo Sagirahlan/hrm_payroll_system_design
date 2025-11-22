@@ -18,37 +18,47 @@
         </div>
 
         <div class="mb-3">
-            <label for="permissions" class="form-label">Permissions</label>
-            <select name="permissions[]" class="form-control select2" multiple="multiple">
-                @foreach ($permissions as $id => $name)
-                    <option value="{{ $id }}">{{ $name }}</option>
-                @endforeach
-            </select>
+            <label class="form-label">Permissions</label>
+            <div class="mb-3">
+                <input type="text" id="permission-search" class="form-control" placeholder="Search permissions...">
+            </div>
+            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                <div class="row" id="permissions-container">
+                    @foreach ($permissions as $id => $name)
+                        <div class="col-md-6 col-lg-4 mb-2 permission-item" data-permission="{{ strtolower($name) }}">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $id }}" id="permission_{{ $id }}">
+                                <label class="form-check-label" for="permission_{{ $id }}">
+                                    {{ $name }}
+                                </label>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary">Save Role</button>
     </form>
 </div>
-@endsection
 
-@section('scripts')
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('permission-search');
+    const permissionItems = document.querySelectorAll('.permission-item');
 
-    <!-- jQuery (required for Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
 
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                tags: true,
-                placeholder: "Select or type to add permissions",
-                allowClear: true,
-                tokenSeparators: [',', ' ']
-            });
+        permissionItems.forEach(function(item) {
+            const permissionName = item.getAttribute('data-permission');
+            if (permissionName.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
         });
-    </script>
+    });
+});
+</script>
 @endsection

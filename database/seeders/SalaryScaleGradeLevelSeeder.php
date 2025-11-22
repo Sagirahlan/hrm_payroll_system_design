@@ -19,7 +19,7 @@ class SalaryScaleGradeLevelSeeder extends Seeder
         // Clear existing grade levels and steps
         DB::table('steps')->delete();
         DB::table('grade_levels')->delete();
-        
+
         // Create or update the HAP salary scale
         $hapScale = SalaryScale::updateOrCreate(
             ['acronym' => 'HAP'],
@@ -32,16 +32,16 @@ class SalaryScaleGradeLevelSeeder extends Seeder
                 'notes' => 'Harmonized salary structure for public sevices'
             ]
         );
-        
+
         // Create grade levels for HAP with the exact salary data
         $this->createHAPGradeLevelsWithExactData($hapScale->id);
     }
-    
+
     private function createHAPGradeLevelsWithExactData($salaryScaleId)
     {
-        // Exact salary data for HAP from your provided table
+        // Organize grade level data with serially arranged steps
         $gradeLevelData = [
-            // GL1
+            // GL1 - 15 steps
             ['grade_level' => 'GL01', 'step_level' => 1, 'basic_salary' => 70000.00],
             ['grade_level' => 'GL01', 'step_level' => 2, 'basic_salary' => 70367.50],
             ['grade_level' => 'GL01', 'step_level' => 3, 'basic_salary' => 70735.00],
@@ -57,8 +57,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL01', 'step_level' => 13, 'basic_salary' => 74410.00],
             ['grade_level' => 'GL01', 'step_level' => 14, 'basic_salary' => 74777.50],
             ['grade_level' => 'GL01', 'step_level' => 15, 'basic_salary' => 75145.00],
-            
-            // GL2
+
+            // GL2 - 15 steps
             ['grade_level' => 'GL02', 'step_level' => 1, 'basic_salary' => 70500.00],
             ['grade_level' => 'GL02', 'step_level' => 2, 'basic_salary' => 70964.17],
             ['grade_level' => 'GL02', 'step_level' => 3, 'basic_salary' => 71428.34],
@@ -74,8 +74,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL02', 'step_level' => 13, 'basic_salary' => 76070.04],
             ['grade_level' => 'GL02', 'step_level' => 14, 'basic_salary' => 76534.21],
             ['grade_level' => 'GL02', 'step_level' => 15, 'basic_salary' => 76998.38],
-            
-            // GL3
+
+            // GL3 - 15 steps
             ['grade_level' => 'GL03', 'step_level' => 1, 'basic_salary' => 71200.00],
             ['grade_level' => 'GL03', 'step_level' => 2, 'basic_salary' => 71790.93],
             ['grade_level' => 'GL03', 'step_level' => 3, 'basic_salary' => 72381.66],
@@ -91,8 +91,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL03', 'step_level' => 13, 'basic_salary' => 78289.96],
             ['grade_level' => 'GL03', 'step_level' => 14, 'basic_salary' => 78880.79],
             ['grade_level' => 'GL03', 'step_level' => 15, 'basic_salary' => 79471.62],
-            
-            // GL4
+
+            // GL4 - 15 steps
             ['grade_level' => 'GL04', 'step_level' => 1, 'basic_salary' => 72100.00],
             ['grade_level' => 'GL04', 'step_level' => 2, 'basic_salary' => 72809.83],
             ['grade_level' => 'GL04', 'step_level' => 3, 'basic_salary' => 73519.66],
@@ -108,12 +108,13 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL04', 'step_level' => 13, 'basic_salary' => 80617.96],
             ['grade_level' => 'GL04', 'step_level' => 14, 'basic_salary' => 81327.79],
             ['grade_level' => 'GL04', 'step_level' => 15, 'basic_salary' => 82037.62],
-            
-            // GL5
+
+            // GL5 - 15 steps (including proper step 5)
             ['grade_level' => 'GL05', 'step_level' => 1, 'basic_salary' => 73200.00],
             ['grade_level' => 'GL05', 'step_level' => 2, 'basic_salary' => 74047.17],
             ['grade_level' => 'GL05', 'step_level' => 3, 'basic_salary' => 74894.34],
             ['grade_level' => 'GL05', 'step_level' => 4, 'basic_salary' => 75741.51],
+            ['grade_level' => 'GL05', 'step_level' => 5, 'basic_salary' => 76588.68], // Interpolated value between step 4 and 6
             ['grade_level' => 'GL05', 'step_level' => 6, 'basic_salary' => 77435.85],
             ['grade_level' => 'GL05', 'step_level' => 7, 'basic_salary' => 78283.02],
             ['grade_level' => 'GL05', 'step_level' => 8, 'basic_salary' => 79130.19],
@@ -124,8 +125,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL05', 'step_level' => 13, 'basic_salary' => 83366.04],
             ['grade_level' => 'GL05', 'step_level' => 14, 'basic_salary' => 84213.21],
             ['grade_level' => 'GL05', 'step_level' => 15, 'basic_salary' => 85060.38],
-            
-            // GL6
+
+            // GL6 - 15 steps
             ['grade_level' => 'GL06', 'step_level' => 1, 'basic_salary' => 74500.00],
             ['grade_level' => 'GL06', 'step_level' => 2, 'basic_salary' => 75505.17],
             ['grade_level' => 'GL06', 'step_level' => 3, 'basic_salary' => 76510.34],
@@ -141,8 +142,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL06', 'step_level' => 13, 'basic_salary' => 86562.04],
             ['grade_level' => 'GL06', 'step_level' => 14, 'basic_salary' => 87567.21],
             ['grade_level' => 'GL06', 'step_level' => 15, 'basic_salary' => 88572.38],
-            
-            // GL7
+
+            // GL7 - 15 steps
             ['grade_level' => 'GL07', 'step_level' => 1, 'basic_salary' => 90066.29],
             ['grade_level' => 'GL07', 'step_level' => 2, 'basic_salary' => 91347.71],
             ['grade_level' => 'GL07', 'step_level' => 3, 'basic_salary' => 92629.13],
@@ -158,8 +159,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL07', 'step_level' => 13, 'basic_salary' => 105443.33],
             ['grade_level' => 'GL07', 'step_level' => 14, 'basic_salary' => 106724.75],
             ['grade_level' => 'GL07', 'step_level' => 15, 'basic_salary' => 108006.17],
-            
-            // GL8
+
+            // GL8 - 15 steps
             ['grade_level' => 'GL08', 'step_level' => 1, 'basic_salary' => 100074.75],
             ['grade_level' => 'GL08', 'step_level' => 2, 'basic_salary' => 101600.00],
             ['grade_level' => 'GL08', 'step_level' => 3, 'basic_salary' => 103125.25],
@@ -175,8 +176,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL08', 'step_level' => 13, 'basic_salary' => 118377.75],
             ['grade_level' => 'GL08', 'step_level' => 14, 'basic_salary' => 119903.00],
             ['grade_level' => 'GL08', 'step_level' => 15, 'basic_salary' => 121428.25],
-            
-            // GL9
+
+            // GL9 - 15 steps
             ['grade_level' => 'GL09', 'step_level' => 1, 'basic_salary' => 108679.23],
             ['grade_level' => 'GL09', 'step_level' => 2, 'basic_salary' => 110495.15],
             ['grade_level' => 'GL09', 'step_level' => 3, 'basic_salary' => 112311.07],
@@ -192,8 +193,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL09', 'step_level' => 13, 'basic_salary' => 130470.27],
             ['grade_level' => 'GL09', 'step_level' => 14, 'basic_salary' => 132286.19],
             ['grade_level' => 'GL09', 'step_level' => 15, 'basic_salary' => 134102.11],
-            
-            // GL10
+
+            // GL10 - 15 steps
             ['grade_level' => 'GL10', 'step_level' => 1, 'basic_salary' => 117490.91],
             ['grade_level' => 'GL10', 'step_level' => 2, 'basic_salary' => 119829.41],
             ['grade_level' => 'GL10', 'step_level' => 3, 'basic_salary' => 122167.91],
@@ -209,8 +210,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL10', 'step_level' => 13, 'basic_salary' => 145552.91],
             ['grade_level' => 'GL10', 'step_level' => 14, 'basic_salary' => 147891.41],
             ['grade_level' => 'GL10', 'step_level' => 15, 'basic_salary' => 150229.91],
-            
-            // GL11 (11 steps)
+
+            // GL11 - 11 steps
             ['grade_level' => 'GL11', 'step_level' => 1, 'basic_salary' => 127726.70],
             ['grade_level' => 'GL11', 'step_level' => 2, 'basic_salary' => 130824.20],
             ['grade_level' => 'GL11', 'step_level' => 3, 'basic_salary' => 133921.70],
@@ -222,8 +223,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL11', 'step_level' => 9, 'basic_salary' => 152506.70],
             ['grade_level' => 'GL11', 'step_level' => 10, 'basic_salary' => 155604.20],
             ['grade_level' => 'GL11', 'step_level' => 11, 'basic_salary' => 158701.70],
-            
-            // GL12 (11 steps)
+
+            // GL12 - 11 steps
             ['grade_level' => 'GL12', 'step_level' => 1, 'basic_salary' => 136658.39],
             ['grade_level' => 'GL12', 'step_level' => 2, 'basic_salary' => 139933.06],
             ['grade_level' => 'GL12', 'step_level' => 3, 'basic_salary' => 143207.73],
@@ -235,8 +236,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL12', 'step_level' => 9, 'basic_salary' => 162855.75],
             ['grade_level' => 'GL12', 'step_level' => 10, 'basic_salary' => 166130.42],
             ['grade_level' => 'GL12', 'step_level' => 11, 'basic_salary' => 169405.09],
-            
-            // GL13 (11 steps)
+
+            // GL13 - 11 steps
             ['grade_level' => 'GL13', 'step_level' => 1, 'basic_salary' => 155631.30],
             ['grade_level' => 'GL13', 'step_level' => 2, 'basic_salary' => 159156.72],
             ['grade_level' => 'GL13', 'step_level' => 3, 'basic_salary' => 162682.14],
@@ -248,8 +249,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL13', 'step_level' => 9, 'basic_salary' => 183834.66],
             ['grade_level' => 'GL13', 'step_level' => 10, 'basic_salary' => 187360.08],
             ['grade_level' => 'GL13', 'step_level' => 11, 'basic_salary' => 190885.50],
-            
-            // GL14 (9 steps)
+
+            // GL14 - 9 steps
             ['grade_level' => 'GL14', 'step_level' => 1, 'basic_salary' => 186400.30],
             ['grade_level' => 'GL14', 'step_level' => 2, 'basic_salary' => 191393.13],
             ['grade_level' => 'GL14', 'step_level' => 3, 'basic_salary' => 196385.96],
@@ -259,8 +260,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL14', 'step_level' => 7, 'basic_salary' => 216357.28],
             ['grade_level' => 'GL14', 'step_level' => 8, 'basic_salary' => 221350.11],
             ['grade_level' => 'GL14', 'step_level' => 9, 'basic_salary' => 226342.94],
-            
-            // GL15 (9 steps)
+
+            // GL15 - 9 steps
             ['grade_level' => 'GL15', 'step_level' => 1, 'basic_salary' => 216181.56],
             ['grade_level' => 'GL15', 'step_level' => 2, 'basic_salary' => 222181.98],
             ['grade_level' => 'GL15', 'step_level' => 3, 'basic_salary' => 228182.40],
@@ -270,8 +271,8 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL15', 'step_level' => 7, 'basic_salary' => 252184.08],
             ['grade_level' => 'GL15', 'step_level' => 8, 'basic_salary' => 258184.50],
             ['grade_level' => 'GL15', 'step_level' => 9, 'basic_salary' => 264184.92],
-            
-            // GL16 (9 steps)
+
+            // GL16 - 9 steps
             ['grade_level' => 'GL16', 'step_level' => 1, 'basic_salary' => 347314.50],
             ['grade_level' => 'GL16', 'step_level' => 2, 'basic_salary' => 358149.84],
             ['grade_level' => 'GL16', 'step_level' => 3, 'basic_salary' => 368985.18],
@@ -282,25 +283,35 @@ class SalaryScaleGradeLevelSeeder extends Seeder
             ['grade_level' => 'GL16', 'step_level' => 8, 'basic_salary' => 423161.88],
             ['grade_level' => 'GL16', 'step_level' => 9, 'basic_salary' => 433997.22]
         ];
-        
+
+        // Group and sort the data by grade level to ensure serial arrangement
         $groupedData = collect($gradeLevelData)->groupBy('grade_level');
 
-        foreach ($groupedData as $gradeLevelName => $steps) {
-            $gradeLevel = GradeLevel::create([
-                'name' => $gradeLevelName,
-                'grade_level' => $gradeLevelName,
-                'salary_scale_id' => $salaryScaleId,
-                'description' => "Grade Level {$gradeLevelName} for Harmonized Academic Pay",
-                // Add other grade level fields if necessary
-            ]);
+        // Process each grade level in order to ensure steps are arranged serially
+        $gradeLevels = [
+            'GL01', 'GL02', 'GL03', 'GL04', 'GL05', 'GL06', 'GL07',
+            'GL08', 'GL09', 'GL10', 'GL11', 'GL12', 'GL13', 'GL14', 'GL15', 'GL16'
+        ];
 
-            foreach ($steps as $stepData) {
-                Step::create([
-                    'name' => 'Step ' . $stepData['step_level'],
-                    'grade_level_id' => $gradeLevel->id,
-                    // You might want to store basic_salary on the step level
-                    'basic_salary' => $stepData['basic_salary'], 
+        foreach ($gradeLevels as $gradeLevelName) {
+            if (isset($groupedData[$gradeLevelName])) {
+                // Sort the steps within each grade level by step_level to ensure serial arrangement
+                $steps = collect($groupedData[$gradeLevelName])->sortBy('step_level')->values();
+
+                $gradeLevel = GradeLevel::create([
+                    'name' => $gradeLevelName,
+                    'grade_level' => $gradeLevelName,
+                    'salary_scale_id' => $salaryScaleId,
+                    'description' => "Grade Level {$gradeLevelName} for Harmonized Academic Pay",
                 ]);
+
+                foreach ($steps as $stepData) {
+                    Step::create([
+                        'name' => 'Step ' . $stepData['step_level'],
+                        'grade_level_id' => $gradeLevel->id,
+                        'basic_salary' => $stepData['basic_salary'],
+                    ]);
+                }
             }
         }
     }

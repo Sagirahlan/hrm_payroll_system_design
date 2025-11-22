@@ -5,34 +5,85 @@
 @section('content')
 <div class="container-fluid py-4">
     <div class="card border-primary shadow">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: skyblue; color: white;">
-            <h5 class="mb-0">Audit Trail Logs</h5>
-            <form method="GET" action="{{ route('audit-trails.index') }}" class="w-100">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-3">
-                        <input type="text" name="search" class="form-control" placeholder="Search logs..." value="{{ request('search') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="action" class="form-select">
-                            <option value="">All Actions</option>
-                            <option value="create" @if(request('action') == 'create') selected @endif>Create</option>
-                            <option value="update" @if(request('action') == 'update') selected @endif>Update</option>
-                            <option value="delete" @if(request('action') == 'delete') selected @endif>Delete</option>
-                            <option value="login" @if(request('action') == 'login') selected @endif>Login</option>
-                            <option value="logout" @if(request('action') == 'logout') selected @endif>Logout</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="start_date" class="form-control" placeholder="Start Date" onfocus="(this.type='date')" onblur="(this.type='text')" value="{{ request('start_date') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="end_date" class="form-control" placeholder="End Date" onfocus="(this.type='date')" onblur="(this.type='text')" value="{{ request('end_date') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">Filter</button>
-                    </div>
+        <div class="card-header" style="background-color: skyblue; color: white;">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0">Audit Trail Logs</h5>
                 </div>
-            </form>
+                <div class="col-md-6">
+                    <form method="GET" action="{{ route('audit-trails.index') }}" class="w-100">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-2">
+                                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search logs..." value="{{ request('search') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="action_filter" class="form-select form-select-sm">
+                                    <option value="">All Actions</option>
+                                    @php
+                                        // Group actions by type for better organization
+                                        $groupedActions = [];
+                                        foreach($actions as $action) {
+                                            $actionStr = (string)$action; // Ensure it's a string
+                                            if (str_contains($actionStr, 'login')) {
+                                                $groupedActions['Login/Logout'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'employee')) {
+                                                $groupedActions['Employee'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'salary_scale')) {
+                                                $groupedActions['Salary Scale'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'user')) {
+                                                $groupedActions['User'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'payroll')) {
+                                                $groupedActions['Payroll'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'addition')) {
+                                                $groupedActions['Additions'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'deduction')) {
+                                                $groupedActions['Deductions'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'promotion')) {
+                                                $groupedActions['Promotions'][] = $actionStr;
+                                            } elseif (str_contains($actionStr, 'leave')) {
+                                                $groupedActions['Leaves'][] = $actionStr;
+                                            } else {
+                                                $groupedActions['Other'][] = $actionStr;
+                                            }
+                                        }
+                                    @endphp
+                                    @foreach($groupedActions as $group => $groupedActionList)
+                                        <optgroup label="{{ $group }}">
+                                            @foreach($groupedActionList as $action)
+                                                <option value="{{ $action }}" @if(request('action_filter') == $action) selected @endif>
+                                                    {{ ucfirst(str_replace('_', ' ', $action)) }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" name="start_date" class="form-control form-control-sm" placeholder="Start Date" onfocus="(this.type='date')" onblur="(this.type='text')" value="{{ request('start_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" name="end_date" class="form-control form-control-sm" placeholder="End Date" onfocus="(this.type='date')" onblur="(this.type='text')" value="{{ request('end_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="user_id" class="form-select form-select-sm">
+                                    <option value="">All Users</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}" @if(request('user_id') == $user->id) selected @endif>
+                                            {{ $user->username }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+                            </div>
+                            <div class="col-md-1">
+                                <a href="{{ route('audit-trails.index') }}" class="btn btn-outline-secondary btn-sm w-100"><i class="fas fa-sync-alt me-1"></i>Reset</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             @if (session('success'))
@@ -70,16 +121,16 @@
                                 <td>
                                     @php
                                         $actionClass = 'bg-secondary'; // Default
-                                        if (in_array($log->action, ['create', 'login'])) {
+                                        if (in_array($log->action, ['create', 'created_salary_scale', 'created_employee', 'login', 'created_user', 'created_payroll', 'created_addition'])) {
                                             $actionClass = 'bg-success';
-                                        } elseif (in_array($log->action, ['update'])) {
+                                        } elseif (in_array($log->action, ['update', 'updated_salary_scale', 'updated_employee', 'updated_user', 'updated_payroll'])) {
                                             $actionClass = 'bg-warning text-dark';
-                                        } elseif (in_array($log->action, ['delete', 'logout'])) {
+                                        } elseif (in_array($log->action, ['delete', 'deleted_salary_scale', 'deleted_employee', 'logout', 'deleted_user', 'deleted_payroll', 'deleted_deduction'])) {
                                             $actionClass = 'bg-danger';
                                         }
                                     @endphp
                                     <span class="badge {{ $actionClass }}">
-                                        {{ ucfirst($log->action) }}
+                                        {{ ucfirst(str_replace('_', ' ', $log->action)) }}
                                     </span>
                                 </td>
                                 <td>

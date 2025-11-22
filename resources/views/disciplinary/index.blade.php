@@ -17,9 +17,12 @@
                 @endcan
                 <form action="{{ route('disciplinary.index') }}" method="GET" class="d-flex">
                     <input type="text" name="search" class="form-control me-2" placeholder="Search by employee, action type, or status" value="{{ request('search') }}">
-                    <button type="submit" class="btn btn-outline-primary">
+                    <button type="submit" class="btn btn-outline-primary me-2">
                         <i class="fas fa-search"></i> Search
                     </button>
+                    @if (request('search'))
+                        <a href="{{ route('disciplinary.index') }}" class="btn btn-outline-secondary">Reset</a>
+                    @endif
                 </form>
             </div>
             <div class="mb-3">
@@ -27,7 +30,7 @@
                     <select name="department" class="form-select me-2">
                         <option value="">All Departments</option>
                         @foreach ($departments as $department)
-                            <option value="{{ $department }}" {{ request('department') == $department ? 'selected' : '' }}>{{ $department }}</option>
+                            <option value="{{ $department->department_id }}" {{ request('department') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
                         @endforeach
                     </select>
                     <select name="status" class="form-select me-2">
@@ -38,7 +41,7 @@
                     </select>
                     <button type="submit" class="btn btn-outline-primary">Filter</button>
                     @if (request('department') || request('status'))
-                        <a href="{{ route('disciplinary.index') }}" class="btn btn-outline-secondary ms-2">Clear Filters</ Clear Filters</a>
+                        <a href="{{ route('disciplinary.index') }}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
                     @endif
                 </form>
             </div>

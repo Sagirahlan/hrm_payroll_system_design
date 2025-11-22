@@ -36,7 +36,7 @@ class SalaryScaleController extends Controller
         // Sorting
         $sortBy = $request->get('sort_by', 'acronym');
         $sortOrder = $request->get('sort_order', 'asc');
-        
+
         $validSortColumns = ['acronym', 'full_name'];
         if (in_array($sortBy, $validSortColumns)) {
             $query->orderBy($sortBy, $sortOrder);
@@ -163,8 +163,14 @@ class SalaryScaleController extends Controller
 
         if ($gradeLevel) {
             $steps = Step::where('grade_level_id', $gradeLevel->id)
-                         ->orderBy('name', 'asc')
-                         ->get();
+                         ->get()
+                         ->sortBy(function($step) {
+                             // Extract numeric part from step name (e.g., from "Step 1", "Step 10", etc.)
+                             // This handles various formats like "Step 1", "Step 10", etc.
+                             preg_match('/(\d+)/', $step->name, $matches);
+                             return isset($matches[1]) ? (int)$matches[1] : PHP_INT_MAX; // Put non-numeric names at the end
+                         })
+                         ->values();
             return response()->json($steps);
         }
 

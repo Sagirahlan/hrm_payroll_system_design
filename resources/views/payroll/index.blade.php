@@ -109,13 +109,34 @@
                                         <option value="Paid" {{ request('status') == 'Paid' ? 'selected' : '' }}>Paid</option>
                                     </select>
                                 </div>
-                                
+
+                                <div class="col-md-3">
+                                    <label for="employee_status" class="form-label">Employee Status</label>
+                                    <select name="employee_status" id="employee_status" class="form-select">
+                                        <option value="">All Employee Statuses</option>
+                                        <option value="Active" {{ request('employee_status') == 'Active' ? 'selected' : '' }}>Active</option>
+                                        <option value="Suspended" {{ request('employee_status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label for="appointment_type" class="form-label">Appointment Type</label>
+                                    <select name="appointment_type" id="appointment_type" class="form-select">
+                                        <option value="">All Appointment Types</option>
+                                        @foreach($appointmentTypes as $type)
+                                            <option value="{{ $type->id }}" {{ request('appointment_type') == $type->id ? 'selected' : '' }}>
+                                                {{ $type->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                                 <div class="col-md-3">
                                     <label for="month_filter" class="form-label">Payroll Month</label>
-                                    <input type="month" 
-                                           name="month_filter" 
-                                           id="month_filter" 
-                                           class="form-control" 
+                                    <input type="month"
+                                           name="month_filter"
+                                           id="month_filter"
+                                           class="form-control"
                                            value="{{ request('month_filter') }}">
                                 </div>
 
@@ -193,7 +214,7 @@
                     </form>
 
                     <!-- Active Filters Display -->
-                    @if(request()->hasAny(['search', 'status', 'month_filter', 'salary_range', 'date_from', 'date_to']))
+                    @if(request()->hasAny(['search', 'status', 'employee_status', 'appointment_type', 'month_filter', 'salary_range', 'date_from', 'date_to']))
                         <div class="mt-3">
                             <small class="text-muted">Active filters:</small>
                             <div class="d-flex flex-wrap gap-2 mt-1">
@@ -205,6 +226,16 @@
                                 @if(request('status'))
                                     <span class="badge bg-warning text-dark">
                                         <i class="fas fa-circle me-1"></i>Status: {{ request('status') }}
+                                    </span>
+                                @endif
+                                @if(request('employee_status'))
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-user me-1"></i>Employee Status: {{ request('employee_status') }}
+                                    </span>
+                                @endif
+                                @if(request('appointment_type'))
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-briefcase me-1"></i>Appointment: {{ $appointmentTypes->firstWhere('id', request('appointment_type'))?->name ?? 'Unknown' }}
                                     </span>
                                 @endif
                                 @if(request('month_filter'))
@@ -235,7 +266,7 @@
                         <i class="fas fa-list me-1"></i>
                         Showing {{ $payrolls->firstItem() ?? 0 }} to {{ $payrolls->lastItem() ?? 0 }} 
                         of {{ $payrolls->total() }} results
-                        @if(request()->hasAny(['search', 'status', 'month_filter', 'salary_range', 'date_from', 'date_to']))
+                        @if(request()->hasAny(['search', 'status', 'employee_status', 'appointment_type', 'month_filter', 'salary_range', 'date_from', 'date_to']))
                             <span class="badge bg-info ms-1">filtered</span>
                         @endif
                     </p>

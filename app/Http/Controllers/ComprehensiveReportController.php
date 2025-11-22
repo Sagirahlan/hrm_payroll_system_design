@@ -58,7 +58,9 @@ class ComprehensiveReportController extends Controller
             $loanDeductionTypes = \App\Models\DeductionType::all();
         }
 
-        return view('reports.new.index', compact('reports', 'departments', 'deductionTypes', 'additionTypes', 'loanDeductionTypes'));
+        $appointmentTypes = \App\Models\AppointmentType::all();
+
+        return view('reports.new.index', compact('reports', 'departments', 'deductionTypes', 'additionTypes', 'loanDeductionTypes', 'appointmentTypes'));
     }
 
     public function create()
@@ -68,9 +70,10 @@ class ComprehensiveReportController extends Controller
         $additionTypes = \App\Models\AdditionType::all();
         $employees = \App\Models\Employee::select('employee_id', 'first_name', 'surname')->get();
         $users = \App\Models\User::select('user_id', 'username')->get();
+        $appointmentTypes = \App\Models\AppointmentType::all();
         // Get deduction types that are associated with loans
         $loanDeductionTypes = \App\Models\DeductionType::whereHas('loans')->get();
-        
+
         // If no loan-associated deduction types found, return all deduction types
         if ($loanDeductionTypes->isEmpty()) {
             $loanDeductionTypes = \App\Models\DeductionType::all();
@@ -82,6 +85,8 @@ class ComprehensiveReportController extends Controller
             'addition_types_json' => json_encode($additionTypes),
             'employees_json' => json_encode($employees),
             'users_json' => json_encode($users),
+            'appointmentTypes' => $appointmentTypes,
+            'appointmentTypes_json' => json_encode($appointmentTypes),
             'loanDeductionTypes_json' => json_encode($loanDeductionTypes)
         ]);
     }
@@ -174,7 +179,7 @@ class ComprehensiveReportController extends Controller
     {
         switch ($reportType) {
             case 'employee_master':
-                return $this->reportService->generateEmployeeMasterReport();
+                return $this->reportService->generateEmployeeMasterReport(null, $filters);
                 
             case 'employee_directory':
                 return $this->reportService->generateEmployeeDirectoryReport($filters);
@@ -184,8 +189,9 @@ class ComprehensiveReportController extends Controller
                 
             case 'payroll_summary':
                 return $this->reportService->generatePayrollSummaryReport(
-                    $filters['year'] ?? null, 
-                    $filters['month'] ?? null
+                    $filters['year'] ?? null,
+                    $filters['month'] ?? null,
+                    $filters
                 );
                 
             case 'deduction_summary':
@@ -201,7 +207,7 @@ class ComprehensiveReportController extends Controller
                 return $this->reportService->generateDisciplinaryReport($filters);
                 
             case 'retirement_planning':
-                return $this->reportService->generateRetirementPlanningReport();
+                return $this->reportService->generateRetirementPlanningReport($filters);
                 
             case 'loan_status':
                 return $this->reportService->generateLoanStatusReport($filters);

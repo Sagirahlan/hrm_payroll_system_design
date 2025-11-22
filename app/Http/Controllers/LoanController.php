@@ -34,22 +34,26 @@ class LoanController extends Controller
      */
     public function create()
     {
-        // Get all employees who have additions
-        $employees = Employee::whereHas('additions')->get();
-        
-        // Filter employees to only include those who have at least one addition that doesn't have an active loan
+        // Get all employees who have loan-related additions
+        $employees = Employee::whereHas('additions', function ($query) {
+            $query->whereHas('additionType', function ($subquery) {
+                $subquery->whereRaw("LOWER(name) LIKE '%loan%' OR LOWER(name) LIKE '%advance%'");
+            });
+        })->get();
+
+        // Filter employees to only include those who have at least one loan-related addition that doesn't have an active loan
         $filteredEmployees = $employees->filter(function ($employee) {
             $additions = $employee->additions;
             foreach ($additions as $addition) {
-                if (!$employee->hasActiveLoanForAdditionType($addition->additionType->name)) {
-                    return true; // This employee has at least one addition without an active loan
+                if ($this->isLoanRelatedType($addition->additionType->name) && !$employee->hasActiveLoanForAdditionType($addition->additionType->name)) {
+                    return true; // This employee has at least one loan-related addition without an active loan
                 }
             }
-            return false; // All additions for this employee have active loans
+            return false; // All loan-related additions for this employee have active loans
         });
-        
+
         $deductionTypes = DeductionType::all();
-        
+
         return view('loans.create', compact('filteredEmployees', 'deductionTypes'));
     }
 
@@ -60,15 +64,16 @@ class LoanController extends Controller
     {
         // Get additions for this employee that don't have active loans of the same type
         $availableAdditions = collect();
-        
+
         $additions = $employee->additions()->with('additionType')->get();
-        
+
         foreach ($additions as $addition) {
-            if (!$employee->hasActiveLoanForAdditionType($addition->additionType->name)) {
+            // Only include addition types that are loan-related (not allowances)
+            if ($this->isLoanRelatedType($addition->additionType->name) && !$employee->hasActiveLoanForAdditionType($addition->additionType->name)) {
                 $availableAdditions->push($addition);
             }
         }
-        
+
         return response()->json($availableAdditions);
     }
 
@@ -296,6 +301,23 @@ class LoanController extends Controller
 
 
     /**
+     * Helper method to check if an addition type is loan-related
+     */
+    private function isLoanRelatedType($typeName)
+    {
+        $loanKeywords = ['loan', 'advance', 'cash advance', 'special loan', 'staff loan', 'salary advance'];
+        $lowerTypeName = strtolower($typeName);
+
+        foreach ($loanKeywords as $keyword) {
+            if (strpos($lowerTypeName, $keyword) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Remove the specified loan from storage.
      */
     public function destroy(Loan $loan)
@@ -318,7 +340,7 @@ class LoanController extends Controller
                 ->with('success', 'Loan deleted successfully.');
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             return redirect()->back()
                 ->withErrors(['error' => 'Failed to delete loan: ' . $e->getMessage()]);
         }

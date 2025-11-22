@@ -69,7 +69,7 @@
 </head>
 <body>
     <div class="header">
-        {{-- <img src="" alt="Logo" class="logo"> --}}
+        <img src="{{ public_path('images/logo-white.png') }}" alt="Logo" class="logo" style="height: 80px;">
         <div class="company-details">
             <h2>Your Company Name</h2>
             <p>123 Company Address, City, State, ZIP</p>

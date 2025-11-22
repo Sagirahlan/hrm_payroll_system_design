@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Kundi HR') }} - @yield('title')</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    
+
     <style>
         /* ================================
         CSS Variables for Easy Theming
@@ -22,7 +22,7 @@
             --primary-color-lighter: #0ed2ecff;
             --text-color-light: #ffffff;
             --text-color-dark: #212529;
-            --body-bg-light: #f4f7f6;   
+            --body-bg-light: #f4f7f6;
             --card-bg-light: #ffffff;
             --border-color-light: #dee2e6;
             --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
@@ -32,13 +32,13 @@
 
         [data-bs-theme="dark"] {
             --primary-color: #00bcd4;
-            --primary-color-darker: #2c3e50; /* Also update for dark mode if needed */
-            --primary-color-lighter: #e0f7fa;
+            --primary-color-darker: #1a2a3a; /* Enhanced dark blue for sidebar */
+            --primary-color-lighter: #4dd0e1;
             --text-color-light: #e9ecef;
-            --text-color-dark: #0c2e3d;
-            --body-bg-light: #0c1e29;
-            --card-bg-light: #162c3a;
-            --border-color-light: #2a434a;
+            --text-color-dark: #e0e0e0; /* Improved text contrast */
+            --body-bg-light: #121826; /* Deeper dark background */
+            --card-bg-light: #1e293b; /* Improved card background */
+            --border-color-light: #374151; /* Better border color */
         }
 
         /* ================================
@@ -51,7 +51,7 @@
             flex-direction: column;
             min-height: 100vh;
         }
-        
+
         .wrapper {
             display: flex;
             width: 100%;
@@ -70,18 +70,28 @@
             transition: margin-left var(--transition-speed) ease;
             height: 100vh; /* Ensure sidebar takes full viewport height */
             overflow-y: auto; /* Add scroll for overflow content */
+            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
         }
-        
+
+        [data-bs-theme="dark"] .sidebar {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0f172a 100%);
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
+        }
+
         .sidebar .sidebar-header {
             padding: 1.25rem;
             text-align: center;
             background: rgba(0,0,0,0.1); /* Changed to be slightly darker than sidebar */
         }
 
+        [data-bs-theme="dark"] .sidebar .sidebar-header {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
         .sidebar .sidebar-header img {
             max-width: 120px;
         }
-        
+
         /* Sidebar Navigation Links */
         .sidebar .nav-link {
             color: var(--primary-color-lighter);
@@ -93,11 +103,20 @@
             border-radius: var(--border-radius);
             margin: 0.25rem 0.5rem;
         }
-        
+
+        [data-bs-theme="dark"] .sidebar .nav-link {
+            color: #a0aec0;
+        }
+
         .sidebar .nav-link:hover {
             background: var(--primary-color);
             color: var(--text-color-light);
             transform: translateX(5px);
+        }
+
+        [data-bs-theme="dark"] .sidebar .nav-link:hover {
+            background: #2d3748;
+            color: #fff;
         }
 
         .sidebar .nav-link.active {
@@ -105,7 +124,12 @@
             color: var(--primary-color-darker);
             font-weight: 600;
         }
-        
+
+        [data-bs-theme="dark"] .sidebar .nav-link.active {
+            background: #4dd0e1;
+            color: #0f172a;
+        }
+
         .sidebar .nav-link i {
             margin-right: 1rem;
             width: 20px;
@@ -125,8 +149,17 @@
             padding-left: 3.5rem; /* Indent sub-items */
             background-color: rgba(0,0,0,0.1);
         }
+
+        [data-bs-theme="dark"] .sidebar .collapse .nav-link {
+            background-color: rgba(0, 0, 0, 0.15);
+        }
+
         .sidebar .collapse .nav-link:hover {
             background-color: var(--primary-color);
+        }
+
+        [data-bs-theme="dark"] .sidebar .collapse .nav-link:hover {
+            background-color: #2d3748;
         }
 
         /* ================================
@@ -147,10 +180,19 @@
             margin-bottom: 1.5rem;
             padding: 0.5rem 1rem;
         }
-        
+
+        [data-bs-theme="dark"] .top-navbar {
+            background: #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
         [data-bs-theme="dark"] .top-navbar .nav-link,
         [data-bs-theme="dark"] .top-navbar .dropdown-item {
             color: var(--text-color-light);
+        }
+
+        [data-bs-theme="dark"] .top-navbar .navbar-text {
+            color: #cbd5e1 !important;
         }
 
         .user-dropdown-toggle img {
@@ -159,12 +201,26 @@
             object-fit: cover;
             border: 2px solid var(--primary-color);
         }
-        
+
         .dropdown-menu {
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             border-color: var(--border-color-light);
             background-color: var(--card-bg-light);
+        }
+
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #1e293b;
+            border-color: #374151;
+        }
+
+        [data-bs-theme="dark"] .dropdown-menu .dropdown-item {
+            color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] .dropdown-menu .dropdown-item:hover {
+            background-color: #374151;
+            color: #fff;
         }
 
         /* ================================
@@ -178,6 +234,11 @@
             background-color: var(--card-bg-light);
         }
 
+        [data-bs-theme="dark"] .card {
+            background-color: #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
         .card-header {
             background: var(--primary-color);
             color: var(--text-color-light);
@@ -185,10 +246,32 @@
             border-bottom: none;
             border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
         }
-        
+
+        [data-bs-theme="dark"] .card-header {
+            background: linear-gradient(135deg, #00bcd4, #00838f);
+        }
+
+        .card-body {
+            background-color: transparent;
+        }
+
         .form-control, .form-select {
             border-radius: var(--border-radius);
+            background-color: var(--card-bg-light);
+            border: 1px solid var(--border-color-light);
         }
+
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #2d3748;
+            border-color: #4b5563;
+            color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] .form-control::placeholder {
+            color: #94a3b8;
+        }
+
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
@@ -206,9 +289,11 @@
             margin-top: auto;
             border-top: 1px solid var(--border-color-light);
         }
-        
+
         [data-bs-theme="dark"] footer {
+            background: #0f172a;
             color: var(--text-color-light);
+            border-top-color: #374151;
         }
 
     </style>
@@ -224,7 +309,7 @@
                 <img src="{{ asset('images/logo-white.png') }}" alt="Logo">
             </a>
         </div>
-        
+
         <ul class="nav nav-pills flex-column mb-auto mt-4">
             <li>
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
@@ -254,7 +339,7 @@
                         @can('view_leaves')
                         <li><a class="nav-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}" href="{{ route('leaves.index') }}">Leave Management</a></li>
                         @endcan
-                       
+
                     </ul>
                 </div>
             </li>
@@ -341,21 +426,21 @@
                         <li><a class="nav-link {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}">Retirement List</a></li>
                         @endcan
                         @can('create_retirement')
-                        <li><a class="nav-link {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}">Add Retirement</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}">Confirm Retirement</a></li>
                         @endcan
                     </ul>
                 </div>
             </li>
             @endif
 
-            @can('manage_employees')
+            @can('manage_Pensioners')
             <li>
                 <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
                     <i class="fas fa-user-shield"></i> Pensioners
                 </a>
             </li>
             @endcan
-        
+
             @can('manage_sms')
             <li>
                 <a class="nav-link {{ request()->routeIs('sms.*') ? 'active' : '' }}" href="{{ route('sms.index') }}">
@@ -416,7 +501,7 @@
                 <button class="btn btn-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
                     <i class="fas fa-bars"></i>
                 </button>
-                
+
                 <div class="collapse navbar-collapse">
                     <span class="navbar-text fw-bold">
                         Welcome, {{ auth()->user()->username ?? 'Guest' }}!

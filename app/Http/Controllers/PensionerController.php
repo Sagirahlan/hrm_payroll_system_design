@@ -63,7 +63,14 @@ class PensionerController extends Controller
             'action' => 'searched_pensioners',
             'description' => "Searched pensioners with query: search='{$request->input('search')}', filter='{$request->input('filter')}'",
             'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Pensioner', 'entity_id' => null, 'search_query' => $request->input('search'), 'filter' => $request->input('filter')]),
+            'log_data' => json_encode([
+                'entity_type' => 'Pensioner',
+                'entity_id' => null,
+                'search_query' => $request->input('search'),
+                'filter' => $request->input('filter'),
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date')
+            ]),
         ]);
 
         return view('pensioners.index', compact('pensioners', 'filterOptions'));

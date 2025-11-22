@@ -24,21 +24,27 @@
 
             <!-- Search and Filter Form -->
             <form method="GET" action="{{ route('pensioners.index') }}" class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <input type="text" name="search" class="form-control" placeholder="Search by name or employee ID" value="{{ request('search') }}">
                 </div>
-                <div class="col-md-3">
-                    <select name="status" class="form-select">
+                <div class="col-md-2">
+                    <select name="filter" class="form-select">
                         <option value="">All Status</option>
-                        <option value="Active" {{ request('status') == 'Active' ? 'selected' : '' }}>Active</option>
-                        <option value="Deceased" {{ request('status') == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                        <option value="Active" {{ request('filter') == 'Active' ? 'selected' : '' }}>Active</option>
+                        <option value="Deceased" {{ request('filter') == 'Deceased' ? 'selected' : '' }}>Deceased</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <input type="date" name="pension_start_date" class="form-control" placeholder="Pension Start Date" value="{{ request('pension_start_date') }}">
+                <div class="col-md-2">
+                    <input type="date" name="start_date" class="form-control" placeholder="Start Date" value="{{ request('start_date') }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                    <input type="date" name="end_date" class="form-control" placeholder="End Date" value="{{ request('end_date') }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+                <div class="col-md-1">
+                    <a href="{{ route('pensioners.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                 </div>
             </form>
             <!-- End Search and Filter Form -->

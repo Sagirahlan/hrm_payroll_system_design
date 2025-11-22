@@ -91,7 +91,7 @@ class EmployeesTableSeeder extends Seeder
                 'department_id' => $departments->random(),
                 'expected_next_promotion' => date('Y-m-d', strtotime('+' . rand(1, 3) . ' years')),
                 'expected_retirement_date' => date('Y-m-d', strtotime('+' . rand(5, 35) . ' years')),
-                'status' => collect(['Active', 'Suspended', 'Retired', 'Deceased'])->random(),
+                'status' => 'Active', // Set all employees to active
                 'highest_certificate' => $this->getRandomCertificate(),
                 'grade_level_limit' => rand(1, 17),
                 'appointment_type_id' => $appointmentTypes->random(),

@@ -151,7 +151,7 @@ class EmployeesSeeder extends Seeder
                 'address' => rand(1, 1000) . ' ' . $this->getRandomStreet() . ', ' . $this->getRandomCity(),
                 'date_of_first_appointment' => $dateOfFirstAppointment,
                 'appointment_type_id' => $appointmentTypeId,
-                'status' => collect(['Active', 'Suspended'])->random(), // Avoid Retired/Deceased for new employees
+                'status' => 'Active', // Set all employees to active
                 'highest_certificate' => $this->getRandomCertificate(),
                 'years_of_service' => $yearsOfService,
                 'created_at' => now(),

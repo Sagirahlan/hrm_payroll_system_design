@@ -93,12 +93,12 @@ class EmployeeController extends Controller
         // Age range filter
         if ($request->filled('age_from') || $request->filled('age_to')) {
             $today = Carbon::now();
-            
+
             if ($request->filled('age_from')) {
                 $dateFrom = $today->copy()->subYears($request->age_from)->endOfYear();
                 $query->where('date_of_birth', '<=', $dateFrom);
             }
-            
+
             if ($request->filled('age_to')) {
                 $dateTo = $today->copy()->subYears($request->age_to)->startOfYear();
                 $query->where('date_of_birth', '>=', $dateTo);
@@ -131,7 +131,7 @@ class EmployeeController extends Controller
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        
+
         $allowedSorts = ['first_name', 'surname', 'employee_id', 'date_of_first_appointment', 'expected_retirement_date', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
@@ -161,10 +161,10 @@ class EmployeeController extends Controller
         ]);
 
         return view('employees.index', compact(
-            'employees', 
-            'departments', 
-            'cadres', 
-            'gradeLevels', 
+            'employees',
+            'departments',
+            'cadres',
+            'gradeLevels',
             'states',
             'statuses',
             'genders',
@@ -213,7 +213,7 @@ class EmployeeController extends Controller
 
     public function exportFiltered(Request $request)
 {
-    // Apply same filters as index method for export    
+    // Apply same filters as index method for export
     $query = Employee::with(['department', 'cadre', 'gradeLevel']);
 
     // Search functionality
@@ -266,12 +266,12 @@ class EmployeeController extends Controller
     // Age range filter
     if ($request->filled('age_from') || $request->filled('age_to')) {
         $today = Carbon::now();
-        
+
         if ($request->filled('age_from')) {
             $dateFrom = $today->copy()->subYears($request->age_from)->endOfYear();
             $query->where('date_of_birth', '<=', $dateFrom);
         }
-        
+
         if ($request->filled('age_to')) {
             $dateTo = $today->copy()->subYears($request->age_to)->startOfYear();
             $query->where('date_of_birth', '>=', $dateTo);
@@ -304,7 +304,7 @@ class EmployeeController extends Controller
     // Sorting
     $sortBy = $request->get('sort_by', 'created_at');
     $sortOrder = $request->get('sort_order', 'desc');
-    
+
     $allowedSorts = ['first_name', 'surname', 'employee_id', 'date_of_first_appointment', 'expected_retirement_date', 'created_at'];
     if (in_array($sortBy, $allowedSorts)) {
         $query->orderBy($sortBy, $sortOrder);
@@ -316,7 +316,7 @@ class EmployeeController extends Controller
 
     // Generate filename with current timestamp
     $timestamp = now()->format('Y-m-d_H-i-s');
-    
+
     if ($request->format === 'excel') {
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -348,12 +348,12 @@ class EmployeeController extends Controller
     {
         // Apply same filters as exportFiltered method
         $query = Employee::with([
-            'department', 
-            'gradeLevel', 
-            'step', 
-            'appointmentType', 
-            'state', 
-            'lga', 
+            'department',
+            'gradeLevel',
+            'step',
+            'appointmentType',
+            'state',
+            'lga',
             'bank'
         ]);
 
@@ -407,12 +407,12 @@ class EmployeeController extends Controller
         // Age range filter
         if ($request->filled('age_from') || $request->filled('age_to')) {
             $today = Carbon::now();
-            
+
             if ($request->filled('age_from')) {
                 $dateFrom = $today->copy()->subYears($request->age_from)->endOfYear();
                 $query->where('date_of_birth', '<=', $dateFrom);
             }
-            
+
             if ($request->filled('age_to')) {
                 $dateTo = $today->copy()->subYears($request->age_to)->startOfYear();
                 $query->where('date_of_birth', '>=', $dateTo);
@@ -445,7 +445,7 @@ class EmployeeController extends Controller
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        
+
         $allowedSorts = ['first_name', 'surname', 'employee_id', 'date_of_first_appointment', 'expected_retirement_date', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
@@ -463,10 +463,10 @@ class EmployeeController extends Controller
 
         $callback = function() use ($employees) {
             $file = fopen('php://output', 'w');
-            
+
             // Add BOM for proper UTF-8 encoding in Excel
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Add headers
             fputcsv($file, [
                 'Employee ID',
@@ -528,16 +528,16 @@ class EmployeeController extends Controller
             'description' => 'Exported employee list as CSV with ' . $employees->count() . ' records',
             'action_timestamp' => now(),
             'log_data' => json_encode([
-                'entity_type' => 'Employee', 
-                'entity_id' => null, 
-                'format' => 'CSV', 
-                'count' => $employees->count(), 
+                'entity_type' => 'Employee',
+                'entity_id' => null,
+                'format' => 'CSV',
+                'count' => $employees->count(),
                 'filters' => $request->only([
-                    'search', 
-                    'department', 
-                    'cadre', 
-                    'status', 
-                    'gender', 
+                    'search',
+                    'department',
+                    'cadre',
+                    'status',
+                    'gender',
                     'appointment_type_id'
                 ])
             ]),
@@ -570,7 +570,7 @@ class EmployeeController extends Controller
         return view('employees.create', compact('departments', 'cadres', 'gradeLevels', 'salaryScales', 'states', 'lgas', 'wards', 'appointmentTypes', 'ranks', 'banks'));
     }
 
-    
+
     public function store(Request $request)
     {
         try {
@@ -616,12 +616,12 @@ class EmployeeController extends Controller
             $tempEmployee = new Employee();
             $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
             $tempEmployee->load('appointmentType');
-            
+
             if ($tempEmployee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
-                
+
             } else {
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
@@ -715,9 +715,15 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
+        // Check if the employee is retired and prevent editing
+        if ($employee->status === 'Retired' || ($employee->retirement && $employee->retirement->status === 'confirmed')) {
+            return redirect()->route('employees.index')
+                ->with('error', 'Editing is not allowed for retired employees.');
+        }
+
         // Load relationships for the employee
         $employee->load(['state', 'lga', 'ward', 'bank']);
-        
+
         $departments = Department::all();
         $cadres = Cadre::all();
         $gradeLevels = GradeLevel::all();
@@ -742,6 +748,12 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
+        // Check if the employee is retired and prevent editing
+        if ($employee->status === 'Retired' || ($employee->retirement && $employee->retirement->status === 'confirmed')) {
+            return redirect()->route('employees.index')
+                ->with('error', 'Editing is not allowed for retired employees.');
+        }
+
         try {
             $employee->load(['nextOfKin', 'bank']);
             $appointmentType = AppointmentType::find($request->input('appointment_type_id'));
@@ -783,7 +795,7 @@ class EmployeeController extends Controller
             $tempEmployee = new Employee();
             $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
             $tempEmployee->load('appointmentType');
-            
+
             if ($tempEmployee->isContractEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
@@ -932,45 +944,45 @@ class EmployeeController extends Controller
             ]);
 
             $file = $request->file('import_file');
-            
+
             // Determine the number of sheets in the Excel file
             $fileExtension = $file->getClientOriginalExtension();
-            
+
             if (in_array($fileExtension, ['xlsx', 'xls'])) {
                 // Use PhpSpreadsheet to read the file and get the number of sheets
                 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
                 $reader->setReadDataOnly(true); // Read only cell values, not formulas
                 $spreadsheet = $reader->load($file->getPathname());
                 $sheetCount = $spreadsheet->getSheetCount();
-                
+
                 // Create a dynamic import based on the number of sheets
                 $import = new class($sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
                     private $sheetCount;
-                    
+
                     public function __construct($sheetCount) {
                         $this->sheetCount = $sheetCount;
                     }
-                    
+
                     public function sheets(): array
                     {
                         $sheets = [
                             0 => new \App\Imports\EmployeeImport(),      // Always import first sheet (Employees)
                         ];
-                        
+
                         // Import Next of Kin sheet if it exists
                         if ($this->sheetCount >= 2) {
                             $sheets[1] = new \App\Imports\NextOfKinImport();
                         }
-                        
+
                         // Import Bank Details sheet if it exists
                         if ($this->sheetCount >= 3) {
                             $sheets[2] = new \App\Imports\BankDetailImport();
                         }
-                        
+
                         return $sheets;
                     }
                 };
-                
+
                 Excel::import($import, $file);
             } else {
                 // For CSV files, use single sheet import
@@ -993,7 +1005,7 @@ class EmployeeController extends Controller
             foreach ($failures as $failure) {
                 $errors[] = 'Row ' . $failure->row() . ': ' . implode(', ', $failure->errors());
             }
-            
+
             return redirect()->back()->with('error', 'Import failed with validation errors: ' . implode('; ', $errors));
         } catch (\Exception $e) {
             \Log::error('Employee import error: ' . $e->getMessage());

@@ -48,7 +48,10 @@ class DisciplinaryController extends Controller
         }
 
         $actions = $query->paginate(10);
-        $departments = Employee::select('department_id')->distinct()->pluck('department_id');
+        // Get departments with their names for the filter dropdown
+        $departments = \App\Models\Department::select('department_id', 'department_name')
+            ->whereIn('department_id', Employee::select('department_id')->distinct()->pluck('department_id'))
+            ->get();
         $statuses = ['Open', 'Resolved', 'Pending'];
 
         AuditTrail::create([
@@ -68,7 +71,7 @@ class DisciplinaryController extends Controller
         $disciplinaryHistory = DisciplinaryAction::where('employee_id', $disciplinary->employee_id)
             ->orderBy('action_date', 'desc')
             ->get();
-    
+
         AuditTrail::create([
             'user_id' => auth()->id(),
             'action' => 'viewed',
@@ -76,7 +79,7 @@ class DisciplinaryController extends Controller
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $disciplinary->action_id]),
         ]);
-    
+
         return view('disciplinary.show', [
             'action' => $disciplinary,
             'disciplinaryHistory' => $disciplinaryHistory
@@ -90,7 +93,7 @@ class DisciplinaryController extends Controller
             ->whereHas('appointmentType', function ($q) {
                 $q->where('name', 'Permanent');
             });
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -99,22 +102,22 @@ class DisciplinaryController extends Controller
                   ->orWhere('staff_no', 'like', "%{$search}%");
             });
         }
-        
+
         // Filter by department
         if ($request->filled('department')) {
             $query->where('department_id', $request->department);
         }
-        
+
         // Filter by status (though we're already filtering by Active)
         if ($request->filled('employee_status')) {
             $query->where('status', $request->employee_status);
         }
-        
+
         $employees = $query->paginate(10);
-        
+
         // Get departments for filter dropdown
         $departments = \App\Models\Department::all();
-        
+
         return view('disciplinary.create', compact('employees', 'departments'));
     }
 
@@ -228,7 +231,7 @@ class DisciplinaryController extends Controller
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $action->action_id]),
         ]);
-        
+
 
         return redirect()->route('disciplinary.index')->with('success', 'Disciplinary action recorded.');
     }
@@ -239,7 +242,7 @@ class DisciplinaryController extends Controller
             'resolution_date' => 'nullable|date',
             'status' => 'required|in:Open,Resolved,Pending',
         ]);
-    
+
         $disciplinary->update($validated);
 
         // If the action type is 'suspended', update the employee's status to 'Suspended' if currently 'Active'
@@ -285,7 +288,7 @@ class DisciplinaryController extends Controller
                 ]);
             }
         }
-    
+
         AuditTrail::create([
             'user_id' => auth()->id(),
             'action' => 'updated',
@@ -293,7 +296,7 @@ class DisciplinaryController extends Controller
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => $disciplinary->action_id]),
         ]);
-    
+
         return redirect()->route('disciplinary.index')->with('success', 'Disciplinary action updated.');
     }
 

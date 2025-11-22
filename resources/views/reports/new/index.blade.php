@@ -41,20 +41,6 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <div class="card border-success">
-                                <div class="card-body">
-                                    <h5 class="card-title">Employee Directory</h5>
-                                    <p class="card-text text-muted">Employee contact information and basic details</p>
-                                    <button class="btn btn-success generate-report-btn"
-                                            data-report-type="employee_directory"
-                                            data-title="Employee Directory Report">
-                                        Generate Report
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h5 class="card-title">Employee Status Report</h5>
@@ -66,6 +52,10 @@
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <!-- Empty column to maintain layout -->
                         </div>
                     </div>
 
@@ -216,20 +206,6 @@
                                     <button class="btn btn-success generate-report-btn"
                                             data-report-type="grade_level_summary"
                                             data-title="Grade Level Summary Report">
-                                        Generate Report
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <div class="card border-warning">
-                                <div class="card-body">
-                                    <h5 class="card-title">Payroll Analysis</h5>
-                                    <p class="card-text text-muted">Detailed payroll analysis by period</p>
-                                    <button class="btn btn-warning generate-report-btn"
-                                            data-report-type="payroll_analysis"
-                                            data-title="Payroll Analysis Report">
                                         Generate Report
                                     </button>
                                 </div>
@@ -401,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function addFiltersForReportType(reportType) {
         switch(reportType) {
-            case 'employee_directory':
+            case 'employee_master':
                 filtersSection.innerHTML = `
                     <div class="row">
                         <div class="col-md-6">
@@ -424,11 +400,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             </select>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 `;
                 break;
 
             case 'payroll_summary':
-            case 'payroll_analysis':
                 filtersSection.innerHTML = `
                     <div class="row">
                         <div class="col-md-6">
@@ -452,6 +438,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                                <option value="Retired">Retired</option>
+                                <option value="Deceased">Deceased</option>
                             </select>
                         </div>
                     </div>
@@ -495,8 +502,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 filtersSection.innerHTML = '';
                 break;
 
-            case 'promotion_history':
-            case 'disciplinary':
             case 'loan_status':
                 filtersSection.innerHTML = `
                     <div class="row">
@@ -530,6 +535,29 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'promotion_history':
+            case 'disciplinary':
+                // No additional filters needed for promotion history and disciplinary reports
+                filtersSection.innerHTML = '';
+                break;
+
+            case 'retirement_planning':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="retirement_within_months" class="form-label">Retirement Period</label>
+                            <select class="form-select" id="retirement_within_months" name="filters[retirement_within_months]">
+                                <option value="6" selected>Within 6 Months</option>
+                                <option value="12">Within 1 Year</option>
+                                <option value="18">Within 18 Months</option>
+                                <option value="24">Within 2 Years</option>
+                                <option value="36">Within 3 Years</option>
                             </select>
                         </div>
                     </div>

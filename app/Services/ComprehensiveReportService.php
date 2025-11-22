@@ -14,11 +14,23 @@ use Carbon\Carbon;
 
 class ComprehensiveReportService
 {
-    public function generateEmployeeMasterReport($employeeId = null)
+    public function generateEmployeeMasterReport($employeeId = null, $filters = [])
     {
+        $query = Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement', 'appointmentType']);
+
+        // Apply appointment type filter if provided
+        if (!empty($filters['appointment_type_id'])) {
+            $query->where('appointment_type_id', $filters['appointment_type_id']);
+        }
+
+        // Apply status filter if provided
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
         $employees = $employeeId
-            ? Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement', 'appointmentType'])->where('employee_id', $employeeId)->get()
-            : Employee::with(['department', 'cadre', 'gradeLevel', 'step', 'bank', 'disciplinaryRecords', 'payrollRecords', 'deductions', 'additions', 'loans', 'promotionHistory', 'retirement', 'appointmentType'])->get();
+            ? $query->where('employee_id', $employeeId)->get()
+            : $query->get();
 
         $reportData = [
             'report_title' => 'Employee Master Report',
@@ -135,9 +147,9 @@ class ComprehensiveReportService
         return $reportData;
     }
 
-    public function generatePayrollSummaryReport($year = null, $month = null)
+    public function generatePayrollSummaryReport($year = null, $month = null, $filters = [])
     {
-        $query = PayrollRecord::with(['employee.department', 'employee.gradeLevel']);
+        $query = PayrollRecord::with(['employee.department', 'employee.gradeLevel', 'employee.appointmentType']);
 
         if ($year) {
             $query->whereYear('payroll_month', $year);
@@ -147,6 +159,20 @@ class ComprehensiveReportService
             // Convert month name to number if needed
             $monthNumber = $this->convertMonthToNumber($month);
             $query->whereMonth('payroll_month', $monthNumber);
+        }
+
+        // Apply appointment type filter if provided
+        if (!empty($filters['appointment_type_id'])) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('appointment_type_id', $filters['appointment_type_id']);
+            });
+        }
+
+        // Apply status filter if provided
+        if (!empty($filters['status'])) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('status', $filters['status']);
+            });
         }
 
         $payrollRecords = $query->get();
@@ -382,10 +408,16 @@ class ComprehensiveReportService
         return $reportData;
     }
 
-    public function generateRetirementPlanningReport()
+    public function generateRetirementPlanningReport($filters = [])
     {
-        // Get employees approaching retirement (within 2 years)
-        $approachingRetirement = Employee::where('expected_retirement_date', '<=', now()->addYears(2)->format('Y-m-d'))
+        // Default to 2 years if no filter is provided
+        $retirementWithinMonths = !empty($filters['retirement_within_months']) ? (int)$filters['retirement_within_months'] : 24; // 24 months = 2 years by default
+
+        // Ensure the value is positive and reasonable (between 1 and 60 months)
+        $retirementWithinMonths = max(1, min(60, $retirementWithinMonths));
+
+        // Get employees approaching retirement based on the specified time period
+        $approachingRetirement = Employee::where('expected_retirement_date', '<=', now()->addMonths($retirementWithinMonths)->format('Y-m-d'))
             ->where('status', 'Active')
             ->with(['department', 'gradeLevel'])
             ->get();
@@ -393,6 +425,8 @@ class ComprehensiveReportService
         $reportData = [
             'report_title' => 'Retirement Planning Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
+            'retirement_within_months' => $retirementWithinMonths,
+            'retirement_period_label' => $this->getRetirementPeriodLabel($retirementWithinMonths),
             'total_approaching_retirement' => $approachingRetirement->count(),
             'employees_approaching_retirement' => []
         ];
@@ -413,6 +447,32 @@ class ComprehensiveReportService
         }
 
         return $reportData;
+    }
+
+    /**
+     * Helper method to get a user-friendly label for the retirement period
+     */
+    private function getRetirementPeriodLabel($months)
+    {
+        $months = (int)$months;
+
+        if ($months == 6) {
+            return 'Within 6 Months';
+        } elseif ($months == 12) {
+            return 'Within 1 Year';
+        } elseif ($months == 18) {
+            return 'Within 18 Months';
+        } elseif ($months == 24) {
+            return 'Within 2 Years';
+        } else {
+            $years = floor($months / 12);
+            $remainingMonths = $months % 12;
+            if ($remainingMonths == 0) {
+                return "Within {$years} Year" . ($years > 1 ? 's' : '');
+            } else {
+                return "Within {$years} Year" . ($years > 1 ? 's' : '') . " {$remainingMonths} Month" . ($remainingMonths > 1 ? 's' : '');
+            }
+        }
     }
 
     public function generateLoanStatusReport($filters = [])

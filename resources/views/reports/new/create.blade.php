@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let filtersHtml = '';
 
         switch(reportType) {
+            case 'employee_master':
             case 'employee_directory':
                 filtersHtml = `
                     <div class="row">
@@ -124,6 +125,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="Suspended">Suspended</option>
                                 <option value="Retired">Retired</option>
                                 <option value="Deceased">Deceased</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                ${jsonData.appointmentTypes.map(type => `<option value="${type.id}">${type.name}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -155,6 +165,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                ${jsonData.appointmentTypes.map(type => \`<option value="\${type.id}">\${type.name}</option>\`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                                <option value="Retired">Retired</option>
+                                <option value="Deceased">Deceased</option>
                             </select>
                         </div>
                     </div>
@@ -236,8 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 break;
 
-            case 'promotion_history':
-            case 'disciplinary':
             case 'loan_status':
                 filtersHtml = `
                     <div class="row">
@@ -271,6 +298,29 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'promotion_history':
+            case 'disciplinary':
+                // No additional filters needed for promotion history and disciplinary reports
+                filtersHtml = '';
+                break;
+
+            case 'retirement_planning':
+                filtersHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="retirement_within_months" class="form-label">Retirement Period</label>
+                            <select class="form-select" name="filters[retirement_within_months]">
+                                <option value="6" selected>Within 6 Months</option>
+                                <option value="12">Within 1 Year</option>
+                                <option value="18">Within 18 Months</option>
+                                <option value="24">Within 2 Years</option>
+                                <option value="36">Within 3 Years</option>
                             </select>
                         </div>
                     </div>
