@@ -2,33 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Requests\PasswordUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Models\AuditTrail;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
-    {
-        $user = $request->user()->load('employee.department', 'employee.cadre', 'employee.gradeLevel', 'employee.nextOfKin', 'employee.biometricData', 'employee.bank', 'employee.state', 'employee.lga', 'employee.ward', 'employee.rank', 'employee.step');
-        return view('profile.edit', [
-            'user' => $user,
-        ]);
-    }
-
     public function __construct()
     {
         $this->middleware(['auth']);
-        $this->middleware(['permission:view_profile'], ['only' => ['show', 'edit']]);
-        $this->middleware(['permission:edit_profile'], ['only' => ['update']]);
-        $this->middleware(['permission:change_password'], ['only' => ['destroy']]);
+        $this->middleware(['permission:view_profile'], ['only' => ['show']]);
+        $this->middleware(['permission:change_password'], ['only' => ['changePassword', 'updatePassword']]);
     }
 
     public function show()
@@ -38,27 +27,39 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * Show the change password form.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function changePassword(): View
     {
-        $request->user()->fill($request->validated());
+        return view('profile.change-password');
+    }
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
+    /**
+     * Update the user's password.
+     */
+    public function updatePassword(PasswordUpdateRequest $request): RedirectResponse
+    {
+        $request->user()->update([
+            'password_hash' => Hash::make($request->password),
+        ]);
 
         AuditTrail::create([
             'user_id' => Auth::id(),
-            'action' => 'updated_profile',
-            'description' => 'User updated their own profile.',
+            'action' => 'updated_password',
+            'description' => 'User changed their password.',
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'User', 'entity_id' => Auth::id()]),
         ]);
 
-        return Redirect::route('profile.show')->with('status', 'profile-updated');
+        // Log the user out after password change for security
+        Auth::logout();
+
+        // Invalidate and regenerate session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Redirect to login with success message
+        return Redirect::to('/login')->with('success', 'Your password has been updated successfully. Please login with your new password.');
     }
 
     /**

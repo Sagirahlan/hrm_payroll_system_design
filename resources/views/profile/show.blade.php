@@ -20,11 +20,20 @@
                     <!-- Profile Header -->
                     <div class="row mb-4">
                         <div class="col-md-12 text-center">
-                            <img src="{{ $user->employee && $user->employee->photo_path ? asset('storage/' . $user->employee->photo_path) : asset('images/default-image.png') }}" 
-                                 alt="Profile" class="rounded-circle border border-2 mb-3" 
+                            <img src="{{ $user->employee && $user->employee->photo_path ? asset('storage/' . $user->employee->photo_path) : asset('images/default-image.png') }}"
+                                 alt="Profile" class="rounded-circle border border-2 mb-3"
                                  style="width: 120px; height: 120px; object-fit: cover;">
                             <h5>{{ $user->employee ? $user->employee->first_name . ' ' . $user->employee->surname : $user->username }}</h5>
                             <span class="badge bg-secondary">{{ $user->roles->first()?->name ?? 'No role assigned' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="row mb-4">
+                        <div class="col-md-12 text-center">
+                            <a href="{{ route('profile.change-password') }}" class="btn btn-warning">
+                                <i class="fas fa-key"></i> {{ __('Change Password') }}
+                            </a>
                         </div>
                     </div>
 
@@ -136,11 +145,11 @@
                                     <td><strong>{{ __('Status') }}</strong></td>
                                     <td>
                                         @if($user->employee)
-                                            <span class="badge 
-                                                @if($user->employee->status === 'Active') bg-success 
-                                                @elseif($user->employee->status === 'Suspended') bg-warning 
-                                                @elseif($user->employee->status === 'Retired') bg-info 
-                                                @elseif($user->employee->status === 'Deceased') bg-danger 
+                                            <span class="badge
+                                                @if($user->employee->status === 'Active') bg-success
+                                                @elseif($user->employee->status === 'Suspended') bg-warning
+                                                @elseif($user->employee->status === 'Retired') bg-info
+                                                @elseif($user->employee->status === 'Deceased') bg-danger
                                                 @else bg-secondary @endif">
                                                 {{ $user->employee->status }}
                                             </span>

@@ -44,7 +44,7 @@ Route::get('/test-reports', function () {
         $masterReport = $reportService->generateEmployeeMasterReport();
         $directoryReport = $reportService->generateEmployeeDirectoryReport();
         $statusReport = $reportService->generateEmployeeStatusReport();
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'All reports generated successfully!',
@@ -72,18 +72,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
     Route::post('/reports/generate-pensioners', [ReportController::class, 'generatePensionersReport'])->name('reports.generate_pensioners');
-    
+
     // New Comprehensive Report System
     Route::get('/comprehensive-reports', [ComprehensiveReportController::class, 'index'])->name('reports.comprehensive.index');
     Route::get('/comprehensive-reports/create', [ComprehensiveReportController::class, 'create'])->name('reports.comprehensive.create');
     Route::post('/comprehensive-reports/generate', [ComprehensiveReportController::class, 'generateReport'])->name('reports.comprehensive.generate');
     Route::get('/comprehensive-reports/{id}', [ComprehensiveReportController::class, 'show'])->name('reports.comprehensive.show');
     Route::get('/comprehensive-reports/{id}/download', [ComprehensiveReportController::class, 'download'])->name('reports.comprehensive.download');
-    
+
     // Profile - accessible to authenticated users based on permission
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('permission:view_profile');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update')->middleware('permission:edit_profile');
-    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit')->middleware('permission:edit_profile');
+    Route::get('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password')->middleware('permission:change_password');
+    Route::put('/profile/change-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password')->middleware('permission:change_password');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy')->middleware('permission:change_password');
 
     // Employee Management - HR and Admin only
@@ -114,24 +114,24 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leaves/{leave}/edit', [\App\Http\Controllers\LeaveController::class, 'edit'])->name('leaves.edit')->middleware('permission:manage_leaves');
     Route::put('/leaves/{leave}', [\App\Http\Controllers\LeaveController::class, 'update'])->name('leaves.update')->middleware('permission:manage_leaves');
     Route::delete('/leaves/{leave}', [\App\Http\Controllers\LeaveController::class, 'destroy'])->name('leaves.destroy')->middleware('permission:manage_leaves');
-    
+
     // AJAX routes for location dropdowns (outside permission middleware so they can be accessed by anyone creating employees)
     Route::get('/employees/lgas-by-state', [EmployeeController::class, 'getLgasByState'])->name('employees.lgas-by-state');
     Route::get('/employees/wards-by-lga', [EmployeeController::class, 'getWardsByLga'])->name('employees.wards-by-lga');
     Route::get('/employees/ranks-by-grade-level', [EmployeeController::class, 'getRanksByGradeLevel'])->name('employees.ranks-by-grade-level');
-    
+
     // AJAX route for getting all salary scales
     Route::get('/api/salary-scales', function () {
         $salaryScales = \App\Models\SalaryScale::select('id', 'acronym', 'full_name')->get();
         return response()->json($salaryScales);
     })->name('salary-scales.all.ajax');
-    
+
     // AJAX route for getting a single salary scale by ID
     Route::get('/api/salary-scales/{salaryScaleId}', function ($salaryScaleId) {
         $salaryScale = \App\Models\SalaryScale::select('id', 'acronym', 'full_name')->find($salaryScaleId);
         return response()->json($salaryScale);
     })->name('salary-scales.single.ajax');
-    
+
     // AJAX route for salary scale grade levels
     Route::get('/api/salary-scales/{salaryScaleId}/grade-levels', function ($salaryScaleId) {
         $gradeLevels = \App\Models\GradeLevel::where('salary_scale_id', $salaryScaleId)->get();
@@ -139,7 +139,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('salary-scales.grade-levels.ajax');
 
     Route::get('/api/salary-scales/{salaryScaleId}/grade-levels/{gradeLevelName}/steps', [\App\Http\Controllers\SalaryScaleController::class, 'getStepsForGradeLevel'])->name('salary-scales.grade-levels.steps.ajax');
-    
+
     // AJAX route for getting grade levels with their steps
     Route::get('/api/grade-levels/with-steps', function () {
         $gradeLevels = \App\Models\GradeLevel::with('steps')->get();
@@ -188,7 +188,7 @@ Route::middleware(['auth'])->group(function () {
     // FIXED: User Management - Admin only (Enhanced with bulk creation)
     Route::middleware('permission:manage_employees')->group(function () {
         // Main user resource routes
-       
+
         // FIXED: Additional user management routes with correct HTTP methods
         Route::resource('users', UserController::class)->except([
             'show'
@@ -197,7 +197,7 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
        Route::post('/users/bulk-create', [UserController::class, 'bulkCreateUsers'])->name('users.bulk-create');
        Route::get('/users/employees-without-users', [UserController::class, 'showEmployeesWithoutUsers'])->name('users.employees-without-users');
-    
+
     });
 
     // Retirement Management - HR and Admin only
@@ -206,13 +206,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/retirements/retired-statuses', [RetirementController::class, 'getAllRetiredStatuses'])->name('retirements.retired-statuses');
         Route::resource('retirements', RetirementController::class);
         Route::post('/employees/{employee}/retire', [RetirementController::class, 'retire'])->name('retirement.retire');
-        Route::get('/retirements', [RetirementController::class, 'index'])->name('retirements.index'); 
+        Route::get('/retirements', [RetirementController::class, 'index'])->name('retirements.index');
         Route::get('/retirements/{retirement}', [RetirementController::class, 'show'])->name('retirements.show');
     });
 
     // Retirement Viewing - HR, Admin, and Bursary
     Route::middleware('permission:view_retirement')->group(function () {
-       
+
     });
 
     // Pensioner Management - HR and Admin only
@@ -225,35 +225,35 @@ Route::middleware(['auth'])->group(function () {
 
     // Payroll Management - Bursary and Admin only (ENHANCED WITH SEARCH & FILTERS)
         Route::middleware('permission:manage_payroll')->group(function () {
-            
+
             // IMPORTANT: Place specific routes BEFORE dynamic routes to avoid conflicts
-            
+
             // Payroll generation and export (with filters) - MUST BE FIRST
             Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
             Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
-            
+
             // AJAX and Search routes - MUST BE BEFORE DYNAMIC ROUTES
             Route::get('/payroll/api/search', [PayrollController::class, 'search'])->name('payroll.search');
             Route::get('/payroll/api/statistics', [PayrollController::class, 'getStatistics'])->name('payroll.statistics');
-            
+
             // Bulk operations - MUST BE BEFORE DYNAMIC ROUTES
             Route::post('/payroll/bulk/update-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.bulk_update_status');
-            
+
             // Bulk workflow operations
             Route::post('/payroll/bulk/send-for-review', [PayrollController::class, 'bulkSendForReview'])->name('payroll.bulk_send_for_review');
             Route::post('/payroll/bulk/mark-as-reviewed', [PayrollController::class, 'bulkMarkAsReviewed'])->name('payroll.bulk_mark_as_reviewed');
             Route::post('/payroll/bulk/send-for-approval', [PayrollController::class, 'bulkSendForApproval'])->name('payroll.bulk_send_for_approval');
             Route::post('/payroll/bulk/final-approve', [PayrollController::class, 'bulkFinalApprove'])->name('payroll.bulk_final_approve');
-            
+
             // Individual workflow operations
             Route::post('/payroll/{payrollId}/send-for-review', [PayrollController::class, 'sendForReview'])->name('payroll.send-for-review');
             Route::post('/payroll/{payrollId}/mark-as-reviewed', [PayrollController::class, 'markAsReviewed'])->name('payroll.mark-as-reviewed');
             Route::post('/payroll/{payrollId}/send-for-approval', [PayrollController::class, 'sendForApproval'])->name('payroll.send-for-approval');
             Route::post('/payroll/{payrollId}/final-approve', [PayrollController::class, 'finalApprove'])->name('payroll.final-approve');
-            
+
             // Detailed payroll information route
             Route::get('/payroll/{payrollId}/detailed', [PayrollController::class, 'getDetailedPayroll'])->name('payroll.detailed');
-            
+
             // Employee-specific deductions and additions - BEFORE DYNAMIC ROUTES
             Route::get('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'showDeductions'])->name('payroll.deductions.show');
             Route::get('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'showAdditions'])->name('payroll.additions.show');
@@ -262,7 +262,7 @@ Route::middleware(['auth'])->group(function () {
 
             // Manage All Adjustments
             Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
-            
+
             Route::get('/payroll/additions', [PayrollController::class, 'additions'])->name('payroll.additions');
             Route::get('/payroll/test', function() {
                 return response()->json(['status' => 'success', 'message' => 'Payroll test route is working!']);
@@ -279,20 +279,20 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payroll/{payrollId}/edit', [PayrollController::class, 'edit'])->name('payroll.edit');
             Route::put('/payroll/{payrollId}', [PayrollController::class, 'update'])->name('payroll.update');
             Route::delete('/payroll/{payrollId}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
-            
-            
+
+
             // Individual payroll actions - AFTER MAIN ROUTES
             Route::get('/payroll/{payrollId}/payslip', [PayrollController::class, 'generatePaySlip'])->name('payroll.payslip');
             Route::post('/payroll/{payrollId}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
             Route::post('/payroll/{payrollId}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
             Route::post('/payroll/{payrollId}/reject', [PayrollController::class, 'reject'])->name('payroll.reject');
 
-            
-            
+
+
             // Salary Scales
             Route::resource('salary-scales', \App\Http\Controllers\SalaryScaleController::class);
             Route::get('/salary-scales/{salaryScale}/grade-levels', [\App\Http\Controllers\SalaryScaleController::class, 'showGradeLevels'])->name('salary-scales.grade-levels');
-            
+
             // Grade Levels within Salary Scales
             Route::prefix('salary-scales/{salaryScale}')->group(function () {
                 Route::get('/grade-levels/create', [\App\Http\Controllers\SalaryScale\GradeLevelController::class, 'create'])->name('salary-scales.grade-levels.create');
@@ -317,7 +317,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
             Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
             Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
-            
+
             // Step Management Routes
             Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
                 // Steps
@@ -327,7 +327,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
                 Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
             });
-            
+
             // Promotion and Demotion Management
             Route::resource('promotions', \App\Http\Controllers\PromotionController::class)->except(['edit', 'update']);
             Route::get('/promotions/employees/search', [\App\Http\Controllers\PromotionController::class, 'searchEmployees'])->name('promotions.employees.search');
@@ -349,8 +349,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/audit-logs', [AuditTrailController::class, 'index'])->name('audit.index');
     });
 
-   
-  
+
+
 });
 
 Route::get('/clear-cache', function() {
