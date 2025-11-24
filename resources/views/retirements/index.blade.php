@@ -5,9 +5,11 @@
 @section('content')
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="{{ route('retirements.create') }}" class="btn btn-primary btn-lg rounded-3 fw-bold shadow">
-            <i class="bi bi-plus-circle me-2"></i> Confirm Retirement
-        </a>
+        @can('create_retirements')
+            <a href="{{ route('retirements.create') }}" class="btn btn-primary btn-lg rounded-3 fw-bold shadow">
+                <i class="bi bi-plus-circle me-2"></i> Confirm Retirement
+            </a>
+        @endcan
         <div>
             @if(isset($retiredEmployees))
                 <a href="{{ route('retirements.index') }}" class="btn btn-info">Approaching Retirement</a>

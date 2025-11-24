@@ -693,4 +693,89 @@ class ComprehensiveReportService
 
         return $reportData;
     }
+
+    public function generateRetirementPlanningReportWithin6Months()
+    {
+        // Get all active employees first
+        $employees = Employee::where('status', 'Active')
+            ->with(['department', 'gradeLevel.salaryScale'])
+            ->get();
+
+        $sixMonthsFromNow = now()->addMonths(6);
+
+        // Filter employees approaching retirement within 6 months using the same logic as the retirement page
+        $approachingRetirement = $employees->filter(function ($employee) use ($sixMonthsFromNow) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                return false;
+            }
+
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            return $actualRetirementDate->isBetween(now(), $sixMonthsFromNow);
+        });
+
+        $reportData = [
+            'report_title' => 'Retirement Planning Report (Within 6 Months)',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'retirement_within_months' => 6,
+            'retirement_period_label' => 'Within 6 Months',
+            'total_approaching_retirement' => $approachingRetirement->count(),
+            'employees_approaching_retirement' => []
+        ];
+
+        foreach ($approachingRetirement as $employee) {
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($employee->gradeLevel->salaryScale->max_retirement_age);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($employee->gradeLevel->salaryScale->max_years_of_service);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            // Determine retirement reason
+            $age = Carbon::parse($employee->date_of_birth)->age;
+            $serviceDuration = Carbon::parse($employee->date_of_first_appointment)->diffInYears(Carbon::now());
+
+            if ($serviceDuration >= $employee->gradeLevel->salaryScale->max_years_of_service) {
+                $retirementReason = 'By Years of Service';
+            } elseif ($age >= $employee->gradeLevel->salaryScale->max_retirement_age) {
+                $retirementReason = 'By Old Age';
+            } else {
+                $actualRetirementDateForReason = Carbon::parse($employee->date_of_birth)->addYears($employee->gradeLevel->salaryScale->max_retirement_age)->min(Carbon::parse($employee->date_of_first_appointment)->addYears($employee->gradeLevel->salaryScale->max_years_of_service));
+                if ($actualRetirementDateForReason->eq(Carbon::parse($employee->date_of_birth)->addYears($employee->gradeLevel->salaryScale->max_retirement_age))) {
+                    $retirementReason = 'By Old Age';
+                } else {
+                    $retirementReason = 'By Years of Service';
+                }
+            }
+
+            $reportData['employees_approaching_retirement'][] = [
+                'employee_id' => $employee->employee_id,
+                'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
+                'department' => $employee->department->department_name ?? 'N/A',
+                'grade_level' => $employee->gradeLevel->name ?? 'N/A',
+                'date_of_birth' => $employee->date_of_birth,
+                'age' => $age,
+                'date_of_first_appointment' => $employee->date_of_first_appointment,
+                'years_of_service' => $serviceDuration,
+                'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'months_to_retirement' => $actualRetirementDate->diffInMonths(now()),
+                'retirement_reason' => $retirementReason
+            ];
+        }
+
+        return $reportData;
+    }
 }

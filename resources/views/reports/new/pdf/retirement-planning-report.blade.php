@@ -45,12 +45,13 @@
 </head>
 <body>
     <div class="header">
-        <div class="report-title">Retirement Planning Report</div>
+        <div class="report-title">{{ $data['report_title'] ?? 'Retirement Planning Report' }}</div>
         <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 
     <div class="summary">
         <p><strong>Total Approaching Retirement:</strong> {{ $data['total_approaching_retirement'] }}</p>
+        <p><strong>Period:</strong> {{ $data['retirement_period_label'] ?? 'N/A' }}</p>
     </div>
 
     <table>
@@ -58,13 +59,11 @@
             <tr>
                 <th>Employee ID</th>
                 <th>Full Name</th>
-                <th>Department</th>
-                <th>Grade Level</th>
-                <th>Date of Birth</th>
-                <th>Age</th>
-                <th>Date of Appointment</th>
+                <th>Calculated Retirement Date</th>
+                <th>Expected Date of Retirement</th>
                 <th>Years of Service</th>
-                <th>Expected Retirement Date</th>
+                <th>Age</th>
+                <th>Retirement Reason</th>
                 <th>Months to Retirement</th>
             </tr>
         </thead>
@@ -73,13 +72,11 @@
             <tr>
                 <td>{{ $employee['employee_id'] }}</td>
                 <td>{{ $employee['full_name'] }}</td>
-                <td>{{ $employee['department'] }}</td>
-                <td>{{ $employee['grade_level'] }}</td>
-                <td>{{ $employee['date_of_birth'] }}</td>
-                <td>{{ $employee['age'] }}</td>
-                <td>{{ $employee['date_of_first_appointment'] }}</td>
-                <td>{{ $employee['years_of_service'] }}</td>
+                <td>{{ $employee['calculated_retirement_date'] ?? $employee['expected_retirement_date'] }}</td>
                 <td>{{ $employee['expected_retirement_date'] }}</td>
+                <td>{{ number_format($employee['years_of_service'], 1) ?? '0' }} years</td>
+                <td>{{ $employee['age'] }}</td>
+                <td>{{ $employee['retirement_reason'] ?? 'N/A' }}</td>
                 <td>{{ $employee['months_to_retirement'] }}</td>
             </tr>
             @endforeach

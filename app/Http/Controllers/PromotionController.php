@@ -25,17 +25,17 @@ class PromotionController extends Controller
     public function index(Request $request)
     {
         $query = PromotionHistory::with('employee', 'creator')->orderBy('created_at', 'desc');
-        
+
         // Filter by promotion type
         if ($request->filled('type')) {
             $query->where('promotion_type', $request->type);
         }
-        
+
         // Filter by employee
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
         }
-        
+
         // Filter by status - default to 'approved' if not specified
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -43,12 +43,12 @@ class PromotionController extends Controller
             // Only show approved promotions by default
             $query->where('status', 'approved');
         }
-        
+
         // Filter by promotion date
         if ($request->filled('promotion_date')) {
             $query->whereDate('promotion_date', $request->promotion_date);
         }
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -62,9 +62,9 @@ class PromotionController extends Controller
                 ->orWhere('reason', 'like', "%{$searchTerm}%");
             });
         }
-        
+
         $promotions = $query->paginate(15);
-        
+
         // Get all employees for the filter dropdown
         $employees = Employee::where('appointment_type_id', 1) // Assuming 1 is for permanent employees
             ->orderBy('surname', 'asc')
@@ -74,7 +74,7 @@ class PromotionController extends Controller
                 $employee->full_name = trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname);
                 return $employee;
             });
-        
+
         return view('promotions.index', compact('promotions', 'employees'));
     }
 
@@ -86,7 +86,7 @@ class PromotionController extends Controller
         $query = Employee::where('appointment_type_id', 1) // Permanent employees only
             ->where('status', 'Active')
             ->with(['gradeLevel', 'step', 'department', 'appointmentType']);
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -95,22 +95,22 @@ class PromotionController extends Controller
                   ->orWhere('employee_id', 'like', "%{$search}%");
             });
         }
-        
+
         // Filter by department
         if ($request->filled('department')) {
             $query->where('department_id', $request->department);
         }
-        
+
         // Filter by status (though we're already filtering by Active)
         if ($request->filled('employee_status')) {
             $query->where('status', $request->employee_status);
         }
-        
+
         $employees = $query->paginate(10);
-        
+
         // Get departments for filter dropdown
         $departments = \App\Models\Department::all();
-        
+
         return view('promotions.create', compact('employees', 'departments'));
     }
 
@@ -156,11 +156,28 @@ class PromotionController extends Controller
     {
         $employee = Employee::with([
             'gradeLevel.salaryScale', // Explicitly load the salary scale relationship
-            'step', 
-            'department', 
-            'appointmentType', 
+            'step',
+            'department',
+            'appointmentType',
             'promotionHistory'
         ])->findOrFail($employeeId);
+
+        // Prepare grade level data with salary scale
+        $gradeLevelData = null;
+        if ($employee->gradeLevel) {
+            $gradeLevelData = [
+                'id' => $employee->gradeLevel->id,
+                'name' => $employee->gradeLevel->name,
+                'grade_level' => $employee->gradeLevel->grade_level,
+                'description' => $employee->gradeLevel->description,
+                'salary_scale' => $employee->gradeLevel->salaryScale ? [
+                    'id' => $employee->gradeLevel->salaryScale->id,
+                    'acronym' => $employee->gradeLevel->salaryScale->acronym,
+                    'full_name' => $employee->gradeLevel->salaryScale->full_name,
+                    'description' => $employee->gradeLevel->salaryScale->description,
+                ] : null
+            ];
+        }
 
         return response()->json(['data' => [
             'employee_id' => $employee->employee_id,
@@ -169,7 +186,7 @@ class PromotionController extends Controller
             'surname' => $employee->surname,
             'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
             'department' => $employee->department,
-            'grade_level' => $employee->gradeLevel, // Use snake_case for consistency
+            'grade_level' => $gradeLevelData,
             'step' => $employee->step,
             'appointmentType' => $employee->appointmentType,
             'status' => $employee->status,
@@ -196,10 +213,10 @@ class PromotionController extends Controller
             'approving_authority' => 'nullable|string|max:255',
             'reason' => 'required|string|max:1000',
         ]);
-        
+
         try {
             DB::beginTransaction();
-            
+
             // Always create with pending status
             $promotion = PromotionHistory::create([
                 'employee_id' => $request->employee_id,
@@ -215,16 +232,16 @@ class PromotionController extends Controller
                 'status' => 'pending', // Always set to pending initially
                 'created_by' => Auth::user()->user_id,
             ]);
-            
+
             DB::commit();
-            
+
             // Redirect to pending changes page
             return redirect()->route('pending-changes.index')
                 ->with('success', ucfirst($request->promotion_type) . ' request submitted successfully and is pending approval.');
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return redirect()->back()
                 ->with('error', 'An error occurred while creating the ' . $request->promotion_type . ': ' . $e->getMessage());
         }
@@ -236,7 +253,7 @@ class PromotionController extends Controller
     public function show(PromotionHistory $promotion)
     {
         $promotion->load('employee', 'creator');
-        
+
         return view('promotions.show', compact('promotion'));
     }
 
@@ -250,7 +267,7 @@ class PromotionController extends Controller
             ->where('status', 'Active')
             ->with('gradeLevel', 'step')
             ->get();
-        
+
         return view('promotions.edit', compact('promotion', 'employees'));
     }
 
@@ -272,10 +289,10 @@ class PromotionController extends Controller
             'reason' => 'required|string|max:1000',
             'status' => ['required', Rule::in(['pending', 'approved', 'rejected'])],
         ]);
-        
+
         try {
             DB::beginTransaction();
-            
+
             $promotion->update([
                 'employee_id' => $request->employee_id,
                 'promotion_type' => $request->promotion_type,
@@ -289,7 +306,7 @@ class PromotionController extends Controller
                 'reason' => $request->reason,
                 'status' => $request->status,
             ]);
-            
+
             // Update employee's grade level if status is approved
             if ($request->status === 'approved') {
                 $employee = Employee::find($request->employee_id);
@@ -305,15 +322,15 @@ class PromotionController extends Controller
                     'step_id' => $this->getStepIdByName($request->new_step, $request->new_grade_level)
                 ]);
             }
-            
+
             DB::commit();
-            
+
             return redirect()->route('promotions.show', $promotion->id)
                 ->with('success', ucfirst($request->promotion_type) . ' record updated successfully.');
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return redirect()->back()
                 ->with('error', 'An error occurred while updating the ' . $request->promotion_type . ': ' . $e->getMessage());
         }
@@ -326,7 +343,7 @@ class PromotionController extends Controller
     {
         $promotionType = $promotion->promotion_type;
         $promotion->delete();
-        
+
         return redirect()->route('promotions.index')
             ->with('success', ucfirst($promotionType) . ' record deleted successfully.');
     }
@@ -373,7 +390,7 @@ class PromotionController extends Controller
         return redirect()->route('promotions.index')
             ->with('success', ucfirst($promotion->promotion_type) . ' rejected.');
     }
-    
+
     /**
      * Get the GradeLevel ID by name
      */
@@ -382,21 +399,21 @@ class PromotionController extends Controller
         $gradeLevel = \App\Models\GradeLevel::where('name', $name)->first();
         return $gradeLevel ? $gradeLevel->id : null;
     }
-    
+
     /**
      * Get the Step ID by name and grade level name
      */
     private function getStepIdByName($name, $gradeLevelName = null)
     {
         $query = \App\Models\Step::where('name', $name);
-        
+
         if ($gradeLevelName) {
             $gradeLevel = \App\Models\GradeLevel::where('name', $gradeLevelName)->first();
             if ($gradeLevel) {
                 $query->where('grade_level_id', $gradeLevel->id);
             }
         }
-        
+
         $step = $query->first();
         return $step ? $step->id : null;
     }

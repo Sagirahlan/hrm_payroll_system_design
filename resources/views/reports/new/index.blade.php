@@ -157,6 +157,27 @@
                         </div>
                     </div>
 
+                    <!-- Retirement-Specific Reports Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4 class="text-primary mb-3"><i class="fas fa-calendar-alt"></i> Retirement-Specific Reports</h4>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">Approaching Retirement (6 Months)</h5>
+                                    <p class="card-text text-muted">Employees retiring within 6 months</p>
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="retirement_6months"
+                                            data-title="Retirement Planning Report (6 Months)">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Financial Reports Section -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -562,6 +583,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `;
+                break;
+
+            case 'retirement_6months':
+                // No additional filters needed for the 6-months specific report
+                filtersSection.innerHTML = '';
                 break;
 
             case 'audit_trail':

@@ -68,11 +68,12 @@
                                                     <td class="small">{{ $employee->employee_id }}</td>
                                                     <td class="small">{{ $employee->department->department_name ?? 'N/A' }}</td>
                                                     <td class="text-center">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary select-employee" 
+                                                        <button type="button" class="btn btn-sm btn-outline-primary select-employee"
                                                                 data-id="{{ $employee->employee_id }}"
                                                                 data-name="{{ $employee->first_name }} {{ $employee->surname }}"
                                                                 data-grade="{{ $employee->gradeLevel->name ?? 'N/A' }}"
-                                                                data-step="{{ $employee->step->name ?? 'N/A' }}">
+                                                                data-step="{{ $employee->step->name ?? 'N/A' }}"
+                                                                data-salary-scale="{{ $employee->gradeLevel->salaryScale->full_name ?? 'N/A' }}">
                                                             Select
                                                         </button>
                                                     </td>
@@ -89,12 +90,12 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Right Column: Promotion Form -->
                         <div class="col-lg-7">
                             <form action="{{ route('promotions.store') }}" method="POST">
                                 @csrf
-                                
+
                                 <!-- Employee Selection Section -->
                                 <div class="card border mb-4">
                                     <div class="card-header bg-primary text-white py-2">
@@ -109,7 +110,7 @@
                                                 </select>
                                                 @error('employee_id') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-6">
                                                 <label for="promotion_type" class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
                                                 <select name="promotion_type" id="promotion_type" class="form-select" required>
@@ -135,13 +136,13 @@
                                                 <input type="text" name="previous_salary_scale" id="previous_salary_scale" class="form-control bg-white" readonly>
                                                 @error('previous_salary_scale') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-4">
                                                 <label for="previous_grade_level" class="form-label fw-semibold small">Current Grade Level <span class="text-danger">*</span></label>
                                                 <input type="text" name="previous_grade_level" id="previous_grade_level" class="form-control bg-white" required readonly>
                                                 @error('previous_grade_level') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-4">
                                                 <label for="previous_step" class="form-label fw-semibold small">Current Step</label>
                                                 <input type="text" name="previous_step" id="previous_step" class="form-control bg-white" readonly>
@@ -165,7 +166,7 @@
                                                 </select>
                                                 @error('new_salary_scale') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-4">
                                                 <label for="new_grade_level" class="form-label fw-semibold">New Grade Level <span class="text-danger">*</span></label>
                                                 <select name="new_grade_level" id="new_grade_level" class="form-select" required>
@@ -173,7 +174,7 @@
                                                 </select>
                                                 @error('new_grade_level') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-4">
                                                 <label for="new_step" class="form-label fw-semibold">New Step</label>
                                                 <select name="new_step" id="new_step" class="form-select">
@@ -197,19 +198,19 @@
                                                 <input type="date" name="promotion_date" id="promotion_date" class="form-control" required>
                                                 @error('promotion_date') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-md-6">
                                                 <label for="effective_date" class="form-label fw-semibold">Effective Date <span class="text-danger">*</span></label>
                                                 <input type="date" name="effective_date" id="effective_date" class="form-control" required>
                                                 @error('effective_date') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-12">
                                                 <label for="approving_authority" class="form-label fw-semibold">Approving Authority</label>
                                                 <input type="text" name="approving_authority" id="approving_authority" class="form-control" placeholder="Enter approving authority name">
                                                 @error('approving_authority') <div class="text-danger small">{{ $message }}</div> @enderror
                                             </div>
-                                            
+
                                             <div class="col-12">
                                                 <label for="reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
                                                 <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="Enter the reason for this promotion/demotion" required>{{ old('reason') }}</textarea>
@@ -241,23 +242,23 @@
     .card {
         border-radius: 8px;
     }
-    
+
     .card-header {
         border-radius: 8px 8px 0 0 !important;
     }
-    
+
     .form-select, .form-control {
         border-radius: 6px;
     }
-    
+
     .btn {
         border-radius: 6px;
     }
-    
+
     .table > :not(caption) > * > * {
         padding: 0.5rem;
     }
-    
+
     @media (max-width: 991px) {
         .col-lg-5, .col-lg-7 {
             margin-bottom: 1rem;
@@ -272,10 +273,10 @@
             button.addEventListener('click', function() {
                 const employeeId = this.getAttribute('data-id');
                 const employeeName = this.getAttribute('data-name');
-                
+
                 // Set the selected employee in the dropdown
                 const select = document.getElementById('employee_id');
-                
+
                 // Check if option already exists, if not create it
                 let option = select.querySelector(`option[value="${employeeId}"]`);
                 if (!option) {
@@ -284,18 +285,18 @@
                     option.textContent = employeeName + ' (' + employeeId + ')';
                     select.appendChild(option);
                 }
-                
+
                 // Select the option
                 option.selected = true;
-                
+
                 // Fetch and update employee details
                 fetchEmployeeDetails(employeeId);
-                
+
                 // Scroll to the form section
                 document.querySelector('#employee_id').scrollIntoView({ behavior: 'smooth', block: 'center' });
             });
         });
-        
+
         // Function to fetch and display employee details
         function fetchEmployeeDetails(employeeId) {
             fetch('/employees/' + employeeId)
@@ -307,14 +308,14 @@
                     if (employee.grade_level && employee.grade_level.name) {
                         document.getElementById('previous_grade_level').value = employee.grade_level.name;
                     }
-                    
+
                     if (employee.step && employee.step.name) {
                         document.getElementById('previous_step').value = employee.step.name;
                     }
-                    
+
                     if (employee.grade_level && employee.grade_level.salary_scale && employee.grade_level.salary_scale.full_name) {
                         document.getElementById('previous_salary_scale').value = employee.grade_level.salary_scale.full_name;
-                    } 
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching employee details:', error);
@@ -322,21 +323,26 @@
                     if (button) {
                         const grade = button.getAttribute('data-grade');
                         const step = button.getAttribute('data-step');
-                        
+                        const salaryScale = button.getAttribute('data-salary-scale');
+
                         if (grade && grade !== 'N/A') {
                             document.getElementById('previous_grade_level').value = grade;
                         }
-                        
+
                         if (step && step !== 'N/A') {
                             document.getElementById('previous_step').value = step;
+                        }
+
+                        if (salaryScale && salaryScale !== 'N/A') {
+                            document.getElementById('previous_salary_scale').value = salaryScale;
                         }
                     }
                 });
         }
-        
+
         // Load salary scales when the page loads
         loadSalaryScales();
-        
+
         // Load salary scales
         function loadSalaryScales() {
             fetch('/api/salary-scales')
@@ -344,7 +350,7 @@
                 .then(salaryScales => {
                     const salaryScaleSelect = document.getElementById('new_salary_scale');
                     salaryScaleSelect.innerHTML = '<option value="">Select Salary Scale</option>';
-                    
+
                     salaryScales.forEach(salaryScale => {
                         const option = document.createElement('option');
                         option.value = salaryScale.id;
@@ -356,16 +362,16 @@
                     console.error('Error loading salary scales:', error);
                 });
         }
-        
+
         // When salary scale is selected, load corresponding grade levels
         document.getElementById('new_salary_scale').addEventListener('change', function() {
             const salaryScaleId = this.value;
             const gradeLevelSelect = document.getElementById('new_grade_level');
-            
+
             gradeLevelSelect.innerHTML = '<option value="">Select Grade Level</option>';
             const stepSelect = document.getElementById('new_step');
             stepSelect.innerHTML = '<option value="">Select Step</option>';
-            
+
             if (salaryScaleId) {
                 fetch(`/api/salary-scales/${salaryScaleId}/grade-levels`)
                     .then(response => response.json())
@@ -382,15 +388,15 @@
                     });
             }
         });
-        
+
         // When grade level is selected, load corresponding steps
         document.getElementById('new_grade_level').addEventListener('change', function() {
             const gradeLevelName = this.value;
             const salaryScaleId = document.getElementById('new_salary_scale').value;
             const stepSelect = document.getElementById('new_step');
-            
+
             stepSelect.innerHTML = '<option value="">Select Step</option>';
-            
+
             if (gradeLevelName && salaryScaleId) {
                 fetch(`/api/salary-scales/${salaryScaleId}/grade-levels/${gradeLevelName}/steps`)
                     .then(response => response.json())

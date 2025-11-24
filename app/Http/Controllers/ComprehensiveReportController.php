@@ -28,18 +28,18 @@ class ComprehensiveReportController extends Controller
     public function index()
     {
         $reports = Report::select([
-                'report_id', 
-                'report_type', 
-                'generated_by', 
-                'generated_date', 
-                'export_format', 
-                'file_path', 
-                'employee_id', 
-                'created_at', 
+                'report_id',
+                'report_type',
+                'generated_by',
+                'generated_date',
+                'export_format',
+                'file_path',
+                'employee_id',
+                'created_at',
                 'updated_at'
             ])
             ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname'])
-            ->orderBy('generated_date', 'desc') 
+            ->orderBy('generated_date', 'desc')
             ->paginate(20);
 
         // Process report types to show actual names instead of ID formats
@@ -52,7 +52,7 @@ class ComprehensiveReportController extends Controller
         $additionTypes = AdditionType::all();
         // Get deduction types that are associated with loans
         $loanDeductionTypes = \App\Models\DeductionType::whereHas('loans')->get();
-        
+
         // If no loan-associated deduction types found, return all deduction types
         if ($loanDeductionTypes->isEmpty()) {
             $loanDeductionTypes = \App\Models\DeductionType::all();
@@ -160,7 +160,7 @@ class ComprehensiveReportController extends Controller
         } catch (\Exception $e) {
             // Log the full error for debugging
             \Log::error('Comprehensive Report Generation Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' line ' . $e->getLine());
-            
+
             // Always return JSON for AJAX requests
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -180,53 +180,56 @@ class ComprehensiveReportController extends Controller
         switch ($reportType) {
             case 'employee_master':
                 return $this->reportService->generateEmployeeMasterReport(null, $filters);
-                
+
             case 'employee_directory':
                 return $this->reportService->generateEmployeeDirectoryReport($filters);
-                
+
             case 'employee_status':
                 return $this->reportService->generateEmployeeStatusReport();
-                
+
             case 'payroll_summary':
                 return $this->reportService->generatePayrollSummaryReport(
                     $filters['year'] ?? null,
                     $filters['month'] ?? null,
                     $filters
                 );
-                
+
             case 'deduction_summary':
                 return $this->reportService->generateDeductionSummaryReport($filters);
-                
+
             case 'addition_summary':
                 return $this->reportService->generateAdditionSummaryReport($filters);
-                
+
             case 'promotion_history':
                 return $this->reportService->generatePromotionHistoryReport($filters);
-                
+
             case 'disciplinary':
                 return $this->reportService->generateDisciplinaryReport($filters);
-                
+
             case 'retirement_planning':
                 return $this->reportService->generateRetirementPlanningReport($filters);
-                
+
+            case 'retirement_6months':
+                return $this->reportService->generateRetirementPlanningReportWithin6Months();
+
             case 'loan_status':
                 return $this->reportService->generateLoanStatusReport($filters);
-                
+
             case 'department_summary':
                 return $this->reportService->generateDepartmentSummaryReport();
-                
+
             case 'grade_level_summary':
                 return $this->reportService->generateGradeLevelSummaryReport();
-                
+
             case 'audit_trail':
                 return $this->reportService->generateAuditTrailReport($filters);
-                
+
             case 'payroll_analysis':
                 return $this->reportService->generatePayrollAnalysisReport(
-                    $filters['year'] ?? null, 
+                    $filters['year'] ?? null,
                     $filters['month'] ?? null
                 );
-                
+
             default:
                 return ['error' => 'Invalid report type'];
         }
@@ -235,19 +238,19 @@ class ComprehensiveReportController extends Controller
     private function generatePDF($report, $reportData, $reportType)
     {
         $viewPath = 'reports.new.pdf.' . str_replace('_', '-', $reportType) . '-report';
-        
+
         // Check if the specific view exists, if not use a generic one
         if (!view()->exists($viewPath)) {
             $viewPath = 'reports.new.pdf.generic-report';
         }
-        
+
         // Generate PDF using Snappy
         $pdf = PDF::loadView($viewPath, [
             'data' => $reportData,
             'report' => $report,
             'reportType' => $this->getReportTypeName($reportType)
         ]);
-        
+
         $fileName = str_replace('_', '-', $reportType) . "_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
 
@@ -290,43 +293,43 @@ class ComprehensiveReportController extends Controller
             case 'employee_master':
                 $this->writeEmployeeMasterExcel($file, $reportData);
                 break;
-                
+
             case 'employee_directory':
                 $this->writeEmployeeDirectoryExcel($file, $reportData);
                 break;
-                
+
             case 'employee_status':
                 $this->writeEmployeeStatusExcel($file, $reportData);
                 break;
-                
+
             case 'payroll_summary':
                 $this->writePayrollSummaryExcel($file, $reportData);
                 break;
-                
+
             case 'deduction_summary':
                 $this->writeDeductionSummaryExcel($file, $reportData);
                 break;
-                
+
             case 'addition_summary':
                 $this->writeAdditionSummaryExcel($file, $reportData);
                 break;
-                
+
             case 'promotion_history':
                 $this->writePromotionHistoryExcel($file, $reportData);
                 break;
-                
+
             case 'disciplinary':
                 $this->writeDisciplinaryExcel($file, $reportData);
                 break;
-                
+
             case 'retirement_planning':
                 $this->writeRetirementPlanningExcel($file, $reportData);
                 break;
-                
+
             case 'loan_status':
                 $this->writeLoanStatusExcel($file, $reportData);
                 break;
-                
+
             default:
                 fputcsv($file, ['No data available for this report type']);
         }
@@ -335,9 +338,9 @@ class ComprehensiveReportController extends Controller
     private function writeEmployeeMasterExcel($file, $reportData)
     {
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Cadre', 'Grade Level', 'Step', 
-            'Status', 'Appointment Type', 'Date of Appointment', 'Years of Service', 'Basic Salary', 
-            'Email', 'Mobile', 'Address', 'Disciplinary Count', 'Total Deductions', 
+            'Employee ID', 'Full Name', 'Department', 'Cadre', 'Grade Level', 'Step',
+            'Status', 'Appointment Type', 'Date of Appointment', 'Years of Service', 'Basic Salary',
+            'Email', 'Mobile', 'Address', 'Disciplinary Count', 'Total Deductions',
             'Total Additions', 'Loan Count', 'Promotion Count', 'Last Payroll Date'
         ]);
 
@@ -370,7 +373,7 @@ class ComprehensiveReportController extends Controller
     private function writeEmployeeDirectoryExcel($file, $reportData)
     {
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step', 
+            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step',
             'Status', 'Email', 'Mobile No', 'Extension'
         ]);
 
@@ -395,10 +398,10 @@ class ComprehensiveReportController extends Controller
         foreach ($reportData['status_summary'] as $status) {
             fputcsv($file, [$status['status'], $status['count']]);
         }
-        
+
         fputcsv($file, []);
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step', 
+            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step',
             'Status', 'Date of Appointment', 'Years of Service'
         ]);
 
@@ -429,8 +432,8 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 
-            'Basic Salary', 'Total Deductions', 'Total Additions', 
+            'Employee ID', 'Full Name', 'Department', 'Grade Level',
+            'Basic Salary', 'Total Deductions', 'Total Additions',
             'Net Salary', 'Payment Date', 'Status'
         ]);
 
@@ -457,7 +460,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Deduction Type', 
+            'Employee ID', 'Employee Name', 'Department', 'Deduction Type',
             'Amount', 'Start Date', 'End Date', 'Frequency'
         ]);
 
@@ -482,7 +485,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Addition Type', 
+            'Employee ID', 'Employee Name', 'Department', 'Addition Type',
             'Amount', 'Start Date', 'End Date', 'Frequency'
         ]);
 
@@ -506,7 +509,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Previous Grade', 
+            'Employee ID', 'Employee Name', 'Department', 'Previous Grade',
             'New Grade', 'Promotion Date', 'Promotion Type', 'Reason', 'Status'
         ]);
 
@@ -531,7 +534,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Action Type', 
+            'Employee ID', 'Employee Name', 'Department', 'Action Type',
             'Action Date', 'Description', 'Status', 'Resolution'
         ]);
 
@@ -555,9 +558,9 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 
-            'Date of Birth', 'Age', 'Date of Appointment', 'Years of Service', 
-            'Expected Retirement Date', 'Months to Retirement'
+            'Employee ID', 'Full Name', 'Department', 'Grade Level',
+            'Date of Birth', 'Age', 'Date of Appointment', 'Years of Service',
+            'Calculated Retirement Date', 'Expected Retirement Date', 'Months to Retirement', 'Retirement Reason'
         ]);
 
         foreach ($reportData['employees_approaching_retirement'] as $employee) {
@@ -570,8 +573,10 @@ class ComprehensiveReportController extends Controller
                 $employee['age'],
                 $employee['date_of_first_appointment'],
                 $employee['years_of_service'],
+                $employee['calculated_retirement_date'] ?? $employee['expected_retirement_date'],
                 $employee['expected_retirement_date'],
-                $employee['months_to_retirement']
+                $employee['months_to_retirement'],
+                $employee['retirement_reason'] ?? 'N/A'
             ]);
         }
     }
@@ -585,8 +590,8 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Loan Type', 
-            'Principal Amount', 'Monthly Deduction', 'Total Months', 
+            'Employee ID', 'Employee Name', 'Department', 'Loan Type',
+            'Principal Amount', 'Monthly Deduction', 'Total Months',
             'Total Repaid', 'Remaining Balance', 'Status', 'Application Date'
         ]);
 
@@ -640,6 +645,7 @@ class ComprehensiveReportController extends Controller
             'promotion_history' => 'Promotion History Report',
             'disciplinary' => 'Disciplinary Action Report',
             'retirement_planning' => 'Retirement Planning Report',
+            'retirement_6months' => 'Retirement Planning Report (6 Months)',
             'loan_status' => 'Loan Status Report',
             'department_summary' => 'Department Summary Report',
             'grade_level_summary' => 'Grade Level Summary Report',
@@ -665,11 +671,11 @@ class ComprehensiveReportController extends Controller
     public function download($id)
     {
         $report = Report::findOrFail($id);
-        
+
         if ($report->file_path && Storage::exists($report->file_path)) {
             return Storage::download($report->file_path);
         }
-        
+
         return redirect()->back()->with('error', 'Report file not found');
     }
 }

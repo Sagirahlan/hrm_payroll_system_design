@@ -14,34 +14,7 @@
                     <i class="fas fa-plus me-1"></i>Add Employee
                 </a>
                 @endcan
-                @can('view_employees')
-                <div class="btn-group">
-                    <button type="button" class="btn btn-light btn-sm rounded-pill dropdown-toggle font-weight-bold shadow-sm" data-bs-toggle="dropdown">
-                        <i class="fas fa-download me-1"></i>Export
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('employees.export.pdf') }}">
-                            <i class="fas fa-file-pdf me-2 text-danger"></i>Export to PDF
-                        </a></li>
-                        <li><a class="dropdown-item" href="{{ route('employees.export.excel') }}">
-                            <i class="fas fa-file-excel me-2 text-success"></i>Export to Excel
-                        </a></li>
-                        <li><a class="dropdown-item" href="{{ route('employees.export.csv') }}">
-                            <i class="fas fa-file-csv me-2 text-primary"></i>Export to CSV
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportFiltered('pdf')">
-                            <i class="fas fa-filter me-2 text-info"></i>Export Filtered (PDF)
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportFiltered('excel')">
-                            <i class="fas fa-filter me-2 text-info"></i>Export Filtered (Excel)
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportFiltered('csv')">
-                            <i class="fas fa-filter me-2 text-primary"></i>Export Filtered (CSV)
-                        </a></li>
-                    </ul>
-                </div>
-                @endcan
+               
             </div>
         </div>
 
