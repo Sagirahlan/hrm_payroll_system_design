@@ -33,31 +33,31 @@ class PendingEmployeeChangeController extends Controller
     public function index(Request $request)
     {
         $query = PendingEmployeeChange::with(['employee', 'requestedBy']);
-        
+
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         // Filter by change type
         if ($request->filled('change_type')) {
             $query->where('change_type', $request->change_type);
         }
-        
+
         // Search by employee name
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 // Split search term into words
                 $words = explode(' ', trim($searchTerm));
-                
+
                 // Search in existing employee records
                 $q->whereHas('employee', function ($subQuery) use ($searchTerm, $words) {
                     $subQuery->where('first_name', 'like', "%{$searchTerm}%")
                              ->orWhere('surname', 'like', "%{$searchTerm}%")
                              ->orWhere('employee_id', 'like', "%{$searchTerm}%")
                              ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"]);
-                             
+
                     // If we have multiple words, search each word separately
                     if (count($words) > 1) {
                         foreach ($words as $word) {
@@ -75,7 +75,7 @@ class PendingEmployeeChangeController extends Controller
                              ->orWhereRaw("JSON_EXTRACT(data, '$.surname') LIKE ?", ["%{$searchTerm}%"])
                              ->orWhereRaw("JSON_EXTRACT(data, '$.employee_id') LIKE ?", ["%{$searchTerm}%"])
                              ->orWhereRaw("CONCAT(JSON_EXTRACT(data, '$.first_name'), ' ', JSON_EXTRACT(data, '$.surname')) LIKE ?", ["%{$searchTerm}%"]);
-                             
+
                     // If we have multiple words, search each word separately
                     if (count($words) > 1) {
                         foreach ($words as $word) {
@@ -88,18 +88,18 @@ class PendingEmployeeChangeController extends Controller
                 });
             });
         }
-        
+
         $pendingChanges = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->except('page'));
-        
+
         // Also get pending promotions/demotions
         $pendingPromotions = PromotionHistory::with(['employee', 'creator'])
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
-        
+
         return view('pending-changes.index', compact('pendingChanges', 'pendingPromotions'));
     }
-    
+
     public function show(PendingEmployeeChange $pendingChange)
     {
         $pendingChange->load(['employee', 'requestedBy', 'approvedBy']);
@@ -148,13 +148,13 @@ class PendingEmployeeChangeController extends Controller
                 return $value;
         }
     }
-    
+
     public function approve(PendingEmployeeChange $pendingChange, Request $request)
     {
         $request->validate([
             'approval_notes' => 'nullable|string|max:1000'
         ]);
-        
+
         return DB::transaction(function () use ($pendingChange, $request) {
             // Update the pending change status
             $pendingChange->update([
@@ -163,22 +163,22 @@ class PendingEmployeeChangeController extends Controller
                 'approved_at' => now(),
                 'approval_notes' => $request->approval_notes
             ]);
-            
+
             // Apply the actual changes based on change type
             switch ($pendingChange->change_type) {
                 case 'create':
                     $this->applyCreate($pendingChange);
                     break;
-                    
+
                 case 'update':
                     $this->applyUpdate($pendingChange);
                     break;
-                    
+
                 case 'delete':
                     $this->applyDelete($pendingChange);
                     break;
             }
-            
+
             // Add audit trail for approval
             AuditTrail::create([
                 'user_id' => auth()->id(),
@@ -190,25 +190,25 @@ class PendingEmployeeChangeController extends Controller
                 'entity_type' => 'PendingEmployeeChange',
                 'entity_id' => $pendingChange->id,
             ]);
-            
+
             return redirect()->route('pending-changes.index')
                 ->with('success', 'Employee change approved successfully.');
         });
     }
-    
+
     public function reject(PendingEmployeeChange $pendingChange, Request $request)
     {
         $request->validate([
             'approval_notes' => 'required|string|max:1000'
         ]);
-        
+
         $pendingChange->update([
             'status' => 'rejected',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
             'approval_notes' => $request->approval_notes
         ]);
-        
+
         // Add audit trail for rejection
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -220,11 +220,11 @@ class PendingEmployeeChangeController extends Controller
             'entity_type' => 'PendingEmployeeChange',
             'entity_id' => $pendingChange->id,
         ]);
-        
+
         return redirect()->route('pending-changes.index')
             ->with('success', 'Employee change rejected.');
     }
-    
+
     private function applyCreate(PendingEmployeeChange $pendingChange)
     {
         $data = $pendingChange->data;
@@ -234,17 +234,39 @@ class PendingEmployeeChangeController extends Controller
         if (isset($data['years_of_service'])) {
             $data['years_of_service'] = intval($data['years_of_service']);
         }
-        
+
         // Create employee
         $employeeData = collect($data)->except([
             'kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address', 'kin_occupation', 'kin_place_of_work',
             'bank_name', 'bank_code', 'account_name', 'account_no'
         ])->toArray();
-        
+
         $employee = Employee::create($employeeData);
 
         $pendingChange->update(['employee_id' => $employee->employee_id]);
-        
+
+        // Check if this is a permanent employee (not contract) and put on probation
+        $appointmentType = null;
+        if (isset($data['appointment_type_id'])) {
+            $appointmentType = AppointmentType::find($data['appointment_type_id']);
+        }
+
+        // If it's a permanent employee, place them on probation for 3 months starting from their date of first appointment
+        if ($appointmentType && $appointmentType->name !== 'Contract') {
+            $dateOfFirstAppointment = $data['date_of_first_appointment'] ?? now();
+            $probationStartDate = \Carbon\Carbon::parse($dateOfFirstAppointment);
+            $probationEndDate = $probationStartDate->copy()->addMonths(3);
+
+            $employee->update([
+                'on_probation' => true,
+                'probation_start_date' => $probationStartDate,
+                'probation_end_date' => $probationEndDate,
+                'probation_status' => 'pending',
+                'status' => 'On Probation', // Change status to indicate probation
+                'probation_notes' => 'Automatically placed on 3-month probation starting from date of first appointment (' . $probationStartDate->format('Y-m-d') . ')'
+            ]);
+        }
+
         // Create next of kin if kin data exists
         if (isset($data['kin_name'])) {
             NextOfKin::create([
@@ -257,7 +279,7 @@ class PendingEmployeeChangeController extends Controller
                 'place_of_work' => $data['kin_place_of_work'] ?? null,
             ]);
         }
-        
+
         // Create bank details if bank data exists
         if (isset($data['bank_name'])) {
             Bank::create([
@@ -269,7 +291,7 @@ class PendingEmployeeChangeController extends Controller
             ]);
         }
     }
-    
+
     private function applyUpdate(PendingEmployeeChange $pendingChange)
     {
         $employee = $pendingChange->employee;
@@ -279,26 +301,26 @@ class PendingEmployeeChangeController extends Controller
         if (isset($data['years_of_service'])) {
             $data['years_of_service'] = intval($data['years_of_service']);
         }
-        
+
         // Update employee
         $employeeData = collect($data)->except([
             'kin_name', 'kin_relationship', 'kin_mobile_no', 'kin_address', 'kin_occupation', 'kin_place_of_work',
             'bank_name', 'bank_code', 'account_name', 'account_no'
         ])->toArray();
-        
+
         $employee->update($employeeData);
-        
+
         // Update or create next of kin if any kin-related data is provided
-        $hasKinData = isset($data['kin_name']) || isset($data['kin_relationship']) || 
-                     isset($data['kin_mobile_no']) || isset($data['kin_address']) || 
+        $hasKinData = isset($data['kin_name']) || isset($data['kin_relationship']) ||
+                     isset($data['kin_mobile_no']) || isset($data['kin_address']) ||
                      isset($data['kin_occupation']) || isset($data['kin_place_of_work']);
-        
+
         if ($hasKinData) {
             // Get existing next of kin to preserve required fields that are not being updated
             $existingKin = NextOfKin::where('employee_id', $employee->employee_id)->first();
-            
+
             $kinData = $existingKin ? $existingKin->toArray() : [];
-            
+
             if (isset($data['kin_name'])) {
                 $kinData['name'] = $data['kin_name'];
             }
@@ -317,7 +339,7 @@ class PendingEmployeeChangeController extends Controller
             if (isset($data['kin_place_of_work'])) {
                 $kinData['place_of_work'] = $data['kin_place_of_work'];
             }
-            
+
             // Make sure required fields are not null
             if (isset($kinData['name']) && isset($kinData['mobile_no'])) {
                 NextOfKin::updateOrCreate(
@@ -326,17 +348,17 @@ class PendingEmployeeChangeController extends Controller
                 );
             }
         }
-        
+
         // Update or create bank details if any bank-related data is provided
-        $hasBankData = isset($data['bank_name']) || isset($data['bank_code']) || 
+        $hasBankData = isset($data['bank_name']) || isset($data['bank_code']) ||
                       isset($data['account_name']) || isset($data['account_no']);
-        
+
         if ($hasBankData) {
             // Get existing bank details to preserve required fields that are not being updated
             $existingBank = Bank::where('employee_id', $employee->employee_id)->first();
-            
+
             $bankData = $existingBank ? $existingBank->toArray() : [];
-            
+
             if (isset($data['bank_name'])) {
                 $bankData['bank_name'] = $data['bank_name'];
             }
@@ -349,7 +371,7 @@ class PendingEmployeeChangeController extends Controller
             if (isset($data['account_no'])) {
                 $bankData['account_no'] = $data['account_no'];
             }
-            
+
             // Make sure required fields are not null
             if (isset($bankData['account_name']) && isset($bankData['account_no'])) {
                 Bank::updateOrCreate(
@@ -359,7 +381,7 @@ class PendingEmployeeChangeController extends Controller
             }
         }
     }
-    
+
     private function applyDelete(PendingEmployeeChange $pendingChange)
     {
         $employee = $pendingChange->employee;

@@ -17,6 +17,7 @@ class PromotionController extends Controller
         $this->middleware(['permission:view_promotions'], ['only' => ['index', 'show']]);
         $this->middleware(['permission:create_promotions'], ['only' => ['create', 'store', 'searchEmployees', 'getEmployeeDetails']]);
         $this->middleware(['permission:delete_promotions'], ['only' => ['destroy']]);
+        $this->middleware(['permission:approve_promotions'], ['only' => ['approve', 'reject']]);
     }
 
     /**

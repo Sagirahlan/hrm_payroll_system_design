@@ -339,6 +339,9 @@
                         @can('view_leaves')
                         <li><a class="nav-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}" href="{{ route('leaves.index') }}">Leave Management</a></li>
                         @endcan
+                        @can('manage_probation')
+                        <li><a class="nav-link {{ request()->routeIs('probation.*') ? 'active' : '' }}" href="{{ route('probation.index') }}">Probation Management</a></li>
+                        @endcan
 
                     </ul>
                 </div>
@@ -433,7 +436,7 @@
             </li>
             @endif
 
-            @can('manage_Pensioners')
+            @can('manage_pensioners')
             <li>
                 <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
                     <i class="fas fa-user-shield"></i> Pensioners
@@ -456,17 +459,8 @@
                 </a>
                 <div class="collapse {{ request()->routeIs(['payroll.*', 'salary-scales.*', 'deduction-types.*', 'addition-types.*', 'loans.*']) ? 'show' : '' }}" id="payrollSubmenu">
                     <ul class="nav flex-column ms-1">
-                        @can('view_payroll')
-                        <li><a class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}" href="{{ route('payroll.index') }}">Process Payroll</a></li>
-                        @endcan
-                        @can('create_additions')
-                        <li><a class="nav-link {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}">Bulk Additions</a></li>
-                        @endcan
-                        @can('create_deductions')
-                        <li><a class="nav-link {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}">Bulk Deductions</a></li>
-                        @endcan
-                        @can('manage_payroll_adjustments')
-                        <li><a class="nav-link {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}">Employee Adjustments</a></li>
+                        @can('view_salary_scales')
+                        <li><a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">Salary Scales</a></li>
                         @endcan
                         @can('view_addition_types')
                         <li><a class="nav-link {{ request()->routeIs('addition-types.*') ? 'active' : '' }}" href="{{ route('addition-types.index') }}">Addition Types</a></li>
@@ -474,12 +468,22 @@
                         @can('view_deduction_types')
                         <li><a class="nav-link {{ request()->routeIs('deduction-types.*') ? 'active' : '' }}" href="{{ route('deduction-types.index') }}">Deduction Types</a></li>
                         @endcan
+                        @can('create_additions')
+                        <li><a class="nav-link {{ request()->routeIs('payroll.additions') ? 'active' : '' }}" href="{{ route('payroll.additions') }}">Bulk Additions</a></li>
+                        @endcan
+                        @can('create_deductions')
+                        <li><a class="nav-link {{ request()->routeIs('payroll.deductions') ? 'active' : '' }}" href="{{ route('payroll.deductions') }}">Bulk Deductions</a></li>
+                        @endcan
                         @can('view_loans')
                         <li><a class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}" href="{{ route('loans.index') }}">Loan Deductions</a></li>
                         @endcan
-                            @can('view_salary_scales')
-                        <li><a class="nav-link {{ request()->routeIs('salary-scales.*') ? 'active' : '' }}" href="{{ route('salary-scales.index') }}">Salary Scales</a></li>
+                        @can('view_payroll')
+                        <li><a class="nav-link {{ request()->routeIs('payroll.index') ? 'active' : '' }}" href="{{ route('payroll.index') }}">Process Payroll</a></li>
                         @endcan
+                        @can('manage_payroll_adjustments')
+                        <li><a class="nav-link {{ request()->routeIs('payroll.adjustments.manage') ? 'active' : '' }}" href="{{ route('payroll.adjustments.manage') }}">Employee Adjustments</a></li>
+                        @endcan
+
                     </ul>
                 </div>
             </li>

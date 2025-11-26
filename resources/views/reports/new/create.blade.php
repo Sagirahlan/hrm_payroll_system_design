@@ -30,6 +30,7 @@
                                     </optgroup>
                                     <optgroup label="Compensation Reports">
                                         <option value="payroll_summary">Payroll Summary Report</option>
+                                        <option value="payroll_journal">Payroll Journal Report</option>
                                         <option value="payroll_analysis">Payroll Analysis Report</option>
                                         <option value="deduction_summary">Deduction Summary Report</option>
                                         <option value="addition_summary">Addition Summary Report</option>
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             case 'payroll_summary':
             case 'payroll_analysis':
+            case 'payroll_journal':
                 filtersHtml = `
                     <div class="row">
                         <div class="col-md-6">

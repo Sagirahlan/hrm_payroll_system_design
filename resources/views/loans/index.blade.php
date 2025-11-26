@@ -8,7 +8,9 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4>Loans Management</h4>
+                        @can('create_loan')
                         <a href="{{ route('loans.create') }}" class="btn btn-primary">Add New Loan</a>
+                        @endcan
                     </div>
                 </div>
 

@@ -8,9 +8,11 @@
                 <h5 class="mb-0">
                     <i class="fas fa-file-invoice-dollar me-2"></i>Payroll Records
                 </h5>
+                @can('manage_payroll_adjustments')
                 <a href="{{ route('payroll.adjustments.manage') }}" class="btn btn-light">
                     <i class="fas fa-users-cog me-1"></i> Manage Adjustments
                 </a>
+                @endcan
             </div>
         </div>
         <div class="card-body">

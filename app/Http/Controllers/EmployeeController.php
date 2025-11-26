@@ -128,6 +128,18 @@ class EmployeeController extends Controller
             $query->where('grade_level_id', $request->grade_level_id);
         }
 
+        // Probation status filter
+        if ($request->filled('probation_status')) {
+            $probationStatus = $request->probation_status;
+            if ($probationStatus === 'pending') {
+                $query->where('on_probation', true)->where('probation_status', 'pending');
+            } elseif ($probationStatus === 'approved') {
+                $query->where('probation_status', 'approved');
+            } elseif ($probationStatus === 'rejected') {
+                $query->where('probation_status', 'rejected');
+            }
+        }
+
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
@@ -440,6 +452,18 @@ class EmployeeController extends Controller
         // Salary scale filter
         if ($request->filled('grade_level_id')) {
             $query->where('grade_level_id', $request->grade_level_id);
+        }
+
+        // Probation status filter
+        if ($request->filled('probation_status')) {
+            $probationStatus = $request->probation_status;
+            if ($probationStatus === 'pending') {
+                $query->where('on_probation', true)->where('probation_status', 'pending');
+            } elseif ($probationStatus === 'approved') {
+                $query->where('probation_status', 'approved');
+            } elseif ($probationStatus === 'rejected') {
+                $query->where('probation_status', 'rejected');
+            }
         }
 
         // Sorting

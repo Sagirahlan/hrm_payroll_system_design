@@ -5,7 +5,7 @@
 @section('content')
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        @can('create_retirements')
+        @can('create_retirement')
             <a href="{{ route('retirements.create') }}" class="btn btn-primary btn-lg rounded-3 fw-bold shadow">
                 <i class="bi bi-plus-circle me-2"></i> Confirm Retirement
             </a>

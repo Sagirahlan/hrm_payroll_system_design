@@ -12,7 +12,7 @@ class RetirementController extends Controller
     {
         $this->middleware(['auth']);
         $this->middleware(['permission:view_retirements'], ['only' => ['index', 'retiredList', 'getAllRetiredStatuses']]);
-        $this->middleware(['permission:create_retirements'], ['only' => ['create', 'store']]);
+        $this->middleware(['permission:create_retirement'], ['only' => ['create', 'store']]);
     }
 
     public function index(Request $request)

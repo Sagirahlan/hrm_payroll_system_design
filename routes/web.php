@@ -23,6 +23,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ComprehensiveReportController;
 use App\Http\Controllers\PendingEmployeeChangeController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\ProbationController;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
@@ -101,6 +102,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('leaves/{leave}/approve', [\App\Http\Controllers\LeaveController::class, 'approve'])->name('leaves.approve');
     });
 
+    // Probation Management - HR and Admin only
+    Route::middleware('permission:view_probation')->group(function () {
+        Route::prefix('probation')->name('probation.')->group(function () {
+            Route::get('/', [ProbationController::class, 'index'])->name('index');
+            Route::get('/{employee}', [ProbationController::class, 'show'])->name('show');
+            Route::post('/{employee}/approve', [ProbationController::class, 'approve'])->name('approve')->middleware('permission:approve_probation');
+            Route::post('/{employee}/reject', [ProbationController::class, 'reject'])->name('reject')->middleware('permission:reject_probation');
+            Route::post('/{employee}/start', [ProbationController::class, 'startProbation'])->name('start')->middleware('permission:manage_probation');
+            Route::post('/{employee}/extend', [ProbationController::class, 'extend'])->name('extend')->middleware('permission:manage_probation');
+        });
+    });
+
     // Routes for employee to manage their own leaves - outside manage_employees middleware
     Route::get('/my-leaves', [\App\Http\Controllers\LeaveController::class, 'myLeaves'])->name('leaves.my');
     Route::get('/my-leaves/create', [\App\Http\Controllers\LeaveController::class, 'createMyLeave'])->name('leaves.create.my');
@@ -159,7 +172,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Employee Viewing - HR, Admin, and Bursary
     Route::middleware('permission:view_employees')->group(function () {
-        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
         Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
     });
 
@@ -328,7 +340,24 @@ Route::middleware(['auth'])->group(function () {
                 Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
             });
 
-            // Promotion and Demotion Management
+            // Grade Level Adjustments
+            Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
+            Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
+            Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
+
+            // Step Management Routes
+            Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
+                // Steps
+                Route::get('/steps/create', [\App\Http\Controllers\SalaryScale\StepController::class, 'create'])->name('salary-scales.grade-levels.steps.create');
+                Route::post('/steps', [\App\Http\Controllers\SalaryScale\StepController::class, 'store'])->name('salary-scales.grade-levels.steps.store');
+                Route::get('/steps/{step}/edit', [\App\Http\Controllers\SalaryScale\StepController::class, 'edit'])->name('salary-scales.grade-levels.steps.edit');
+                Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
+                Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
+            });
+        });
+
+        // Promotion and Demotion Management
+        Route::middleware('permission:view_promotions')->group(function () {
             Route::resource('promotions', \App\Http\Controllers\PromotionController::class)->except(['edit', 'update']);
             Route::get('/promotions/employees/search', [\App\Http\Controllers\PromotionController::class, 'searchEmployees'])->name('promotions.employees.search');
             Route::get('/employees/{employeeId}', [\App\Http\Controllers\PromotionController::class, 'getEmployeeDetails'])->name('employees.details');

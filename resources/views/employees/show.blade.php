@@ -12,7 +12,7 @@
                     <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="Employee Photo" class="img-thumbnail border border-info shadow-sm" width="120">
                 </div>
             @endif
-            
+
             <!-- Step Navigation -->
             <ul class="nav nav-pills justify-content-center flex-nowrap overflow-auto mb-4" id="employeeTab" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -33,9 +33,12 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">Bank</button>
                 </li>
-                 
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="probation-tab" data-bs-toggle="tab" data-bs-target="#probation" type="button" role="tab">Probation</button>
+                </li>
+
             </ul>
-            
+
             <!-- Step Content -->
             <div class="tab-content" id="employeeTabContent">
                 <!-- Personal Information Step -->
@@ -69,7 +72,7 @@
                             </div>
                     </div>
                 </div>
-                
+
                 <!-- Work Information Step -->
                 <div class="tab-pane fade" id="work" role="tabpanel">
                     <h5 class="text-primary mb-3">Work Information</h5>
@@ -135,9 +138,71 @@
                         <div class="alert alert-warning mt-4">No bank information available.</div>
                     @endif
                 </div>
-                
-                
-            
+
+                <!-- Probation Details Step -->
+                <div class="tab-pane fade" id="probation" role="tabpanel">
+                    <h5 class="text-primary mb-3">Probation Information</h5>
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>On Probation:</strong>
+                            @if($employee->on_probation)
+                                <span class="badge bg-warning">Yes</span>
+                            @else
+                                <span class="badge bg-secondary">No</span>
+                            @endif
+                        </p></div>
+                        <div class="col-md-6"><p><strong>Probation Status:</strong>
+                            @if($employee->probation_status == 'pending')
+                                <span class="badge bg-warning">On Probation</span>
+                            @elseif($employee->probation_status == 'approved')
+                                <span class="badge bg-success">Approved</span>
+                            @elseif($employee->probation_status == 'rejected')
+                                <span class="badge bg-danger">Rejected</span>
+                            @else
+                                <span class="badge bg-secondary">N/A</span>
+                            @endif
+                        </p></div>
+                        <div class="col-md-6"><p><strong>Probation Start Date:</strong> {{ $employee->probation_start_date ? \Carbon\Carbon::parse($employee->probation_start_date)->format('j M Y') : 'N/A' }}</p></div>
+                        <div class="col-md-6"><p><strong>Probation End Date:</strong> {{ $employee->probation_end_date ? \Carbon\Carbon::parse($employee->probation_end_date)->format('j M Y') : 'N/A' }}</p></div>
+                        @if($employee->on_probation)
+                            <div class="col-md-6">
+                                <p><strong>Days Remaining:</strong>
+                                    @if($employee->hasProbationPeriodEnded())
+                                        <span class="text-danger">Probation Ended</span>
+                                    @else
+                                        {{ $employee->getRemainingProbationDays() }} days
+                                    @endif
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Can be Evaluated:</strong>
+                                    @if($employee->canBeEvaluatedForProbation())
+                                        <span class="badge bg-success">Yes</span>
+                                    @else
+                                        <span class="badge bg-warning">No ({{ $employee->getRemainingProbationDays() }} days remaining)</span>
+                                    @endif
+                                </p>
+                            </div>
+                        @endif
+                        @if($employee->probation_notes)
+                            <div class="col-md-12">
+                                <p><strong>Probation Notes:</strong></p>
+                                <div class="alert alert-info">
+                                    {{ $employee->probation_notes }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if($employee->on_probation)
+                        <div class="mt-3">
+                            <a href="{{ route('probation.show', $employee) }}" class="btn btn-info rounded-pill">
+                                <i class="fas fa-clock me-1"></i>Manage Probation
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('employees.index') }}" class="btn btn-secondary rounded-pill px-4">Back</a>
                 @can('edit_employees')

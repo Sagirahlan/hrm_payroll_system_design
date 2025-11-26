@@ -10,9 +10,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Comprehensive Reports</h3>
                     <div class="btn-group">
-                        <a href="{{ route('reports.create') }}" class="btn btn-primary">
+                        <!-- <a href="{{ route('reports.create') }}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Generate individual Report
-                        </a>
+                        </a> -->
                         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
                             <i class="fas fa-list"></i> View All Reports
                         </a>
@@ -73,6 +73,20 @@
                                     <button class="btn btn-warning generate-report-btn"
                                             data-report-type="payroll_summary"
                                             data-title="Payroll Summary Report">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">Payroll Journal</h5>
+                                    <p class="card-text text-muted">Detailed payroll journal with deductions/additions</p>
+                                    <button class="btn btn-primary generate-report-btn"
+                                            data-report-type="payroll_journal"
+                                            data-title="Payroll Journal Report">
                                         Generate Report
                                     </button>
                                 </div>
@@ -480,6 +494,36 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="Suspended">Suspended</option>
                                 <option value="Retired">Retired</option>
                                 <option value="Deceased">Deceased</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'payroll_journal':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
                             </select>
                         </div>
                     </div>

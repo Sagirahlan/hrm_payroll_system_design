@@ -230,6 +230,14 @@ class ComprehensiveReportController extends Controller
                     $filters['month'] ?? null
                 );
 
+            case 'retirement':
+                return $this->reportService->generateRetirementReport($filters);
+            case 'historical_retirement':
+                return $this->reportService->generateHistoricalRetirementReport($filters);
+
+            case 'payroll_journal':
+                return $this->reportService->generatePayrollJournalReport($filters);
+
             default:
                 return ['error' => 'Invalid report type'];
         }
@@ -328,6 +336,10 @@ class ComprehensiveReportController extends Controller
 
             case 'loan_status':
                 $this->writeLoanStatusExcel($file, $reportData);
+                break;
+
+            case 'payroll_journal':
+                $this->writePayrollJournalExcel($file, $reportData);
                 break;
 
             default:
@@ -558,25 +570,19 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level',
-            'Date of Birth', 'Age', 'Date of Appointment', 'Years of Service',
-            'Calculated Retirement Date', 'Expected Retirement Date', 'Months to Retirement', 'Retirement Reason'
+            'Employee ID', 'Name', 'Calculated Retirement Date', 'Expected Date of Retirement', 'Years of Service', 'Age', 'Retirement Reason', 'Status'
         ]);
 
         foreach ($reportData['employees_approaching_retirement'] as $employee) {
             fputcsv($file, [
                 $employee['employee_id'],
                 $employee['full_name'],
-                $employee['department'],
-                $employee['grade_level'],
-                $employee['date_of_birth'],
-                $employee['age'],
-                $employee['date_of_first_appointment'],
-                $employee['years_of_service'],
                 $employee['calculated_retirement_date'] ?? $employee['expected_retirement_date'],
                 $employee['expected_retirement_date'],
-                $employee['months_to_retirement'],
-                $employee['retirement_reason'] ?? 'N/A'
+                $employee['years_of_service'],
+                $employee['age'],
+                $employee['retirement_reason'] ?? 'N/A',
+                $employee['status']
             ]);
         }
     }
@@ -633,6 +639,27 @@ class ComprehensiveReportController extends Controller
         }
     }
 
+    private function writePayrollJournalExcel($file, $reportData)
+    {
+        fputcsv($file, ['Period', $reportData['period']]);
+        fputcsv($file, ['Grand Total', '₦' . number_format($reportData['grand_total'], 2)]);
+        fputcsv($file, []);
+
+        fputcsv($file, [
+            'Code', 'Description', 'Count', 'Amount', 'Type'
+        ]);
+
+        foreach ($reportData['journal_items'] as $item) {
+            fputcsv($file, [
+                $item['code'],
+                $item['description'],
+                $item['count'],
+                '₦' . number_format($item['amount'], 2),
+                $item['type']
+            ]);
+        }
+    }
+
     private function getReportTypeName($reportType)
     {
         $reportNames = [
@@ -650,7 +677,10 @@ class ComprehensiveReportController extends Controller
             'department_summary' => 'Department Summary Report',
             'grade_level_summary' => 'Grade Level Summary Report',
             'audit_trail' => 'Audit Trail Report',
-            'payroll_analysis' => 'Payroll Analysis Report'
+            'payroll_analysis' => 'Payroll Analysis Report',
+            'retirement' => 'Employees Approaching Retirement Report',
+            'historical_retirement' => 'Historical Retirement Report',
+            'payroll_journal' => 'Payroll Journal Report'
         ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';

@@ -115,17 +115,36 @@
     document.addEventListener('DOMContentLoaded', function () {
         const periodSelect = document.getElementById('period');
         const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const endDateContainer = endDateInput.closest('.mb-3');
+
+        function toggleEndDate() {
+            if (periodSelect.value === 'OneTime') {
+                endDateContainer.style.display = 'none';
+                endDateInput.required = false;
+                endDateInput.value = ''; // Clear value
+            } else {
+                endDateContainer.style.display = 'block';
+                // End date is optional for Perpetual, but let's keep it consistent with request
+                // Request says: "if montly use the start date and end date"
+                // It implies end date is important for Monthly.
+                // However, existing backend validation might treat it as optional.
+                // Let's just control visibility for now.
+            }
+        }
 
         periodSelect.addEventListener('change', function () {
-            if (this.value === 'OneTime') {
-                const selectedDate = new Date(startDateInput.value);
-                const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-                const year = firstDayOfMonth.getFullYear();
-                const month = ('0' + (firstDayOfMonth.getMonth() + 1)).slice(-2);
-                const day = ('0' + firstDayOfMonth.getDate()).slice(-2);
-                startDateInput.value = `${year}-${month}-${day}`;
+            toggleEndDate();
+            
+            if (this.value === 'OneTime' && startDateInput.value) {
+                // Optional: logic to set start date to first of month if needed, 
+                // but user request didn't explicitly ask for this auto-correction here,
+                // just "use that start date".
             }
         });
+
+        // Initial check
+        toggleEndDate();
     });
 </script>
 @endpush

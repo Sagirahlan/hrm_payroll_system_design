@@ -14,7 +14,9 @@
                     <i class="fas fa-plus me-1"></i>Add Employee
                 </a>
                 @endcan
-               
+                <a href="{{ route('probation.index') }}" class="btn btn-info btn-sm rounded-pill me-2 font-weight-bold shadow-sm">
+                    <i class="fas fa-clock me-1"></i>Probation Employees
+                </a>
             </div>
         </div>
 
@@ -60,7 +62,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center" style="background: #f1f8ff;">
                             <h6 class="mb-0 fw-bold text-primary">
                                 <div class="d-flex align-items-center">
-                                    
+
                                     <span class="me-3"></span>
                                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters"
                                         aria-expanded="{{ request()->hasAny(['department', 'cadre', 'status', 'gender', 'appointment_type_id', 'state_of_origin', 'age_from', 'age_to', 'appointment_from', 'appointment_to']) ? 'true' : 'false' }}"
@@ -79,8 +81,8 @@
                                     <div class="col-12 col-md-6 mb-3 mb-md-0">
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                            <input type="text" name="search" class="form-control" 
-                                                   placeholder="Search by name, ID, email, phone..." 
+                                            <input type="text" name="search" class="form-control"
+                                                   placeholder="Search by name, ID, email, phone..."
                                                    value="{{ request('search') }}">
                                         </div>
                                     </div>
@@ -105,7 +107,7 @@
                                             <select name="department" class="form-select">
                                                 <option value="">All Departments</option>
                                                 @foreach($departments as $dept)
-                                                    <option value="{{ $dept->department_id }}" 
+                                                    <option value="{{ $dept->department_id }}"
                                                             {{ request('department') == $dept->department_id ? 'selected' : '' }}>
                                                         {{ $dept->department_name }}
                                                     </option>
@@ -117,7 +119,7 @@
                                             <select name="cadre" class="form-select">
                                                 <option value="">All Cadres</option>
                                                 @foreach($cadres as $cadre)
-                                                    <option value="{{ $cadre->cadre_id }}" 
+                                                    <option value="{{ $cadre->cadre_id }}"
                                                             {{ request('cadre') == $cadre->cadre_id ? 'selected' : '' }}>
                                                         {{ $cadre->name }}
                                                     </option>
@@ -129,7 +131,7 @@
                                             <select name="status" class="form-select">
                                                 <option value="">All Statuses</option>
                                                 @foreach($statuses as $status)
-                                                    <option value="{{ $status }}" 
+                                                    <option value="{{ $status }}"
                                                             {{ request('status') == $status ? 'selected' : '' }}>
                                                         {{ $status }}
                                                     </option>
@@ -141,7 +143,7 @@
                                             <select name="gender" class="form-select">
                                                 <option value="">All Genders</option>
                                                 @foreach($genders as $gender)
-                                                    <option value="{{ $gender }}" 
+                                                    <option value="{{ $gender }}"
                                                             {{ request('gender') == $gender ? 'selected' : '' }}>
                                                         {{ $gender }}
                                                     </option>
@@ -157,7 +159,7 @@
                                             <select name="appointment_type_id" class="form-select">
                                                 <option value="">All Types</option>
                                                 @foreach($appointmentTypes as $type)
-                                                    <option value="{{ $type->id }}" 
+                                                    <option value="{{ $type->id }}"
                                                             {{ request('appointment_type_id') == $type->id ? 'selected' : '' }}>
                                                         {{ $type->name }}
                                                     </option>
@@ -169,7 +171,7 @@
                                             <select name="state_of_origin" class="form-select">
                                                 <option value="">All States</option>
                                                 @foreach($states as $state)
-                                                    <option value="{{ $state->name }}" 
+                                                    <option value="{{ $state->name }}"
                                                             {{ request('state_of_origin') == $state->name ? 'selected' : '' }}>
                                                         {{ $state->name }}
                                                     </option>
@@ -181,7 +183,7 @@
                                             <select name="grade_level_id" class="form-select">
                                                 <option value="">All Grade Levels</option>
                                                 @foreach($gradeLevels as $level)
-                                                    <option value="{{ $level->id }}" 
+                                                    <option value="{{ $level->id }}"
                                                             {{ request('grade_level_id') == $level->id ? 'selected' : '' }}>
                                                         {{ $level->name }}
                                                     </option>
@@ -205,13 +207,13 @@
                                             <label class="form-label fw-bold">Age Range</label>
                                             <div class="row">
                                                 <div class="col-6">
-                                                    <input type="number" name="age_from" class="form-control" 
-                                                           placeholder="From" min="18" max="70" 
+                                                    <input type="number" name="age_from" class="form-control"
+                                                           placeholder="From" min="18" max="70"
                                                            value="{{ request('age_from') }}">
                                                 </div>
                                                 <div class="col-6">
-                                                    <input type="number" name="age_to" class="form-control" 
-                                                           placeholder="To" min="18" max="70" 
+                                                    <input type="number" name="age_to" class="form-control"
+                                                           placeholder="To" min="18" max="70"
                                                            value="{{ request('age_to') }}">
                                                 </div>
                                             </div>
@@ -220,14 +222,27 @@
                                             <label class="form-label fw-bold">Appointment Date Range</label>
                                             <div class="row">
                                                 <div class="col-6">
-                                                    <input type="date" name="appointment_from" class="form-control" 
+                                                    <input type="date" name="appointment_from" class="form-control"
                                                            value="{{ request('appointment_from') }}">
                                                 </div>
                                                 <div class="col-6">
-                                                    <input type="date" name="appointment_to" class="form-control" 
+                                                    <input type="date" name="appointment_to" class="form-control"
                                                            value="{{ request('appointment_to') }}">
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mt-2">
+                                        <!-- Row 4 - Probation Status -->
+                                        <div class="col-md-6 col-12">
+                                            <label class="form-label fw-bold">Probation Status</label>
+                                            <select name="probation_status" class="form-select">
+                                                <option value="">All Probation Statuses</option>
+                                                <option value="pending" {{ request('probation_status') == 'pending' ? 'selected' : '' }}>On Probation</option>
+                                                <option value="approved" {{ request('probation_status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                                <option value="rejected" {{ request('probation_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            </select>
                                         </div>
                                     </div>
 
@@ -253,9 +268,9 @@
                 <div class="col-12 col-md-6 mb-3 mb-md-0">
                     <p class="mb-0 text-muted">
                         <i class="fas fa-info-circle me-1"></i>
-                        Showing {{ $employees->firstItem() ?? 0 }} to {{ $employees->lastItem() ?? 0 }} 
+                        Showing {{ $employees->firstItem() ?? 0 }} to {{ $employees->lastItem() ?? 0 }}
                         of {{ $employees->total() }} results
-                        @if(request()->hasAny(['search', 'department', 'cadre', 'status']))
+                        @if(request()->hasAny(['search', 'department', 'cadre', 'status', 'probation_status']))
                             <span class="badge bg-info ms-2">Filtered</span>
                         @endif
                     </p>
@@ -298,6 +313,7 @@
                             <th>Pay Point</th>
                             <th>Appointment Type</th>
                             <th>Status</th>
+                            <th>Probation</th>
                             <th>Contact</th>
                             <th>Actions</th>
                         </tr>
@@ -311,12 +327,12 @@
                                 </td>
                                 <td>
                                     @if($employee->photo_path)
-                                        <img src="{{ asset('storage/' . $employee->photo_path) }}" 
-                                             alt="{{ $employee->first_name }}" 
-                                             class="rounded-circle" 
+                                        <img src="{{ asset('storage/' . $employee->photo_path) }}"
+                                             alt="{{ $employee->first_name }}"
+                                             class="rounded-circle"
                                              style="width: 40px; height: 40px; object-fit: cover;">
                                     @else
-                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" 
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white"
                                              style="width: 40px; height: 40px;">
                                             {{ substr($employee->first_name, 0, 1) }}{{ substr($employee->surname, 0, 1) }}
                                         </div>
@@ -335,13 +351,31 @@
                                 <td>{{ $employee->pay_point ?? 'N/A' }}</td>
                                 <td>{{ $employee->appointmentType->name ?? 'N/A' }}</td>
                                 <td>
-                                    <span class="badge {{ 
-                                        $employee->status == 'Active' ? 'bg-success' : 
-                                        ($employee->status == 'Suspended' ? 'bg-warning' : 
+                                    <span class="badge {{
+                                        $employee->status == 'Active' ? 'bg-success' :
+                                        ($employee->status == 'Suspended' ? 'bg-warning' :
                                         ($employee->status == 'Retired' ? 'bg-info' : 'bg-dark'))
                                     }}">
                                         {{ $employee->status }}
                                     </span>
+                                </td>
+                                <td>
+                                    @if($employee->on_probation)
+                                        <span class="badge bg-warning">
+                                            @if($employee->probation_status == 'pending')
+                                                {{ 'On Probation' }}
+                                                @if($employee->getRemainingProbationDays() > 0)
+                                                    <br><small>{{ $employee->getRemainingProbationDays() }} days left</small>
+                                                @endif
+                                            @elseif($employee->probation_status == 'approved')
+                                                Approved
+                                            @elseif($employee->probation_status == 'rejected')
+                                                Rejected
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary">Not on Probation</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <small>
@@ -354,7 +388,7 @@
                                 <td>
                                     @can('manage_employees')
                                         <div class="dropdown">
-                                            <button class="btn btn-secondary btn-sm rounded-pill dropdown-toggle" 
+                                            <button class="btn btn-secondary btn-sm rounded-pill dropdown-toggle"
                                                     type="button" data-bs-toggle="dropdown">
                                                 Actions
                                             </button>
@@ -364,6 +398,13 @@
                                                         <i class="fas fa-eye me-2"></i>View
                                                     </a>
                                                 </li>
+                                                @if($employee->on_probation)
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('probation.show', $employee) }}">
+                                                        <i class="fas fa-clock me-2"></i>Probation Details
+                                                    </a>
+                                                </li>
+                                                @endif
                                                 @can('edit_employees')
                                                 <li>
                                                     <a class="dropdown-item" href="{{ route('employees.edit', $employee) }}">
@@ -390,7 +431,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-4">
+                                <td colspan="12" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="fas fa-users fa-3x mb-3"></i>
                                         <h5>No employees found</h5>
@@ -411,7 +452,7 @@
                 <div class="text-muted text-center text-md-end">
                     <small>
                         Total: {{ $employees->total() }} employees
-                        @if(request()->hasAny(['search', 'department', 'cadre', 'status']))
+                        @if(request()->hasAny(['search', 'department', 'cadre', 'status', 'probation_status']))
                             | <span class="text-info">Filtered results</span>
                         @endif
                     </small>
@@ -433,20 +474,20 @@ function changeSorting(value) {
 function exportFiltered(format) {
     // Build the export URL with all current filter parameters
     const exportUrl = new URL('{{ route("employees.export.filtered") }}', window.location.origin);
-    
+
     // Get all form parameters and add them to the URL
     const form = document.getElementById('filterForm');
     const formData = new FormData(form);
-    
+
     for (let [key, value] of formData.entries()) {
         if (value) {
             exportUrl.searchParams.append(key, value);
         }
     }
-    
+
     // Add the format parameter
     exportUrl.searchParams.set('format', format);
-    
+
     // Open the export URL
     window.open(exportUrl.toString(), '_blank');
 }
@@ -455,7 +496,7 @@ function exportFiltered(format) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Employee index page loaded');
     const filterInputs = document.querySelectorAll('#filterForm select:not([name="per_page"]), #filterForm input[type="date"], #filterForm input[type="number"]');
-    
+
     filterInputs.forEach(input => {
         input.addEventListener('change', function() {
             // Optional: Auto-submit on change
@@ -482,7 +523,7 @@ function deleteEmployee(employeeId, employeeName) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/employees/${employeeId}`;
-            
+
             // Add CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const csrfInput = document.createElement('input');
@@ -490,21 +531,21 @@ function deleteEmployee(employeeId, employeeName) {
             csrfInput.name = '_token';
             csrfInput.value = csrfToken;
             form.appendChild(csrfInput);
-            
+
             // Add method field
             const methodInput = document.createElement('input');
             methodInput.type = 'hidden';
             methodInput.name = '_method';
             methodInput.value = 'DELETE';
             form.appendChild(methodInput);
-            
+
             // Add delete reason
             const reasonInput = document.createElement('input');
             reasonInput.type = 'hidden';
             reasonInput.name = 'delete_reason';
             reasonInput.value = reason.trim();
             form.appendChild(reasonInput);
-            
+
             // Submit form
             document.body.appendChild(form);
             form.submit();

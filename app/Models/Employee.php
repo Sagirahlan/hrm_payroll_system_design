@@ -17,6 +17,7 @@ class Employee extends Model
         'expected_retirement_date', 'status', 'highest_certificate', 'grade_level_limit', 'appointment_type_id',
         'photo_path', 'years_of_service', 'contract_start_date', 'contract_end_date', 'amount',
         'rsa_balance', 'pfa_contribution_rate', 'pension_administrator', 'rsa_pin',
+        'on_probation', 'probation_start_date', 'probation_end_date', 'probation_status', 'probation_notes',
     ];
 
     public function setDateOfBirthAttribute($value)
@@ -169,7 +170,7 @@ public function getCalculatedRetirementDateAttribute()
     {
         return $this->hasMany(PromotionHistory::class, 'employee_id', 'employee_id');
     }
-    
+
     public function getLastPromotionAttribute()
     {
         return $this->promotionHistory()->latest('created_at')->first();
@@ -179,7 +180,7 @@ public function getCalculatedRetirementDateAttribute()
     {
         return $this->hasMany(\App\Models\Models\Leave::class, 'employee_id', 'employee_id');
     }
-    
+
     /**
      * Check if employee is a contract employee
      */
@@ -187,7 +188,7 @@ public function getCalculatedRetirementDateAttribute()
     {
         return $this->appointmentType && $this->appointmentType->name === 'Contract';
     }
-    
+
     /**
      * Get formatted employee details for API responses
      */
@@ -207,6 +208,73 @@ public function getCalculatedRetirementDateAttribute()
             'last_promotion_date' => $this->getLastPromotionAttribute() ? $this->getLastPromotionAttribute()->promotion_date : null,
             'date_of_first_appointment' => $this->date_of_first_appointment,
             'years_of_service' => $this->getYearsOfServiceAttribute(),
+            'probation_start_date' => $this->probation_start_date,
+            'probation_end_date' => $this->probation_end_date,
+            'on_probation' => $this->on_probation,
+            'probation_status' => $this->probation_status,
         ];
     }
+
+    /**
+     * Check if employee is on probation
+     */
+    public function isOnProbation(): bool
+    {
+        return $this->on_probation && $this->probation_status === 'pending';
+    }
+
+    /**
+     * Check if employee's probation period has ended
+     */
+    public function hasProbationPeriodEnded(): bool
+    {
+        if (!$this->on_probation || !$this->probation_end_date) {
+            return false;
+        }
+        return Carbon::parse($this->probation_end_date)->isPast();
+    }
+
+    /**
+     * Check if employee has completed probation successfully
+     */
+    public function hasCompletedProbation(): bool
+    {
+        return $this->probation_status === 'approved';
+    }
+
+    /**
+     * Calculate remaining probation days based on the probation end date
+     */
+    public function getRemainingProbationDays(): int
+    {
+        if (!$this->on_probation || !$this->probation_end_date) {
+            return 0;
+        }
+
+        $endDate = Carbon::parse($this->probation_end_date);
+        $today = Carbon::now();
+
+        if ($endDate->isPast()) {
+            return 0;
+        }
+
+        return $today->diffInDays($endDate);
+    }
+
+    /**
+     * Check if employee can be evaluated for probation (3 months have passed since probation start date)
+     */
+    public function canBeEvaluatedForProbation(): bool
+    {
+        if (!$this->on_probation || !$this->probation_start_date) {
+            return false;
+        }
+
+        $probationStartDate = Carbon::parse($this->probation_start_date);
+        $today = Carbon::now();
+
+        // Check if at least 3 months have passed since the probation start date
+        return $probationStartDate->addMonths(3)->lte($today);
+    }
+
 }

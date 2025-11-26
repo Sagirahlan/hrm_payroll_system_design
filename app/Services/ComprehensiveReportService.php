@@ -410,17 +410,43 @@ class ComprehensiveReportService
 
     public function generateRetirementPlanningReport($filters = [])
     {
-        // Default to 2 years if no filter is provided
-        $retirementWithinMonths = !empty($filters['retirement_within_months']) ? (int)$filters['retirement_within_months'] : 24; // 24 months = 2 years by default
+        // Default to 6 months if no filter is provided, as per user request context
+        $retirementWithinMonths = !empty($filters['retirement_within_months']) ? (int)$filters['retirement_within_months'] : 6;
 
         // Ensure the value is positive and reasonable (between 1 and 60 months)
         $retirementWithinMonths = max(1, min(60, $retirementWithinMonths));
+        
+        $targetDate = now()->addMonths($retirementWithinMonths);
 
-        // Get employees approaching retirement based on the specified time period
-        $approachingRetirement = Employee::where('expected_retirement_date', '<=', now()->addMonths($retirementWithinMonths)->format('Y-m-d'))
-            ->where('status', 'Active')
-            ->with(['department', 'gradeLevel'])
+        // Get all active employees with necessary relationships
+        $employees = Employee::where('status', 'Active')
+            ->with(['department', 'gradeLevel.salaryScale'])
             ->get();
+            
+        // Filter employees approaching retirement using dynamic calculation
+        $approachingRetirement = $employees->filter(function ($employee) use ($targetDate) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                return false;
+            }
+
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+            
+            // Store the calculated date for later use
+            $employee->calculated_retirement_date = $actualRetirementDate;
+
+            // Filter: check if the retirement date is between now and the target date
+            return $actualRetirementDate->isBetween(now(), $targetDate);
+        });
 
         $reportData = [
             'report_title' => 'Retirement Planning Report',
@@ -432,17 +458,42 @@ class ComprehensiveReportService
         ];
 
         foreach ($approachingRetirement as $employee) {
+            // Recalculate or use stored calculated date
+            $actualRetirementDate = $employee->calculated_retirement_date;
+            
+            // Determine retirement reason
+            $age = Carbon::parse($employee->date_of_birth)->age;
+            $serviceDuration = Carbon::parse($employee->date_of_first_appointment)->diffInYears(Carbon::now());
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            if ($serviceDuration >= $yearsOfService) {
+                $retirementReason = 'By Years of Service';
+            } elseif ($age >= $retirementAge) {
+                $retirementReason = 'By Old Age';
+            } else {
+                $dateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+                if ($actualRetirementDate->eq($dateByAge)) {
+                    $retirementReason = 'By Old Age';
+                } else {
+                    $retirementReason = 'By Years of Service';
+                }
+            }
+
             $reportData['employees_approaching_retirement'][] = [
                 'employee_id' => $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                 'department' => $employee->department->department_name ?? 'N/A',
                 'grade_level' => $employee->gradeLevel->name ?? 'N/A',
                 'date_of_birth' => $employee->date_of_birth,
-                'age' => Carbon::parse($employee->date_of_birth)->age,
+                'age' => $age,
                 'date_of_first_appointment' => $employee->date_of_first_appointment,
                 'years_of_service' => $employee->getYearsOfServiceAttribute(),
-                'expected_retirement_date' => $employee->expected_retirement_date,
-                'months_to_retirement' => Carbon::parse($employee->expected_retirement_date)->diffInMonths(now())
+                'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'months_to_retirement' => Carbon::parse($actualRetirementDate)->diffInMonths(now()),
+                'retirement_reason' => $retirementReason,
+                'status' => $employee->status
             ];
         }
 
@@ -763,19 +814,301 @@ class ComprehensiveReportService
             $reportData['employees_approaching_retirement'][] = [
                 'employee_id' => $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
-                'department' => $employee->department->department_name ?? 'N/A',
-                'grade_level' => $employee->gradeLevel->name ?? 'N/A',
-                'date_of_birth' => $employee->date_of_birth,
-                'age' => $age,
-                'date_of_first_appointment' => $employee->date_of_first_appointment,
-                'years_of_service' => $serviceDuration,
                 'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
                 'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
-                'months_to_retirement' => $actualRetirementDate->diffInMonths(now()),
-                'retirement_reason' => $retirementReason
+                'years_of_service' => $serviceDuration . ' years',
+                'age' => $age,
+                'retirement_reason' => $retirementReason,
+                'status' => $employee->status,
+                'department' => $employee->department->department_name ?? 'N/A',
+                'grade_level' => $employee->gradeLevel->name ?? 'N/A',
             ];
         }
 
         return $reportData;
+    }
+
+    /**
+     * Generate a retirement report showing employees retiring within 6 months (matching the retirement planning page)
+     */
+    public function generateRetirementReport($filters = [])
+    {
+        // Default to 6 months if no filter is provided
+        $retirementWithinMonths = !empty($filters['retirement_within_months']) ? (int)$filters['retirement_within_months'] : 6; // 6 months by default
+
+        // Ensure the value is positive and reasonable (between 1 and 60 months)
+        $retirementWithinMonths = max(1, min(60, $retirementWithinMonths));
+
+        // Get all active employees
+        $employees = Employee::where('status', 'Active')
+            ->with(['department', 'gradeLevel.salaryScale'])
+            ->get();
+
+        $endDate = now()->addMonths($retirementWithinMonths);
+
+        // Filter employees approaching retirement within specified months using the same logic as the retirement page
+        $approachingRetirement = $employees->filter(function ($employee) use ($endDate) {
+            if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                return false;
+            }
+
+            $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            // Check if this retirement date falls within our range
+            return $actualRetirementDate->isBetween(now(), $endDate);
+        });
+
+        $reportData = [
+            'report_title' => 'Retirement Report (Employees Retiring Within ' . $retirementWithinMonths . ' Months)',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'retirement_within_months' => $retirementWithinMonths,
+            'retirement_period_label' => $this->getRetirementPeriodLabel($retirementWithinMonths),
+            'total_approaching_retirement' => $approachingRetirement->count(),
+            'employees_approaching_retirement' => []
+        ];
+
+        foreach ($approachingRetirement as $employee) {
+            // Calculate retirement date based on age
+            $retirementDateByAge = Carbon::parse($employee->date_of_birth)->addYears($employee->gradeLevel->salaryScale->max_retirement_age);
+
+            // Calculate retirement date based on service
+            $retirementDateByService = Carbon::parse($employee->date_of_first_appointment)->addYears($employee->gradeLevel->salaryScale->max_years_of_service);
+
+            // The actual retirement date is the earlier of the two
+            $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+            // Determine retirement reason
+            $currentAge = Carbon::parse($employee->date_of_birth)->age;
+            $currentServiceDuration = Carbon::parse($employee->date_of_first_appointment)->diffInYears(Carbon::now());
+            $maxAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+            $maxService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+            if ($currentServiceDuration >= $maxService) {
+                $retirementReason = 'By Years of Service';
+            } elseif ($currentAge >= $maxAge) {
+                $retirementReason = 'By Old Age';
+            } else {
+                // Determine which milestone will come first
+                $ageBasedRetirementDate = Carbon::parse($employee->date_of_birth)->addYears($maxAge);
+                $serviceBasedRetirementDate = Carbon::parse($employee->date_of_first_appointment)->addYears($maxService);
+
+                if ($ageBasedRetirementDate->lte($serviceBasedRetirementDate)) {
+                    $retirementReason = 'By Old Age';
+                } else {
+                    $retirementReason = 'By Years of Service';
+                }
+            }
+
+            $reportData['employees_approaching_retirement'][] = [
+                'employee_id' => $employee->employee_id,
+                'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
+                'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
+                'years_of_service' => $currentServiceDuration . ' years',
+                'age' => $currentAge,
+                'retirement_reason' => $retirementReason,
+                'status' => $employee->status,
+                'department' => $employee->department->department_name ?? 'N/A',
+                'grade_level' => $employee->gradeLevel->name ?? 'N/A',
+            ];
+        }
+
+        return $reportData;
+    }
+
+    /**
+     * Generate a retirement report based on actual retirement records from the retirements table
+     */
+    public function generateHistoricalRetirementReport($filters = [])
+    {
+        $query = Retirement::with(['employee.department', 'employee.gradeLevel', 'employee.step']);
+
+        // Apply filters
+        if (isset($filters['status']) && $filters['status']) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['retirement_date_from']) && $filters['retirement_date_from']) {
+            $query->where('retirement_date', '>=', $filters['retirement_date_from']);
+        }
+
+        if (isset($filters['retirement_date_to']) && $filters['retirement_date_to']) {
+            $query->where('retirement_date', '<=', $filters['retirement_date_to']);
+        }
+
+        if (isset($filters['retire_reason']) && $filters['retire_reason']) {
+            $query->where('retire_reason', 'like', '%' . $filters['retire_reason'] . '%');
+        }
+
+        $retirements = $query->orderBy('retirement_date', 'desc')->get();
+
+        $reportData = [
+            'report_title' => 'Retirement Report (Historical)',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'total_retirements' => $retirements->count(),
+            'total_gratuity_paid' => $retirements->sum('gratuity_amount'),
+            'retirements' => []
+        ];
+
+        foreach ($retirements as $retirement) {
+            $reportData['retirements'][] = [
+                'employee_id' => $retirement->employee->employee_id,
+                'full_name' => trim($retirement->employee->first_name . ' ' . $retirement->employee->middle_name . ' ' . $retirement->employee->surname),
+                'department' => $retirement->employee->department->department_name ?? 'N/A',
+                'grade_level' => $retirement->employee->gradeLevel->name ?? 'N/A',
+                'step' => $retirement->employee->step->name ?? 'N/A',
+                'retirement_date' => $retirement->retirement_date,
+                'notification_date' => $retirement->notification_date,
+                'gratuity_amount' => $retirement->gratuity_amount,
+                'status' => $retirement->status,
+                'retire_reason' => $retirement->retire_reason,
+                'date_of_birth' => $retirement->employee->date_of_birth,
+                'age_at_retirement' => Carbon::parse($retirement->employee->date_of_birth)->age,
+                'years_of_service' => $retirement->employee->getYearsOfServiceAttribute(),
+            ];
+        }
+
+        return $reportData;
+    }
+    public function generatePayrollJournalReport($filters = [])
+    {
+        $year = $filters['year'] ?? now()->year;
+        $month = $filters['month'] ?? now()->month;
+        $monthNumber = $this->convertMonthToNumber($month);
+
+        // Get all payroll records for the specified month/year
+        $payrollRecords = PayrollRecord::whereYear('payroll_month', $year)
+            ->whereMonth('payroll_month', $monthNumber)
+            ->get();
+
+        if ($payrollRecords->isEmpty()) {
+            return [
+                'report_title' => 'Payroll Journal Report',
+                'generated_date' => now()->format('Y-m-d H:i:s'),
+                'period' => $year . '-' . $this->getMonthName($monthNumber),
+                'error' => 'No payroll records found for this period.'
+            ];
+        }
+
+        $employeeIds = $payrollRecords->pluck('employee_id');
+        $journalItems = collect();
+
+        // 1. Regular Deductions (Templates active in this month)
+        $deductions = Deduction::whereIn('employee_id', $employeeIds)
+            ->where(function ($query) use ($year, $monthNumber) {
+                $date = Carbon::createFromDate($year, $monthNumber, 1);
+                $query->where('start_date', '<=', $date->endOfMonth())
+                      ->where(function ($q) use ($date) {
+                          $q->where('end_date', '>=', $date->startOfMonth())
+                            ->orWhereNull('end_date');
+                      });
+            })
+            ->whereNull('loan_id') // Exclude loan deductions (handled separately)
+            ->with('deductionType')
+            ->get();
+
+        $groupedDeductions = $deductions->groupBy('deduction_type_id');
+
+        foreach ($groupedDeductions as $typeId => $items) {
+            $firstItem = $items->first();
+            $journalItems->push([
+                'code' => $firstItem->deductionType->id ?? 'D-'.$typeId,
+                'description' => $firstItem->deductionType->name ?? 'Unknown Deduction',
+                'count' => $items->unique('employee_id')->count(),
+                'amount' => $items->sum('amount'),
+                'type' => 'Deduction'
+            ]);
+        }
+
+        // 2. Loan Deductions (Actual records from LoanDeduction table)
+        $loanDeductions = \App\Models\LoanDeduction::whereIn('employee_id', $employeeIds)
+            ->whereYear('deduction_date', $year)
+            ->whereMonth('deduction_date', $monthNumber)
+            ->with(['loan.deductionType'])
+            ->get();
+
+        $groupedLoanDeductions = $loanDeductions->groupBy(function ($item) {
+            return $item->loan->deduction_type_id ?? 'L-' . $item->loan_id;
+        });
+
+        foreach ($groupedLoanDeductions as $key => $items) {
+            $firstItem = $items->first();
+            $description = $firstItem->loan->deductionType->name ?? $firstItem->loan->loan_type ?? 'Loan Deduction';
+            
+            $existingItem = $journalItems->firstWhere('description', $description);
+            
+            if ($existingItem) {
+                $journalItems = $journalItems->map(function ($item) use ($description, $items) {
+                    if ($item['description'] === $description) {
+                        $item['count'] += $items->unique('employee_id')->count();
+                        $item['amount'] += $items->sum('amount_deducted');
+                    }
+                    return $item;
+                });
+            } else {
+                $journalItems->push([
+                    'code' => $firstItem->loan->deductionType->id ?? 'L-'.$key,
+                    'description' => $description,
+                    'count' => $items->unique('employee_id')->count(),
+                    'amount' => $items->sum('amount_deducted'),
+                    'type' => 'Deduction'
+                ]);
+            }
+        }
+
+        // 3. Additions
+        $additions = Addition::whereIn('employee_id', $employeeIds)
+            ->where(function ($query) use ($year, $monthNumber) {
+                $date = Carbon::createFromDate($year, $monthNumber, 1);
+                $query->where('start_date', '<=', $date->endOfMonth())
+                      ->where(function ($q) use ($date) {
+                          $q->where('end_date', '>=', $date->startOfMonth())
+                            ->orWhereNull('end_date');
+                      });
+            })
+            ->with('additionType')
+            ->get();
+
+        $groupedAdditions = $additions->groupBy('addition_type_id');
+
+        foreach ($groupedAdditions as $typeId => $items) {
+            $firstItem = $items->first();
+            $journalItems->push([
+                'code' => $firstItem->additionType->id ?? 'A-'.$typeId,
+                'description' => $firstItem->additionType->name ?? 'Unknown Addition',
+                'count' => $items->unique('employee_id')->count(),
+                'amount' => $items->sum('amount'),
+                'type' => 'Addition'
+            ]);
+        }
+
+        // 4. Net Pay
+        $journalItems->push([
+            'code' => 'NET',
+            'description' => 'Net Pay',
+            'count' => $payrollRecords->count(),
+            'amount' => $payrollRecords->sum('net_salary'),
+            'type' => 'Net Pay'
+        ]);
+
+        $journalItems = $journalItems->sortBy('description')->values();
+
+        return [
+            'report_title' => 'Payroll Journal Report',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'period' => $year . '-' . $this->getMonthName($monthNumber),
+            'journal_items' => $journalItems,
+            'grand_total' => $journalItems->sum('amount')
+        ];
     }
 }

@@ -13,6 +13,19 @@ class PayrollCalculationService
 {
     public function calculatePayroll(Employee $employee, string $month, bool $isSuspended = false): array
     {
+        // Check if employee is eligible for salary (probation check)
+        $probationService = new \App\Services\ProbationService();
+        if (!$probationService->isEligibleForSalary($employee)) {
+            return [
+                'basic_salary'     => 0,
+                'total_deductions' => 0,
+                'total_additions'  => 0,
+                'net_salary'       => 0,
+                'deductions'       => [],
+                'additions'        => [],
+            ];
+        }
+
         // Check if employee is a contract employee using the new method
         $isContractEmployee = $employee->isContractEmployee();
         
