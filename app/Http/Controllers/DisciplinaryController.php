@@ -180,8 +180,9 @@ class DisciplinaryController extends Controller
         $action = DisciplinaryAction::create($validated);
 
         // If the action type is 'suspended', update the employee's status to 'Suspended' if currently 'Active'
-        // If the action type is 'active', update the employee's status to 'Active' if currently 'Suspended'
-        // If the disciplinary action status is 'Resolved', update the employee's status to 'Active' if currently 'Suspended'
+        // If the action type is 'hold', update the employee's status to 'Hold' if currently 'Active'
+        // If the action type is 'active', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
+        // If the disciplinary action status is 'Resolved', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
         $actionType = strtolower($validated['action_type']);
         $employee = Employee::find($validated['employee_id']);
         if ($employee) {
@@ -197,7 +198,19 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            if ($actionType === 'active' && strtolower($employee->status) === 'suspended') {
+            elseif ($actionType === 'hold' && strtolower($employee->status) === 'active') {
+                $employee->status = 'Hold';
+                $employee->save();
+
+                AuditTrail::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'updated',
+                    'description' => "Employee ID {$employee->employee_id} status set to Hold due to disciplinary action ID: {$action->action_id}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
+                ]);
+            }
+            if ($actionType === 'active' && (strtolower($employee->status) === 'suspended' || strtolower($employee->status) === 'hold')) {
                 $employee->status = 'Active';
                 $employee->save();
 
@@ -209,8 +222,8 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended'
-            if (strtolower($validated['status']) === 'resolved' && strtolower($employee->status) === 'suspended') {
+            // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended' or 'Hold'
+            if (strtolower($validated['status']) === 'resolved' && (strtolower($employee->status) === 'suspended' || strtolower($employee->status) === 'hold')) {
                 $employee->status = 'Active';
                 $employee->save();
 
@@ -246,8 +259,9 @@ class DisciplinaryController extends Controller
         $disciplinary->update($validated);
 
         // If the action type is 'suspended', update the employee's status to 'Suspended' if currently 'Active'
-        // If the action type is 'active', update the employee's status to 'Active' if currently 'Suspended'
-        // If the disciplinary action status is 'Resolved', update the employee's status to 'Active' if currently 'Suspended'
+        // If the action type is 'hold', update the employee's status to 'Hold' if currently 'Active'
+        // If the action type is 'active', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
+        // If the disciplinary action status is 'Resolved', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
         if ($disciplinary->employee) {
             $employee = $disciplinary->employee;
             if ($disciplinary->action_type === 'suspended' && strtolower($employee->status) === 'active') {
@@ -262,7 +276,19 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            if ($disciplinary->action_type === 'active' && strtolower($employee->status) === 'suspended') {
+            elseif ($disciplinary->action_type === 'hold' && strtolower($employee->status) === 'active') {
+                $employee->status = 'Hold';
+                $employee->save();
+
+                AuditTrail::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'updated',
+                    'description' => "Employee ID {$employee->employee_id} status set to Hold due to disciplinary action ID: {$disciplinary->action_id}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
+                ]);
+            }
+            if ($disciplinary->action_type === 'active' && (strtolower($employee->status) === 'suspended' || strtolower($employee->status) === 'hold')) {
                 $employee->status = 'Active';
                 $employee->save();
 
@@ -274,8 +300,8 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended'
-            if (strtolower($validated['status']) === 'resolved' && strtolower($employee->status) === 'suspended') {
+            // New logic: If the disciplinary action status is 'Resolved', update employee status to 'Active' if currently 'Suspended' or 'Hold'
+            if (strtolower($validated['status']) === 'resolved' && (strtolower($employee->status) === 'suspended' || strtolower($employee->status) === 'hold')) {
                 $employee->status = 'Active';
                 $employee->save();
 
@@ -287,6 +313,14 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
+        }
+
+        // Update days counted if resolution date changed
+        if ($validated['resolution_date'] ?? null) {
+            $startDate = \Carbon\Carbon::parse($disciplinary->action_date);
+            $endDate = \Carbon\Carbon::parse($validated['resolution_date']);
+            $disciplinary->days_counted = $startDate->diffInDays($endDate);
+            $disciplinary->save();
         }
 
         AuditTrail::create([

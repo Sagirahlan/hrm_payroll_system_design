@@ -54,7 +54,7 @@ class PayrollController extends Controller
         $month = $request->input('month', now()->format('Y-m'));
         $appointmentTypeId = $request->input('appointment_type_id');
 
-        // Fetch employees (both Active and Suspended) excluding those on probation
+        // Fetch employees (Active and Suspended) excluding those on probation and on hold
         $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
             ->where(function($query) {
                 // Exclude employees who are on probation
@@ -62,6 +62,7 @@ class PayrollController extends Controller
                       ->orWhere('on_probation', false)
                       ->orWhere('probation_status', '!=', 'pending');
             })
+            ->where('status', '!=', 'Hold')  // Exclude employees with hold status
             ->with(['gradeLevel', 'step']);      // Load related grade level and step
 
         if ($appointmentTypeId) {
@@ -672,6 +673,7 @@ class PayrollController extends Controller
     public function manageAllAdjustments(Request $request)
     {
         $query = \App\Models\Employee::whereIn('status', ['Active', 'Suspended'])
+            ->where('status', '!=', 'Hold')  // Exclude employees with hold status
             ->with(['department', 'gradeLevel']);
 
         // Search functionality - include full name search
@@ -1182,7 +1184,9 @@ class PayrollController extends Controller
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with('gradeLevel');
+            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
+                ->where('status', '!=', 'Hold')  // Exclude employees with hold status
+                ->with('gradeLevel');
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
@@ -1207,7 +1211,9 @@ class PayrollController extends Controller
 
             $employees = $employeesQuery->get();
         } else {
-            $employees = Employee::whereIn('employee_id', $request->employee_ids)->with('gradeLevel', 'step')->get();
+            $employees = Employee::whereIn('employee_id', $request->employee_ids)
+                ->where('status', '!=', 'Hold')  // Exclude employees with hold status
+                ->with('gradeLevel', 'step')->get();
         }
 
         $additionTypeIds = $request->input('addition_types', []);
@@ -1345,7 +1351,9 @@ class PayrollController extends Controller
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with('gradeLevel');
+            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
+                ->where('status', '!=', 'Hold')  // Exclude employees with hold status
+                ->with('gradeLevel');
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
@@ -1369,7 +1377,9 @@ class PayrollController extends Controller
 
             $employees = $employeesQuery->get();
         } else {
-            $employees = Employee::whereIn('employee_id', $request->employee_ids)->with('gradeLevel')->get();
+            $employees = Employee::whereIn('employee_id', $request->employee_ids)
+                ->where('status', '!=', 'Hold')  // Exclude employees with hold status
+                ->with('gradeLevel')->get();
         }
 
         $deductionTypeIds = $request->input('deduction_types', []);

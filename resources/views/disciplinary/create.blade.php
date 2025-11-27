@@ -23,30 +23,31 @@
                                     </select>
                                     @error('employee_id') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
-                                
+
                                 <div class="form-group mb-3">
                                     <label for="action_type" class="form-label">Action Type *</label>
                                     <select name="action_type" class="form-select" required>
                                         <option value="">Select action type</option>
                                         <option value="suspended">Suspended</option>
+                                        <option value="hold">Hold</option>
                                         <option value="warning">Warning</option>
                                         <option value="terminated">Terminated</option>
                                     </select>
                                     @error('action_type') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
-                                
+
                                 <div class="form-group mb-3">
                                     <label for="description" class="form-label">Description *</label>
                                     <textarea name="description" class="form-control" rows="3" required></textarea>
                                     @error('description') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
-                                
+
                                 <div class="form-group mb-3">
                                     <label for="action_date" class="form-label">Action Date *</label>
                                     <input type="date" name="action_date" class="form-control" required>
                                     @error('action_date') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
-                                
+
                                 <div class="form-group mb-3">
                                     <label for="status" class="form-label">Status *</label>
                                     <select name="status" class="form-select" required>
@@ -56,14 +57,14 @@
                                     </select>
                                     @error('status') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
-                                
+
                                 <div class="d-flex justify-content-start mt-4">
                                     <button type="submit" class="btn btn-primary">Save Disciplinary Action</button>
                                     <a href="{{ route('disciplinary.index') }}" class="btn btn-secondary ms-2">Cancel</a>
                                 </div>
                             </form>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <!-- Search and Filter Form -->
                             <form action="{{ route('disciplinary.create') }}" method="GET" class="mb-4">
@@ -110,7 +111,7 @@
                                                 <span class="badge bg-success">{{ $employee->status }}</span>
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-sm btn-primary select-employee" 
+                                                <button type="button" class="btn btn-sm btn-primary select-employee"
                                                         data-id="{{ $employee->employee_id }}"
                                                         data-name="{{ $employee->first_name }} {{ $employee->surname }}">
                                                     Select
@@ -121,7 +122,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <!-- Pagination -->
                             <div class="d-flex justify-content-center mt-3">
                                 {{ $employees->appends(request()->query())->links('pagination::bootstrap-4') }}
@@ -146,10 +147,10 @@
             button.addEventListener('click', function() {
                 const employeeId = this.getAttribute('data-id');
                 const employeeName = this.getAttribute('data-name');
-                
+
                 // Set the selected employee in the dropdown
                 const select = document.getElementById('employee_id');
-                
+
                 // Check if option already exists, if not create it
                 let option = select.querySelector(`option[value="${employeeId}"]`);
                 if (!option) {
@@ -158,10 +159,10 @@
                     option.textContent = employeeName;
                     select.appendChild(option);
                 }
-                
+
                 // Select the option
                 option.selected = true;
-                
+
                 // Scroll to the form section
                 document.querySelector('#employee_id').scrollIntoView({ behavior: 'smooth' });
             });

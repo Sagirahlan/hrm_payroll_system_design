@@ -27,7 +27,12 @@
                 </div>
                 <div class="mb-3">
                     <label for="action_type" class="form-label">Action Type</label>
-                    <input type="text" class="form-control @error('action_type') is-invalid @enderror" id="action_type" name="action_type" value="{{ old('action_type', $action->action_type) }}" required readonly>
+                    <select class="form-select @error('action_type') is-invalid @enderror" id="action_type" name="action_type" required>
+                        <option value="suspended" {{ old('action_type', $action->action_type) == 'suspended' ? 'selected' : '' }}>Suspended</option>
+                        <option value="hold" {{ old('action_type', $action->action_type) == 'hold' ? 'selected' : '' }}>Hold</option>
+                        <option value="warning" {{ old('action_type', $action->action_type) == 'warning' ? 'selected' : '' }}>Warning</option>
+                        <option value="terminated" {{ old('action_type', $action->action_type) == 'terminated' ? 'selected' : '' }}>Terminated</option>
+                    </select>
                     @error('action_type')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -57,9 +62,9 @@
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
                         <option value="Open" {{ old('status', $action->status) == 'Open' ? 'selected' : '' }}>Open</option>
-                        <option value="Resolved" {{ old('status', $action->status) == 'Resolved' ? 'selected' : '' }} 
-                            @if(old('status', $action->status) == 'Resolved') 
-                                data-action-type-update="active" 
+                        <option value="Resolved" {{ old('status', $action->status) == 'Resolved' ? 'selected' : '' }}
+                            @if(old('status', $action->status) == 'Resolved')
+                                data-action-type-update="active"
                             @endif
                         >Resolved</option>
                         <script>
