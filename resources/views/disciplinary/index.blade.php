@@ -26,21 +26,35 @@
                 </form>
             </div>
             <div class="mb-3">
-                <form action="{{ route('disciplinary.index') }}" method="GET" class="d-flex">
-                    <select name="department" class="form-select me-2">
+                <form action="{{ route('disciplinary.index') }}" method="GET" class="d-flex flex-wrap gap-2">
+                    <select name="employee_id" class="form-select">
+                        <option value="">All Employees</option>
+                        @foreach ($employees as $employee)
+                            <option value="{{ $employee->employee_id }}" {{ request('employee_id') == $employee->employee_id ? 'selected' : '' }}>
+                                {{ $employee->first_name }} {{ $employee->surname }} ({{ $employee->staff_no }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="action_type" class="form-select">
+                        <option value="">All Action Types</option>
+                        @foreach ($actionTypes as $actionType)
+                            <option value="{{ $actionType }}" {{ request('action_type') == $actionType ? 'selected' : '' }}>{{ $actionType }}</option>
+                        @endforeach
+                    </select>
+                    <select name="department" class="form-select">
                         <option value="">All Departments</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->department_id }}" {{ request('department') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
                         @endforeach
                     </select>
-                    <select name="status" class="form-select me-2">
+                    <select name="status" class="form-select">
                         <option value="">All Statuses</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>{{ $status }}</option>
                         @endforeach
                     </select>
                     <button type="submit" class="btn btn-outline-primary">Filter</button>
-                    @if (request('department') || request('status'))
+                    @if (request('department') || request('status') || request('action_type') || request('employee_id'))
                         <a href="{{ route('disciplinary.index') }}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
                     @endif
                 </form>
@@ -74,6 +88,7 @@
                                     <th>Description</th>
                                     <th>Action Date</th>
                                     <th>Resolution Date</th>
+                                    <th>Days Counted</th>
                                     <th>Status</th>
                                     @canany(['view_disciplinary', 'edit_disciplinary', 'delete_disciplinary'])
                                     <th>Actions</th>
@@ -89,6 +104,7 @@
                                         <td>{{ $action->description ?? 'N/A' }}</td>
                                         <td>{{ $action->action_date }}</td>
                                         <td>{{ $action->resolution_date ?? 'N/A' }}</td>
+                                        <td>{{ $action->days_counted }}</td>
                                         <td>
                                             <span class="badge bg-info text-dark">{{ $action->status }}</span>
                                         </td>
@@ -131,7 +147,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8">No disciplinary actions found.</td>
+                                        <td colspan="9">No disciplinary actions found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

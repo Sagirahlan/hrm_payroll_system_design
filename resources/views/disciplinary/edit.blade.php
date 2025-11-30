@@ -27,12 +27,8 @@
                 </div>
                 <div class="mb-3">
                     <label for="action_type" class="form-label">Action Type</label>
-                    <select class="form-select @error('action_type') is-invalid @enderror" id="action_type" name="action_type" required>
-                        <option value="suspended" {{ old('action_type', $action->action_type) == 'suspended' ? 'selected' : '' }}>Suspended</option>
-                        <option value="hold" {{ old('action_type', $action->action_type) == 'hold' ? 'selected' : '' }}>Hold</option>
-                        <option value="warning" {{ old('action_type', $action->action_type) == 'warning' ? 'selected' : '' }}>Warning</option>
-                        <option value="terminated" {{ old('action_type', $action->action_type) == 'terminated' ? 'selected' : '' }}>Terminated</option>
-                    </select>
+                    <input type="text" class="form-control" value="{{ ucfirst($action->action_type) }}" readonly>
+                    <input type="hidden" name="action_type" value="{{ $action->action_type }}">
                     @error('action_type')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -46,7 +42,8 @@
                 </div>
                 <div class="mb-3">
                     <label for="action_date" class="form-label">Action Date</label>
-                    <input type="date" class="form-control @error('action_date') is-invalid @enderror" id="action_date" name="action_date" value="{{ old('action_date', $action->action_date) }}" required>
+                    <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($action->action_date)->format('Y-m-d') }}" readonly>
+                    <input type="hidden" name="action_date" value="{{ $action->action_date }}">
                     @error('action_date')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -61,12 +58,7 @@
                 <div class="mb-3">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
-                        <option value="Open" {{ old('status', $action->status) == 'Open' ? 'selected' : '' }}>Open</option>
-                        <option value="Resolved" {{ old('status', $action->status) == 'Resolved' ? 'selected' : '' }}
-                            @if(old('status', $action->status) == 'Resolved')
-                                data-action-type-update="active"
-                            @endif
-                        >Resolved</option>
+                        <option value="Resolved" {{ old('status', $action->status) == 'Resolved' ? 'selected' : '' }}>Resolved</option>
                         <script>
                             document.addEventListener('DOMContentLoaded', function() {
                                 const statusSelect = document.getElementById('status');
@@ -80,7 +72,6 @@
                                 });
                             });
                         </script>
-                        <option value="Pending" {{ old('status', $action->status) == 'Pending' ? 'selected' : '' }}>Pending</option>
                     </select>
                     @error('status')
                         <div class="invalid-feedback">{{ $message }}</div>

@@ -30,7 +30,7 @@
                                         <option value="">Select action type</option>
                                         <option value="suspended">Suspended</option>
                                         <option value="hold">Hold</option>
-                                        <option value="warning">Warning</option>
+                                        <option value="query">Query</option>
                                         <option value="terminated">Terminated</option>
                                     </select>
                                     @error('action_type') <div class="text-danger">{{ $message }}</div> @enderror
@@ -52,8 +52,6 @@
                                     <label for="status" class="form-label">Status *</label>
                                     <select name="status" class="form-select" required>
                                         <option value="Open">Open</option>
-                                        <option value="Resolved">Resolved</option>
-                                        <option value="Pending">Pending</option>
                                     </select>
                                     @error('status') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>

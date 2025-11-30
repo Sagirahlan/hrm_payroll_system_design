@@ -98,14 +98,14 @@
                                     </select>
                                     @error('ward_id') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                              
-                               
+
+
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">Staff ID <span class="text-danger">*</span></label>
                                     <input type="text" name="staff_no" class="form-control" required value="{{ old('staff_no', $employee->staff_no) }}">
                                     @error('staff_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
-                               
+
                                 <div class="col-md-4 col-12">
                                     <label class="form-label font-weight-bold">NIN <span class="text-danger">*</span></label>
                                     <input type="text" name="nin" class="form-control" value="{{ old('nin', $employee->nin) }}">
@@ -284,6 +284,7 @@
                                         <option value="Suspended" {{ old('status', $employee->status) == 'Suspended' ? 'selected' : '' }}>Suspended</option>
                                         <option value="Retired" {{ old('status', $employee->status) == 'Retired' ? 'selected' : '' }}>Retired</option>
                                         <option value="Deceased" {{ old('status', $employee->status) == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                                        <option value="Hold" {{ old('status', $employee->status) == 'Hold' ? 'selected' : '' }}>Hold</option>
                                     </select>
                                     @error('status') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -509,7 +510,7 @@
                     }
                 }
             }
-            
+
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
                 if (appointmentTypeName !== 'Contract') {

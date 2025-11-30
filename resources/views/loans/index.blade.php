@@ -8,9 +8,9 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4>Loans Management</h4>
-                        @can('create_loan')
+                        
                         <a href="{{ route('loans.create') }}" class="btn btn-primary">Add New Loan</a>
-                        @endcan
+                        
                     </div>
                 </div>
 
@@ -29,7 +29,6 @@
                                     <th>Employee</th>
                                     <th>Loan Type</th>
                                     <th>Principal Amount</th>
-                                    <th>Interest Rate</th>
                                     <th>Total Repayment</th>
                                     <th>Monthly Deduction</th>
                                     <th>Monthly Percentage</th>
@@ -48,7 +47,6 @@
                                         <td>{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}</td>
                                         <td>{{ $loan->deductionType->name ?? $loan->loan_type }}</td>
                                         <td>{{ number_format($loan->principal_amount, 2) }}</td>
-                                        <td>{{ $loan->interest_rate ? $loan->interest_rate . '%' : '0.00%' }}</td>
                                         <td>{{ number_format($loan->total_repayment, 2) }}</td>
                                         <td>{{ number_format($loan->monthly_deduction, 2) }}</td>
                                         <td>{{ $loan->monthly_percentage ? $loan->monthly_percentage . '%' : 'N/A' }}</td>

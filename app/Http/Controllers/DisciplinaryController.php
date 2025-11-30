@@ -47,12 +47,32 @@ class DisciplinaryController extends Controller
             $query->where('status', $request->input('status'));
         }
 
+        // Filter by action type
+        if ($request->filled('action_type')) {
+            $query->where('action_type', $request->action_type);
+        }
+
+        // Filter by employee
+        if ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->employee_id);
+        }
+
         $actions = $query->paginate(10);
         // Get departments with their names for the filter dropdown
         $departments = \App\Models\Department::select('department_id', 'department_name')
             ->whereIn('department_id', Employee::select('department_id')->distinct()->pluck('department_id'))
             ->get();
         $statuses = ['Open', 'Resolved', 'Pending'];
+
+        // Get unique action types for filter dropdown
+        $actionTypes = \App\Models\DisciplinaryAction::select('action_type')->distinct()->pluck('action_type', 'action_type');
+
+        // Get all active employees for the employee filter dropdown
+        $employees = \App\Models\Employee::select('employee_id', 'first_name', 'surname', 'staff_no')
+            ->where('status', '!=', 'Retired')
+            ->orderBy('first_name')
+            ->orderBy('surname')
+            ->get();
 
         AuditTrail::create([
             'user_id' => auth()->id(),
@@ -62,7 +82,7 @@ class DisciplinaryController extends Controller
             'log_data' => json_encode(['entity_type' => 'DisciplinaryAction', 'entity_id' => null]),
         ]);
 
-        return view('disciplinary.index', compact('actions', 'departments', 'statuses'));
+        return view('disciplinary.index', compact('actions', 'departments', 'statuses', 'actionTypes', 'employees'));
     }
 
     public function show(DisciplinaryAction $disciplinary)
@@ -198,7 +218,7 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            elseif ($actionType === 'hold' && strtolower($employee->status) === 'active') {
+            elseif ($actionType === 'query' && strtolower($employee->status) === 'active') {
                 $employee->status = 'Hold';
                 $employee->save();
 

@@ -280,6 +280,7 @@
                                         <option value="Suspended" {{ old('status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
                                         <option value="Retired" {{ old('status') == 'Retired' ? 'selected' : '' }}>Retired</option>
                                         <option value="Deceased" {{ old('status') == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                                        <option value="Hold" {{ old('status') == 'Hold' ? 'selected' : '' }}>Hold</option>
                                     </select>
                                     @error('status') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -502,7 +503,7 @@
                     }
                 }
             }
-            
+
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
                 if (appointmentTypeName !== 'Contract') {

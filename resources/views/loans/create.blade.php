@@ -12,7 +12,11 @@
                 <div class="card-body">
                     <form action="{{ route('loans.store') }}" method="POST">
                         @csrf
-
+                        <div class="mb-3">
+                            <a href="{{ route('loans.index') }}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
                         <div class="mb-3">
                             <label for="employee_id" class="form-label">Employee</label>
                             <select name="employee_id" id="employee_id" class="form-control" required>
@@ -62,25 +66,7 @@
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="interest_rate" class="form-label">Interest Rate (%)</label>
-                                <input type="number" step="0.01" name="interest_rate" id="interest_rate" class="form-control" value="{{ old('interest_rate') }}">
-                                @error('interest_rate')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="total_interest" class="form-label">Total Interest</label>
-                                <input type="number" step="0.01" id="total_interest" class="form-control" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="total_repayment" class="form-label">Total Repayment</label>
-                                <input type="number" step="0.01" id="total_repayment" class="form-control" readonly>
-                            </div>
-                        </div>
+                           
 
                                                             <div class="row">
                                             <div class="col-md-4 mb-3">

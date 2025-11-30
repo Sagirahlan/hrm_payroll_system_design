@@ -770,6 +770,18 @@
                 </div>
             </div>
 
+            <div class="stat-box danger">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $holdEmployees ?? 0 }}</div>
+                        <div class="stat-title">Hold Status</div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                </div>
+            </div>
+
             <div class="stat-box primary">
                 <div class="stat-header">
                     <div>
@@ -821,11 +833,11 @@
             <div class="stat-box info">
                 <div class="stat-header">
                     <div>
-                        <div class="stat-number">{{ $totalLeaveRequests ?? 0 }}</div>
-                        <div class="stat-title">Total Leave Requests</div>
+                        <div class="stat-number">{{ $maleEmployees ?? 0 }}</div>
+                        <div class="stat-title">Male Employees</div>
                     </div>
                     <div class="stat-icon info">
-                        <i class="fas fa-calendar-alt"></i>
+                        <i class="fas fa-mars"></i>
                     </div>
                 </div>
             </div>
@@ -833,11 +845,11 @@
             <div class="stat-box warning">
                 <div class="stat-header">
                     <div>
-                        <div class="stat-number">{{ $pendingLeaveRequests ?? 0 }}</div>
-                        <div class="stat-title">Pending Leaves</div>
+                        <div class="stat-number">{{ $femaleEmployees ?? 0 }}</div>
+                        <div class="stat-title">Female Employees</div>
                     </div>
                     <div class="stat-icon warning">
-                        <i class="fas fa-clock"></i>
+                        <i class="fas fa-venus"></i>
                     </div>
                 </div>
             </div>
@@ -845,11 +857,11 @@
             <div class="stat-box success">
                 <div class="stat-header">
                     <div>
-                        <div class="stat-number">{{ $approvedLeaveRequests ?? 0 }}</div>
-                        <div class="stat-title">Approved Leaves</div>
+                        <div class="stat-number">{{ $totalDepartments ?? 0 }}</div>
+                        <div class="stat-title">Departments</div>
                     </div>
                     <div class="stat-icon success">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-building"></i>
                     </div>
                 </div>
             </div>
@@ -857,14 +869,40 @@
             <div class="stat-box danger">
                 <div class="stat-header">
                     <div>
-                        <div class="stat-number">{{ $rejectedLeaveRequests ?? 0 }}</div>
-                        <div class="stat-title">Rejected Leaves</div>
+                        <div class="stat-number">{{ $openDisciplinaryActions ?? 0 }}</div>
+                        <div class="stat-title">Open Disciplinary Actions</div>
                     </div>
                     <div class="stat-icon danger">
-                        <i class="fas fa-times-circle"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
                 </div>
             </div>
+
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $resolvedDisciplinaryActions ?? 0 }}</div>
+                        <div class="stat-title">Resolved Disciplinary Actions</div>
+                    </div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box secondary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $payrollRecords ?? 0 }}</div>
+                        <div class="stat-title">Current Month Payrolls</div>
+                    </div>
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
 
         {{-- Main Content Grid --}}

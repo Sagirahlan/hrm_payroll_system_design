@@ -618,7 +618,7 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:Active,Suspended,Retired,Deceased',
+                'status' => 'required|in:Active,Suspended,Retired,Deceased,Hold',
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -799,7 +799,7 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:Active,Suspended,Retired,Deceased',
+                'status' => 'required|in:Active,Suspended,Retired,Deceased,Hold',
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -853,6 +853,12 @@ class EmployeeController extends Controller
             $previousData = [];
 
             foreach ($validated as $key => $value) {
+                // Special handling for status field - don't change from 'Hold' to any other value during regular updates
+                if ($key === 'status' && $employee->status === 'Hold') {
+                    // If employee is on 'Hold' status, don't allow the status to be changed as part of other updates
+                    continue; // Skip updating status field
+                }
+
                 if (array_key_exists($key, $currentData) && $currentData[$key] != $value) {
                     $changedData[$key] = $value;
                     $previousData[$key] = $currentData[$key];
@@ -962,79 +968,65 @@ class EmployeeController extends Controller
 
     public function importEmployees(Request $request)
     {
-        try {
-            $request->validate([
-                'import_file' => 'required|file|mimes:xlsx,xls,csv',
-            ]);
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
 
-            $file = $request->file('import_file');
+        $file = $request->file('import_file');
 
-            // Determine the number of sheets in the Excel file
-            $fileExtension = $file->getClientOriginalExtension();
+        // Determine the number of sheets in the Excel file
+        $fileExtension = $file->getClientOriginalExtension();
 
-            if (in_array($fileExtension, ['xlsx', 'xls'])) {
-                // Use PhpSpreadsheet to read the file and get the number of sheets
-                $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
-                $reader->setReadDataOnly(true); // Read only cell values, not formulas
-                $spreadsheet = $reader->load($file->getPathname());
-                $sheetCount = $spreadsheet->getSheetCount();
+        if (in_array($fileExtension, ['xlsx', 'xls'])) {
+            // Use PhpSpreadsheet to read the file and get the number of sheets
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+            $reader->setReadDataOnly(true); // Read only cell values, not formulas
+            $spreadsheet = $reader->load($file->getPathname());
+            $sheetCount = $spreadsheet->getSheetCount();
 
-                // Create a dynamic import based on the number of sheets
-                $import = new class($sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
-                    private $sheetCount;
+            // Create a dynamic import based on the number of sheets
+            $import = new class($sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                private $sheetCount;
 
-                    public function __construct($sheetCount) {
-                        $this->sheetCount = $sheetCount;
+                public function __construct($sheetCount) {
+                    $this->sheetCount = $sheetCount;
+                }
+
+                public function sheets(): array
+                {
+                    $sheets = [
+                        0 => new \App\Imports\EmployeeImport(),      // Always import first sheet (Employees)
+                    ];
+
+                    // Import Next of Kin sheet if it exists
+                    if ($this->sheetCount >= 2) {
+                        $sheets[1] = new \App\Imports\NextOfKinImport();
                     }
 
-                    public function sheets(): array
-                    {
-                        $sheets = [
-                            0 => new \App\Imports\EmployeeImport(),      // Always import first sheet (Employees)
-                        ];
-
-                        // Import Next of Kin sheet if it exists
-                        if ($this->sheetCount >= 2) {
-                            $sheets[1] = new \App\Imports\NextOfKinImport();
-                        }
-
-                        // Import Bank Details sheet if it exists
-                        if ($this->sheetCount >= 3) {
-                            $sheets[2] = new \App\Imports\BankDetailImport();
-                        }
-
-                        return $sheets;
+                    // Import Bank Details sheet if it exists
+                    if ($this->sheetCount >= 3) {
+                        $sheets[2] = new \App\Imports\BankDetailImport();
                     }
-                };
 
-                Excel::import($import, $file);
-            } else {
-                // For CSV files, use single sheet import
-                Excel::import(new \App\Imports\EmployeeImport(), $file);
-            }
+                    return $sheets;
+                }
+            };
 
-            AuditTrail::create([
-                'user_id' => auth()->id(),
-                'action' => 'imported',
-                'description' => 'Imported employee data from Excel',
-                'action_timestamp' => now(),
-                'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
-            ]);
-
-            return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-
-            $errors = [];
-            foreach ($failures as $failure) {
-                $errors[] = 'Row ' . $failure->row() . ': ' . implode(', ', $failure->errors());
-            }
-
-            return redirect()->back()->with('error', 'Import failed with validation errors: ' . implode('; ', $errors));
-        } catch (\Exception $e) {
-            \Log::error('Employee import error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'An error occurred during import: ' . $e->getMessage());
+            Excel::import($import, $file);
+        } else {
+            // For CSV files, use single sheet import
+            Excel::import(new \App\Imports\EmployeeImport(), $file);
         }
+
+        AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'imported',
+            'description' => 'Imported employee data from Excel',
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
+        ]);
+
+        return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');
     }
 
     public function getLgasByState(Request $request)
