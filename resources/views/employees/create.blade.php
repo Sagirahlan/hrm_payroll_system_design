@@ -61,15 +61,7 @@
                                     <select name="nationality" class="form-select" required>
                                         <option value="">-- Select Nationality --</option>
                                         <option value="Nigeria" {{ old('nationality') == 'Nigeria' ? 'selected' : '' }}>Nigeria</option>
-                                        <option value="Benin" {{ old('nationality') == 'Benin' ? 'selected' : '' }}>Benin</option>
-                                        <option value="Cameroon" {{ old('nationality') == 'Cameroon' ? 'selected' : '' }}>Cameroon</option>
-                                        <option value="Chad" {{ old('nationality') == 'Chad' ? 'selected' : '' }}>Chad</option>
-                                        <option value="Ghana" {{ old('nationality') == 'Ghana' ? 'selected' : '' }}>Ghana</option>
-                                        <option value="Niger" {{ old('nationality') == 'Niger' ? 'selected' : '' }}>Niger</option>
-                                        <option value="Togo" {{ old('nationality') == 'Togo' ? 'selected' : '' }}>Togo</option>
-                                        <option value="Burkina Faso" {{ old('nationality') == 'Burkina Faso' ? 'selected' : '' }}>Burkina Faso</option>
-                                        <option value="Equatorial Guinea" {{ old('nationality') == 'Equatorial Guinea' ? 'selected' : '' }}>Equatorial Guinea</option>
-                                        <option value="Central African Republic" {{ old('nationality') == 'Central African Republic' ? 'selected' : '' }}>Central African Republic</option>
+                                       
                                     </select>
                                     @error('nationality') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>

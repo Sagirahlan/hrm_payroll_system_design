@@ -107,6 +107,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_pending_employee_changes',
             'approve_pending_employee_changes',
             'reject_pending_employee_changes',
+            'approve_bank_details',
+            'manage_bank_details',
 
             // Deduction Management
             'view_deductions',
@@ -305,6 +307,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_pending_employee_changes',
             'approve_pending_employee_changes',
             'reject_pending_employee_changes',
+            'approve_bank_details',
+            'manage_bank_details',
             'view_deductions',
             'create_deductions',
             'edit_deductions',
@@ -560,6 +564,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_grade_level_adjustments',
             'create_grade_level_adjustments',
             'delete_grade_level_adjustments',
+            'manage_bank_details',
         ]);
 
         // Initiator role
@@ -603,6 +608,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_loans',
             'manage_loans',
             'view_grade_level_adjustments',
+            'manage_bank_details',
+            'approve_bank_details',
         ]);
 
         // Admin I role

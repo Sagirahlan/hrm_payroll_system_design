@@ -4,7 +4,7 @@
 <div class="container-fluid py-4">
     <div class="card border-primary shadow">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Manage Employee Deductions & Additions</h5>
+            <h5 class="mb-0">Manage Staff Deductions & Additions</h5>
         </div>
         <div class="card-body">
             <!-- Search and Filter Section -->
@@ -22,25 +22,25 @@
                                 <!-- Search -->
                                 <div class="col-md-3">
                                     <label for="search" class="form-label">Search</label>
-                                    <input type="text" name="search" id="search" class="form-control" 
-                                           placeholder="Search by name, ID, or reg no..." 
+                                    <input type="text" name="search" id="search" class="form-control"
+                                           placeholder="Search by name, Staff No, or reg no..."
                                            value="{{ request()->get('search') }}">
                                 </div>
-                                
+
                                 <!-- Department Filter -->
                                 <div class="col-md-3">
                                     <label for="department_id" class="form-label">Department</label>
                                     <select name="department_id" id="department_id" class="form-select">
                                         <option value="">All Departments</option>
                                         @foreach($departments as $department)
-                                            <option value="{{ $department->department_id }}" 
+                                            <option value="{{ $department->department_id }}"
                                                     {{ request()->get('department_id') == $department->department_id ? 'selected' : '' }}>
                                                 {{ $department->department_name }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
-                                
+
                                 <!-- Status Filter -->
                                 <div class="col-md-3">
                                     <label for="employee_status" class="form-label">Status</label>
@@ -50,17 +50,17 @@
                                         <option value="Suspended" {{ request()->get('employee_status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
                                     </select>
                                 </div>
-                                
+
                                 <!-- Sort By -->
                                 <div class="col-md-3">
                                     <label for="sort_by" class="form-label">Sort By</label>
                                     <select name="sort_by" id="sort_by" class="form-select">
-                                        <option value="employee_id" {{ request()->get('sort_by') == 'employee_id' ? 'selected' : '' }}>Employee ID</option>
+                                        <option value="staff_no" {{ request()->get('sort_by') == 'staff_no' ? 'selected' : '' }}>Staff No</option>
                                         <option value="first_name" {{ request()->get('sort_by') == 'first_name' ? 'selected' : '' }}>First Name</option>
                                         <option value="surname" {{ request()->get('sort_by') == 'surname' ? 'selected' : '' }}>Surname</option>
                                     </select>
                                 </div>
-                                
+
                                 <!-- Sort Direction -->
                                 <div class="col-md-12">
                                     <div class="d-flex justify-content-end">
@@ -77,20 +77,20 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Results Info -->
             <div class="mb-3">
                 <p class="text-muted mb-0">
-                    Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of {{ $employees->total() }} employees
+                    Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of {{ $employees->total() }} staff
                 </p>
             </div>
-            
-            <!-- Employees Table -->
+
+            <!-- Staff Table -->
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="table-primary">
                         <tr>
-                            <th>Employee ID</th>
+                            <th>Staff No</th>
                             <th>Name</th>
                             <th>Department</th>
                             <th>Grade Level</th>
@@ -101,12 +101,12 @@
                     <tbody>
                         @forelse ($employees as $employee)
                             <tr>
-                                <td>{{ $employee->employee_id }}</td>
+                                <td>{{ $employee->staff_no ?? $employee->employee_id }}</td>
                                 <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
                                 <td>
-                                    <span class="badge 
+                                    <span class="badge
                                         @if($employee->status === 'Active') bg-success
                                         @elseif($employee->status === 'Suspended') bg-warning text-dark
                                         @else bg-secondary @endif">
@@ -139,18 +139,18 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">No employees found</td>
+                                <td colspan="6" class="text-center">No staff found</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- Pagination -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
                     <p class="text-muted mb-0">
-                        Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of {{ $employees->total() }} employees
+                        Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of {{ $employees->total() }} staff
                     </p>
                 </div>
                 <div>

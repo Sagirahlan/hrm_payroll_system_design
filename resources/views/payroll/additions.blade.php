@@ -45,16 +45,16 @@
                             <h5>Statutory Additions</h5>
                             @foreach($statutoryAdditions as $type)
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="addition_types[]" value="{{ $type->id }}" id="addition_{{ $type->id }}">
+                                    <input class="form-check-input" type="checkbox" name="addition_types[]" value="{{ $type->id }}" id="addition_{{ $type->id }}" {{ in_array($type->id, (array)old('addition_types', [])) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="addition_{{ $type->id }}">
                                         {{ $type->name }}
                                     </label>
                                 </div>
                             @endforeach
-                            
+
                             <div class="mt-3">
                                 <label for="statutory_addition_month" class="form-label">Addition Month</label>
-                                <input type="month" name="statutory_addition_month" id="statutory_addition_month" class="form-control" required>
+                                <input type="month" name="statutory_addition_month" id="statutory_addition_month" class="form-control" value="{{ old('statutory_addition_month') }}" required>
                             </div>
                         </div>
 
@@ -63,9 +63,9 @@
                         <div class="mb-3">
                             <h5>Non-Statutory Additions</h5>
                             <select name="type_id" id="type_id" class="form-select">
-                                <option value="" selected disabled>-- Select Type --</option>
+                                <option value="" {{ old('type_id') ? '' : 'selected' }} disabled>-- Select Type --</option>
                                 @foreach($nonStatutoryAdditions as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                    <option value="{{ $type->id }}" {{ old('type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -74,15 +74,15 @@
                             <div class="col-sm-8">
                                 <div class="mb-3">
                                     <label for="amount" class="form-label">Amount (for non-statutory)</label>
-                                    <input type="number" name="amount" id="amount" class="form-control" step="0.01" placeholder="Enter amount or %">
+                                    <input type="number" name="amount" id="amount" class="form-control" step="0.01" placeholder="Enter amount or %" value="{{ old('amount') }}">
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="mb-3">
                                     <label for="amount_type" class="form-label">Type</label>
                                     <select name="amount_type" id="amount_type" class="form-select">
-                                        <option value="fixed">Fixed</option>
-                                        <option value="percentage">Percentage</option>
+                                        <option value="fixed" {{ old('amount_type') == 'fixed' ? 'selected' : '' }}>Fixed</option>
+                                        <option value="percentage" {{ old('amount_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
                                     </select>
                                 </div>
                             </div>
@@ -91,20 +91,19 @@
                         <div class="mb-3">
                             <label for="period" class="form-label">Frequency</label>
                             <select name="period" id="period" class="form-select" required>
-                                <option value="OneTime">One Time</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="Perpetual">Perpetual</option>
+                                <option value="OneTime" {{ old('period') == 'OneTime' ? 'selected' : '' }}>One Time</option>
+                                <option value="Monthly" {{ old('period') == 'Monthly' ? 'selected' : '' }}>Monthly</option>
                             </select>
                         </div>
 
                         <div class="row">
                             <div class="col-sm-6 mb-3">
                                 <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" name="start_date" id="start_date" class="form-control" required>
+                                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ old('start_date') }}" required>
                             </div>
                             <div class="col-sm-6 mb-3">
-                                <label for="end_date" class="form-label">End Date <small class="text-muted">(Optional)</small></label>
-                                <input type="date" name="end_date" id="end_date" class="form-control">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ old('end_date') }}" required>
                             </div>
                         </div>
                     </div>
@@ -135,7 +134,7 @@
                             <button class="btn btn-outline-secondary" type="submit">Search</button>
                             <a href="{{ route('payroll.additions') }}" class="btn btn-outline-danger" title="Clear Search">Clear</a>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="department_filter" class="form-label">Department</label>
@@ -165,7 +164,7 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">Apply Filters</button>
                         </div>
@@ -193,7 +192,7 @@
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <div class="mt-3">
                         Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of <span id="total-employees">{{ $employees->total() }}</span> employees
                     </div>
@@ -219,8 +218,8 @@
 
             if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100) {
                 isLoading = true;
-                fetch(nextPageUrl, { 
-                    headers: { 
+                fetch(nextPageUrl, {
+                    headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     }
@@ -339,13 +338,13 @@
         // Handle department filter change
         const departmentFilter = document.getElementById('department_filter');
         const gradeLevelFilter = document.getElementById('grade_level_filter');
-        
+
         if (departmentFilter) {
             departmentFilter.addEventListener('change', function() {
                 filterForm.submit();
             });
         }
-        
+
         if (gradeLevelFilter) {
             gradeLevelFilter.addEventListener('change', function() {
                 filterForm.submit();
@@ -364,18 +363,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = String(today.getMonth() + 1).padStart(2, '0');
         statutoryMonthInput.value = `${year}-${month}`;
     }
-    
-    // Set default value for start date
+
+    // Set default value for start date to first day of current month
     const startDateInput = document.getElementById('start_date');
     if (startDateInput && !startDateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const startDate = `${year}-${month}-01`;
+        startDateInput.value = startDate;
     }
-    
+
+    // Set default value for end date to last day of current month
+    const endDateInput = document.getElementById('end_date');
+    if (endDateInput && !endDateInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+        const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+        endDateInput.value = endDate;
+    }
+
     // Show/hide sections based on selection
     const typeIdSelect = document.getElementById('type_id');
     const nonStatutoryFields = document.querySelectorAll('#amount, #amount_type, #period, #start_date, #end_date');
-    
+
     if (typeIdSelect) {
         typeIdSelect.addEventListener('change', function() {
             const showNonStatutory = this.value !== '';

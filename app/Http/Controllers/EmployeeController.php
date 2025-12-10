@@ -651,7 +651,7 @@ class EmployeeController extends Controller
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
                 $validationRules['step_id'] = 'required|exists:steps,id';
-                $validationRules['step_level'] = 'required|string|max:50';
+                $validationRules['step_level'] = 'nullable|string|max:50';
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'required|date';
                 $validationRules['rank_id'] = 'required|exists:ranks,id';
@@ -829,7 +829,7 @@ class EmployeeController extends Controller
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
                 $validationRules['step_id'] = 'required|exists:steps,id';
-                $validationRules['step_level'] = 'required|string|max:50';
+                $validationRules['step_level'] = 'nullable|string|max:50';
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'required|date';
                 $validationRules['rank_id'] = 'required|exists:ranks,id';

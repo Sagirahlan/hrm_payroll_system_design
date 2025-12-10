@@ -902,8 +902,262 @@
                 </div>
             </div>
 
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $employeesRetiringWithin6Months->count() ?? 0 }}</div>
+                        <div class="stat-title">Retiring Within 6 Months</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box info">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingRetirementConfirmations->count() ?? 0 }}</div>
+                        <div class="stat-title">Pending Retirement Confirmations</div>
+                    </div>
+                    <div class="stat-icon info">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Approval Statistics --}}
+            <div class="stat-box info">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $totalPendingApprovals ?? 0 }}</div>
+                        <div class="stat-title">Total Pending Approvals</div>
+                    </div>
+                    <div class="stat-icon info">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingLeaveRequests ?? 0 }}</div>
+                        <div class="stat-title">Pending Leave Requests</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingPayrollApprovals ?? 0 }}</div>
+                        <div class="stat-title">Pending Payroll Approvals</div>
+                    </div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box danger">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingProbations ?? 0 }}</div>
+                        <div class="stat-title">Pending Probation Reviews</div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box success">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingPromotions ?? 0 }}</div>
+                        <div class="stat-title">Pending Promotions</div>
+                    </div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box secondary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingEmployeeChanges ?? 0 }}</div>
+                        <div class="stat-title">Pending Employee Changes</div>
+                    </div>
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number">{{ $pendingDisciplinaryActions ?? 0 }}</div>
+                        <div class="stat-title">Pending Disciplinary Actions</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-gavel"></i>
+                    </div>
+                </div>
+            </div>
 
         </div>
+
+        {{-- Retirement Information Section --}}
+        @if($employeesRetiringWithin6Months && $employeesRetiringWithin6Months->count() > 0)
+        <div class="card-professional mb-3">
+            <div class="card-professional-header">
+                <h3 class="card-professional-title">
+                    <i class="fas fa-user-clock"></i> Employees Retiring Within 6 Months
+                </h3>
+            </div>
+            <div class="card-professional-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Grade Level</th>
+                            <th>Estimated Retirement Date</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $retirementData = [];
+                            foreach ($employeesRetiringWithin6Months as $employee) {
+                                $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                                $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+                                // Calculate retirement date based on age
+                                $retirementDateByAge = \Carbon\Carbon::parse($employee->date_of_birth)->addYears($retirementAge);
+
+                                // Calculate retirement date based on service
+                                $retirementDateByService = \Carbon\Carbon::parse($employee->date_of_first_appointment)->addYears($yearsOfService);
+
+                                // The actual retirement date is the earlier of the two
+                                $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
+
+                                // Determine retirement reason
+                                $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                                $serviceYears = \Carbon\Carbon::parse($employee->date_of_first_appointment)->floatDiffInYears(now());
+
+                                $retirementReason = 'By Years of Service';
+                                if ($age >= $retirementAge && $serviceYears < $yearsOfService) {
+                                    $retirementReason = 'By Old Age';
+                                } elseif ($actualRetirementDate->eq($retirementDateByAge)) {
+                                    $retirementReason = 'By Old Age';
+                                } else {
+                                    $retirementReason = 'By Years of Service';
+                                }
+
+                                $retirementData[] = [
+                                    'employee' => $employee,
+                                    'date' => $actualRetirementDate,
+                                    'reason' => $retirementReason
+                                ];
+                            }
+
+                            // Sort by retirement date (earliest first)
+                            usort($retirementData, function($a, $b) {
+                                return $a['date']->timestamp - $b['date']->timestamp;
+                            });
+                        @endphp
+
+                        @foreach ($retirementData as $item)
+                            @php
+                                $employee = $item['employee'];
+                                $retirementDate = $item['date'];
+                                $retirementReason = $item['reason'];
+
+                                $fullName = trim($employee->first_name . ' ' . ($employee->middle_name ?? '') . ' ' . $employee->surname);
+                                $retirementReasonDisplay = $retirementReason;
+                            @endphp
+                            <tr>
+                                <td>{{ $fullName }}</td>
+                                <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
+                                <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
+                                <td>{{ $retirementDate->format('M d, Y') }}</td>
+                                <td>
+                                    <span class="badge-pro {{ $retirementReason === 'By Old Age' ? 'warning' : 'info' }}">
+                                        {{ $retirementReasonDisplay }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- Pending Retirement Confirmation Section --}}
+        @if($pendingRetirementConfirmations && $pendingRetirementConfirmations->count() > 0)
+        <div class="card-professional mb-3">
+            <div class="card-professional-header">
+                <h3 class="card-professional-title">
+                    <i class="fas fa-user-clock"></i> Pending Retirement Confirmations
+                </h3>
+            </div>
+            <div class="card-professional-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Grade Level</th>
+                            <th>Age</th>
+                            <th>Service Years</th>
+                            <th>Eligibility</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($pendingRetirementConfirmations as $employee)
+                            @php
+                                $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                                $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+                                $retirementAge = $employee->gradeLevel->salaryScale->max_retirement_age;
+                                $maxServiceYears = $employee->gradeLevel->salaryScale->max_years_of_service;
+                                $fullName = trim($employee->first_name . ' ' . ($employee->middle_name ?? '') . ' ' . $employee->surname);
+
+                                // Determine eligibility
+                                $eligibility = [];
+                                if ($age >= $retirementAge) {
+                                    $eligibility[] = 'Age (' . $age . ' of ' . $retirementAge . ')';
+                                }
+                                if ($serviceDuration >= $maxServiceYears) {
+                                    $eligibility[] = 'Service (' . $serviceDuration . ' of ' . $maxServiceYears . ' years)';
+                                }
+                                $eligibilityText = implode(', ', $eligibility);
+                            @endphp
+                            <tr>
+                                <td>{{ $fullName }}</td>
+                                <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
+                                <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
+                                <td>{{ $age }}</td>
+                                <td>{{ $serviceDuration }} years</td>
+                                <td>
+                                    <span class="badge-pro warning">
+                                        {{ $eligibilityText }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
 
         {{-- Main Content Grid --}}
         <div class="content-layout">

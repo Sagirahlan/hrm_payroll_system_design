@@ -31,14 +31,20 @@ class AdditionTypeController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20|unique:addition_types',
             'description' => 'nullable|string',
             'is_statutory' => 'required|boolean',
-            'calculation_type' => 'required|in:fixed_amount,percentage',
-            'rate_or_amount' => 'nullable|numeric',
-        ]);
+        ];
+
+        // Add conditional validation rules based on is_statutory value
+        if ($request->is_statutory == 1) {
+            $rules['calculation_type'] = 'required|in:fixed_amount,percentage';
+            $rules['rate_or_amount'] = 'required|numeric';
+        }
+
+        $request->validate($rules);
 
         $additionType = AdditionType::create($request->all());
 
@@ -61,14 +67,20 @@ class AdditionTypeController extends Controller
 
     public function update(Request $request, AdditionType $additionType)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20|unique:addition_types,code,' . $additionType->id,
             'description' => 'nullable|string',
             'is_statutory' => 'required|boolean',
-            'calculation_type' => 'required|in:fixed_amount,percentage',
-            'rate_or_amount' => 'nullable|numeric',
-        ]);
+        ];
+
+        // Add conditional validation rules based on is_statutory value
+        if ($request->is_statutory == 1) {
+            $rules['calculation_type'] = 'required|in:fixed_amount,percentage';
+            $rules['rate_or_amount'] = 'required|numeric';
+        }
+
+        $request->validate($rules);
 
         $additionType->update($request->all());
 

@@ -13,6 +13,18 @@ class PayrollCalculationService
 {
     public function calculatePayroll(Employee $employee, string $month, bool $isSuspended = false): array
     {
+        // For Hold status, we now return zero values directly as this is handled in payroll controller
+        if ($employee->status === 'Hold') {
+            return [
+                'basic_salary'     => 0,
+                'total_deductions' => 0,
+                'total_additions'  => 0,
+                'net_salary'       => 0,
+                'deductions'       => [],
+                'additions'        => [],
+            ];
+        }
+
         // Check if employee is eligible for salary (probation check)
         $probationService = new \App\Services\ProbationService();
         if (!$probationService->isEligibleForSalary($employee)) {
@@ -28,9 +40,9 @@ class PayrollCalculationService
 
         // Check if employee is a contract employee using the new method
         $isContractEmployee = $employee->isContractEmployee();
-        
+
         $basicSalary = 0;
-        
+
         if ($isContractEmployee) {
             // For contract employees, use the amount field instead of grade level step
             $basicSalary = $employee->amount ?: 0;
@@ -68,12 +80,12 @@ class PayrollCalculationService
 
             $basicSalary = $step->basic_salary;
         }
-        
+
         // For suspended employees, use half of the basic salary for calculations
         if ($isSuspended) {
             $basicSalary = $basicSalary / 2;
         }
-        
+
         $payrollDate = Carbon::parse($month . '-01');
         $payrollStart = Carbon::parse($month . '-01');
         $payrollEnd = Carbon::parse($month . '-01')->endOfMonth();
@@ -89,7 +101,7 @@ class PayrollCalculationService
                 if ($deductionType->is_statutory) {
                     // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
                     $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
-                    
+
                     $totalDeductions += $amount;
                     $deductionRecords[] = [
                         'type' => 'deduction',
@@ -144,12 +156,12 @@ class PayrollCalculationService
                 // This loan deduction has already been processed for this month, skip it
                 continue;
             }
-            
+
             // Check if there's already a deduction record for this loan (indicating it should be processed through the deduction system)
             $existingDeductionRecord = \App\Models\Deduction::where('loan_id', $loan->loan_id)
                 ->where('employee_id', $employee->employee_id)
                 ->first();
-                
+
             if ($existingDeductionRecord) {
                 // There's already a deduction record for this loan, so it will be processed in the deduction section
                 // Skip processing it here to avoid double processing
@@ -161,7 +173,7 @@ class PayrollCalculationService
             $payrollMonthStart = Carbon::parse($month . '-01');
             $payrollMonthEnd = Carbon::parse($month . '-01')->endOfMonth();
             $loanStartDate = Carbon::parse($loan->start_date);
-            
+
             if ($loanStartDate->gt($payrollMonthEnd)) {
                 // Loan starts after this payroll month ends, skip it for this payroll
                 continue;
@@ -171,12 +183,12 @@ class PayrollCalculationService
             // Calculate actual months passed since loan start to determine if term is reached
             $loanStart = Carbon::parse($loan->start_date);
             $currentMonth = Carbon::parse($month . '-01');
-            
+
             // Calculate how many months have passed since the loan started (inclusive)
             // diffInMonths gives full months difference: Nov 2025 to Nov 2025 = 0, Nov 2025 to Dec 2025 = 1, etc.
             // So we add 1 to represent the current month as the nth month since start
             $monthsSinceStart = $loanStart->diffInMonths($currentMonth, false) + 1;
-            
+
             if ($loan->remaining_balance <= 0 || $monthsSinceStart > $loan->total_months || $loan->status === 'completed') {
                 // Loan has been fully repaid, exceeded its term, or marked as completed - update status if needed
                 if ($loan->status !== 'completed') {
@@ -190,7 +202,7 @@ class PayrollCalculationService
             if ($loan->remaining_balance > 0) {
                 // Calculate deduction amount based on monthly deduction amount if set, otherwise calculate from percentage
                 $deductionAmount = $loan->monthly_deduction > 0 ? $loan->monthly_deduction : ($loan->monthly_percentage / 100) * $basicSalary;
-                
+
                 // Ensure deduction doesn't exceed remaining balance
                 $deductionAmount = min($deductionAmount, $loan->remaining_balance);
 
@@ -201,10 +213,10 @@ class PayrollCalculationService
 
                 // Calculate the maximum total deductions allowed to prevent negative net pay
                 $maxTotalDeductionsAllowed = $basicSalary + $totalAdditions;
-                
+
                 // Check if adding this loan deduction would exceed the max allowed deductions
                 $projectedTotalDeductions = $totalDeductions + $deductionAmount;
-                
+
                 if ($projectedTotalDeductions > $maxTotalDeductionsAllowed) {
                     // Adjust the loan deduction amount to not exceed the limit
                     $availableForDeduction = max(0, $maxTotalDeductionsAllowed - $totalDeductions);
@@ -229,17 +241,17 @@ class PayrollCalculationService
                     $loan->status = 'completed';
                     $loan->end_date = Carbon::now();
                 }
-                
+
                 // Update remaining months based on how many deductions have been processed
                 // Count existing loan deductions to determine how many months have been completed
                 $existingDeductionsCount = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->count();
                 $loan->remaining_months = max(0, $loan->total_months - ($existingDeductionsCount + 1));
-                
+
                 $loan->save();
 
                 // Calculate months completed based on actual months passed
                 $monthsCompleted = min($monthsSinceStart, $loan->total_months);
-                
+
                 // Additional check: if loan term has been reached, mark as completed
                 if ($monthsSinceStart >= $loan->total_months) {
                     $loan->status = 'completed';
@@ -273,7 +285,7 @@ class PayrollCalculationService
         foreach ($employeeDeductions as $deduction) {
             $deductionAmount = 0;
             $processedLoanDeduction = false; // Flag to track if this was a loan deduction that was processed
-            
+
             // Check if this is a loan deduction
             if ($deduction->loan_id) {
                 // This is a loan deduction - get the actual monthly amount from the loan record
@@ -285,17 +297,17 @@ class PayrollCalculationService
                     $payrollMonthEnd = Carbon::parse($month . '-01')->endOfMonth();
                     $loanStartDate = Carbon::parse($loan->start_date);
                     $loanEndDate = Carbon::parse($loan->end_date);
-                    
+
                     // Check if the loan is active for this payroll month
                     if ($loanStartDate->lte($payrollMonthEnd) && $loanEndDate->gte($payrollMonthStart)) {
                         // Loan is active for this month - use the loan's monthly deduction amount
                         $deductionAmount = $loan->monthly_deduction;
-                        
+
                         // Loan deductions continue at full amount even during suspension
                         // if ($isSuspended) {
                         //     $deductionAmount /= 2;
                         // }
-                        
+
                         // Track this loan deduction and update the loan record
                         $processedLoanDeduction = true;
                     }
@@ -323,21 +335,21 @@ class PayrollCalculationService
                     $deductionAmount = $deduction->amount;
                 }
             }
-            
+
             // Only add deduction if there's an amount to deduct
             if ($deductionAmount > 0) {
                 // Calculate the maximum total deductions allowed to prevent negative net pay
                 $maxTotalDeductionsAllowed = $basicSalary + $totalAdditions;
-                
+
                 // Check if adding this deduction would exceed the max allowed deductions
                 $projectedTotalDeductions = $totalDeductions + $deductionAmount;
-                
+
                 if ($projectedTotalDeductions > $maxTotalDeductionsAllowed) {
                     // Adjust the deduction amount to not exceed the limit
                     $availableForDeduction = max(0, $maxTotalDeductionsAllowed - $totalDeductions);
                     $deductionAmount = $availableForDeduction;
                 }
-                
+
                 $totalDeductions += $deductionAmount;
                 $deductionRecords[] = [
                     'type' => 'deduction',
@@ -345,13 +357,13 @@ class PayrollCalculationService
                     'amount' => $deductionAmount,
                     'frequency' => $deduction->deduction_period,
                 ];
-                
+
                 // If this is a pension-related deduction, accumulate the amount
                 $deductionName = $deduction->deductionType ? $deduction->deductionType->name : $deduction->deduction_type;
                 if (stripos($deductionName, 'Pension') !== false) {
                     $totalPensionAmount += $deductionAmount;
                 }
-                
+
                 // If this was a processed loan deduction, update the loan record and create tracking record
                 if ($processedLoanDeduction && isset($loan)) {
                     // Update loan details
@@ -364,7 +376,7 @@ class PayrollCalculationService
                         $loan->status = 'completed';
                         $loan->end_date = Carbon::now();
                     }
-                    
+
                     // Additional check: if loan term has been reached, mark as completed
                     // Calculate actual months passed since loan start to determine if term is reached
                     $loanStart = Carbon::parse($loan->start_date);
@@ -374,12 +386,12 @@ class PayrollCalculationService
                         $loan->status = 'completed';
                         $loan->end_date = Carbon::now();
                     }
-                    
+
                     // Update remaining months based on how many deductions have been processed
                     // Count existing loan deductions to determine how many months have been completed
                     $existingDeductionsCount = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->count();
                     $loan->remaining_months = max(0, $loan->total_months - ($existingDeductionsCount + 1));
-                    
+
                     $loan->save();
 
                     // Calculate actual months passed since loan start to determine month number for tracking
@@ -410,7 +422,7 @@ class PayrollCalculationService
             // The $totalPensionAmount already contains the employee's contribution.
             // So, we add both to the RSA balance.
             $newRsaBalance = $currentRsaBalance + $totalPensionAmount + $governmentContribution;
-            
+
             $employee->update(['rsa_balance' => $newRsaBalance]);
         }
 
@@ -424,7 +436,7 @@ class PayrollCalculationService
         foreach ($employeeAdditions as $addition) {
             // Check if this addition should be applied for the current payroll month based on period
             $shouldApply = false;
-            
+
             switch ($addition->addition_period) {
                 case 'Monthly':
                     // Monthly additions apply every month within the date range
@@ -448,7 +460,7 @@ class PayrollCalculationService
                     $shouldApply = false;
                     break;
             }
-            
+
             if ($shouldApply) {
                 // Calculate addition amount based on the specific step's basic salary
                 if ($addition->amount_type === 'percentage') {
@@ -456,7 +468,7 @@ class PayrollCalculationService
                     if ($isContractEmployee) {
                         // For contract employees, use their contract amount for percentage calculations
                         $additionAmount = ($addition->amount / 100) * $employee->amount;
-                        
+
                         // Additions continue at full amount even during suspension
                         // if ($isSuspended) {
                         //     $additionAmount = $additionAmount / 2;
@@ -466,7 +478,7 @@ class PayrollCalculationService
                         $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
                         if ($step && $step->basic_salary) {
                             $additionAmount = ($addition->amount / 100) * $step->basic_salary;
-                            
+
                             // Additions continue at full amount even during suspension
                             // if ($isSuspended) {
                             //     $additionAmount = $additionAmount / 2;
@@ -479,7 +491,7 @@ class PayrollCalculationService
                     // For fixed amount additions, use the stored amount
                     $additionAmount = $addition->amount;
                 }
-                
+
                 $totalAdditions += $additionAmount;
                 $additionRecords[] = [
                     'type' => 'addition',
@@ -494,16 +506,16 @@ class PayrollCalculationService
         // Net salary = Basic Salary - Total Deductions + Total Additions
         // For suspended employees, we already halved the basic salary above
         $netSalary = $basicSalary - $totalDeductions + $totalAdditions;
-        
+
         // Final safety check: ensure net salary is never negative
         // If net salary would be negative, we reduce total deductions to ensure net salary is zero
         if ($netSalary < 0) {
             // Calculate maximum allowable deductions to have net salary of zero
             $maxAllowableDeductions = max(0, $basicSalary + $totalAdditions);
-            
+
             // Adjust total deductions to not exceed the maximum allowable
             $totalDeductions = $maxAllowableDeductions;
-            
+
             // Recalculate net salary (should now be 0)
             $netSalary = max(0, $basicSalary - $totalDeductions + $totalAdditions);
         }

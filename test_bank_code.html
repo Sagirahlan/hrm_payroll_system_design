@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bank Code Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Bank Code Auto-population Test</h1>
+    
+    <div>
+        <label for="bank_name">Bank Name:</label>
+        <select name="bank_name" id="bank_name">
+            <option value="">Select Bank</option>
+            <option value="Access Bank" data-bank-code="044">Access Bank</option>
+            <option value="GTBank" data-bank-code="058">GTBank</option>
+            <option value="First Bank" data-bank-code="011">First Bank</option>
+        </select>
+    </div>
+    
+    <div>
+        <label for="bank_code">Bank Code:</label>
+        <input type="text" name="bank_code" id="bank_code" readonly>
+    </div>
+    
+    <p>Current bank code: <span id="display_code">None</span></p>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bankSelect = document.getElementById('bank_name');
+            const bankCodeInput = document.getElementById('bank_code');
+            const displayCode = document.getElementById('display_code');
+
+            console.log('Elements loaded:', {bankSelect, bankCodeInput});
+            
+            bankSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                console.log('Selected option:', selectedOption);
+                
+                if (selectedOption) {
+                    const bankCode = selectedOption.getAttribute('data-bank-code');
+                    console.log('Bank code attribute:', bankCode);
+                    
+                    if (bankCode) {
+                        bankCodeInput.value = bankCode;
+                        bankCodeInput.readOnly = true;
+                        displayCode.textContent = bankCode;
+                        console.log('Set bank code to:', bankCode);
+                    } else {
+                        bankCodeInput.value = '';
+                        bankCodeInput.readOnly = false;
+                        displayCode.textContent = 'None';
+                        console.log('Cleared bank code');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

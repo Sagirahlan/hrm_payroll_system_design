@@ -201,6 +201,7 @@ class DisciplinaryController extends Controller
 
         // If the action type is 'suspended', update the employee's status to 'Suspended' if currently 'Active'
         // If the action type is 'hold', update the employee's status to 'Hold' if currently 'Active'
+        // If the action type is 'query', update the employee's status to 'Hold' if currently 'Active'
         // If the action type is 'active', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
         // If the disciplinary action status is 'Resolved', update the employee's status to 'Active' if currently 'Suspended' or 'Hold'
         $actionType = strtolower($validated['action_type']);
@@ -218,7 +219,7 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
-            elseif ($actionType === 'query' && strtolower($employee->status) === 'active') {
+            elseif ($actionType === 'hold' && strtolower($employee->status) === 'active') {
                 $employee->status = 'Hold';
                 $employee->save();
 
@@ -226,6 +227,17 @@ class DisciplinaryController extends Controller
                     'user_id' => auth()->id(),
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Hold due to disciplinary action ID: {$action->action_id}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
+                ]);
+            }
+            elseif ($actionType === 'query' && strtolower($employee->status) === 'active') {
+                // For 'query' action type, do NOT change the employee status - remain active
+                // Just log the action
+                AuditTrail::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'updated',
+                    'description' => "Employee ID {$employee->employee_id} disciplinary action recorded as 'query' (status unchanged, remains Active)",
                     'action_timestamp' => now(),
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);

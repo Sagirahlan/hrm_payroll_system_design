@@ -577,12 +577,12 @@ class PayrollController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'period' => 'required|in:OneTime,Monthly,Perpetual',
             'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date', // Require end_date for all periods now
         ];
 
-        // If period is Monthly, end_date is required per user request
-        if ($request->period === 'Monthly') {
-            $rules['end_date'] = 'required|date|after_or_equal:start_date';
+        // For OneTime period, end_date is not required as per business logic
+        if ($request->period === 'OneTime') {
+            $rules['end_date'] = 'nullable|date|after_or_equal:start_date';
         }
 
         $request->validate($rules);
@@ -1284,8 +1284,22 @@ class PayrollController extends Controller
     public function deductions(Request $request)
     {
         $allDeductionTypes = DeductionType::all();
+
+        // Filter out loan-related deductions from non-statutory deductions
+        $loanKeywords = ['loan', 'advance', 'cash advance', 'special loan', 'staff loan', 'salary advance'];
+
         $statutoryDeductions = $allDeductionTypes->where('is_statutory', true);
-        $nonStatutoryDeductions = $allDeductionTypes->where('is_statutory', false);
+
+        $nonStatutoryDeductions = $allDeductionTypes->where('is_statutory', false)->filter(function ($deductionType) use ($loanKeywords) {
+            // Check if the deduction type name contains any loan-related keywords (case-insensitive)
+            $lowerName = strtolower($deductionType->name);
+            foreach ($loanKeywords as $keyword) {
+                if (strpos($lowerName, $keyword) !== false) {
+                    return false; // Exclude this deduction type
+                }
+            }
+            return true; // Include this deduction type
+        });
 
         $departments = Department::orderBy('department_name')->get();
         $gradeLevels = GradeLevel::orderBy('name')->get();

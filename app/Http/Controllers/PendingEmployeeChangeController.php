@@ -26,8 +26,8 @@ class PendingEmployeeChangeController extends Controller
     {
         $this->middleware(['auth']);
         $this->middleware(['permission:view_pending_employee_changes'], ['only' => ['index', 'show']]);
-        $this->middleware(['permission:approve_pending_employee_changes'], ['only' => ['approve']]);
-        $this->middleware(['permission:reject_pending_employee_changes'], ['only' => ['reject']]);
+        $this->middleware(['permission:approve_pending_employee_changes|approve_bank_details'], ['only' => ['approve']]);
+        $this->middleware(['permission:reject_pending_employee_changes|approve_bank_details'], ['only' => ['reject']]);
     }
 
     public function index(Request $request)
@@ -89,13 +89,27 @@ class PendingEmployeeChangeController extends Controller
             });
         }
 
+        // Apply permission-based filtering
+        $user = auth()->user();
+        if ($user->can('approve_bank_details') && !$user->can('approve_pending_employee_changes')) {
+            // User can ONLY see bank details changes
+            $query->whereRaw("JSON_EXTRACT(data, '$.bank_name') IS NOT NULL");
+        } elseif ($user->can('approve_pending_employee_changes') && !$user->can('approve_bank_details')) {
+             // User can see everything EXCEPT bank details changes
+            $query->whereRaw("JSON_EXTRACT(data, '$.bank_name') IS NULL");
+        }
+        // If user has both, they can see everything (no filter needed)
+
         $pendingChanges = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->except('page'));
 
-        // Also get pending promotions/demotions
-        $pendingPromotions = PromotionHistory::with(['employee', 'creator'])
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Also get pending promotions/demotions - Only show if not restricted to bank details
+        $pendingPromotions = collect([]);
+        if ($user->can('approve_pending_employee_changes')) {
+             $pendingPromotions = PromotionHistory::with(['employee', 'creator'])
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         return view('pending-changes.index', compact('pendingChanges', 'pendingPromotions'));
     }
@@ -155,6 +169,17 @@ class PendingEmployeeChangeController extends Controller
             'approval_notes' => 'nullable|string|max:1000'
         ]);
 
+        // Security check: Ensure user has correct permission for this specific type of change
+        $isBankChange = isset($pendingChange->data['bank_name']);
+        
+        if ($isBankChange && !auth()->user()->can('approve_bank_details')) {
+             abort(403, 'You do not have permission to approve bank details changes.');
+        }
+        
+        if (!$isBankChange && !auth()->user()->can('approve_pending_employee_changes')) {
+            abort(403, 'You do not have permission to approve general employee changes.');
+        }
+
         return DB::transaction(function () use ($pendingChange, $request) {
             // Update the pending change status
             $pendingChange->update([
@@ -201,6 +226,17 @@ class PendingEmployeeChangeController extends Controller
         $request->validate([
             'approval_notes' => 'required|string|max:1000'
         ]);
+
+        // Security check: Ensure user has correct permission for this specific type of change
+        $isBankChange = isset($pendingChange->data['bank_name']);
+        
+        if ($isBankChange && !auth()->user()->can('approve_bank_details')) {
+             abort(403, 'You do not have permission to reject bank details changes.');
+        }
+        
+        if (!$isBankChange && !auth()->user()->can('approve_pending_employee_changes')) {
+            abort(403, 'You do not have permission to reject general employee changes.');
+        }
 
         $pendingChange->update([
             'status' => 'rejected',

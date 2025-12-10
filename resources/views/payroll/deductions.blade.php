@@ -51,7 +51,7 @@
                                     </label>
                                 </div>
                             @endforeach
-                            
+
                             <div class="mt-3">
                                 <label for="statutory_deduction_month" class="form-label">Deduction Month</label>
                                 <input type="month" name="statutory_deduction_month" id="statutory_deduction_month" class="form-control" required>
@@ -103,8 +103,8 @@
                                 <input type="date" name="start_date" id="start_date" class="form-control" required>
                             </div>
                             <div class="col-sm-6 mb-3">
-                                <label for="end_date" class="form-label">End Date <small class="text-muted">(Optional)</small></label>
-                                <input type="date" name="end_date" id="end_date" class="form-control">
+                                <label for="end_date" class="form-label">End Date </label>
+                                <input type="date" name="end_date" id="end_date" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                             <button class="btn btn-outline-secondary" type="submit">Search</button>
                             <a href="{{ route('payroll.deductions') }}" class="btn btn-outline-danger" title="Clear Search">Clear</a>
                         </div>
-                        
+
 <div class="row mb-3">
     <div class="col-md-4">
         <label for="department_filter" class="form-label">Department</label>
@@ -165,7 +165,7 @@
         </select>
     </div>
 </div>
-                        
+
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">Apply Filters</button>
                         </div>
@@ -193,7 +193,7 @@
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <div class="mt-3">
                         Showing {{ $employees->firstItem() }} to {{ $employees->lastItem() }} of <span id="total-employees">{{ $employees->total() }}</span> employees
                     </div>
@@ -219,8 +219,8 @@
 
             if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100) {
                 isLoading = true;
-                fetch(nextPageUrl, { 
-                    headers: { 
+                fetch(nextPageUrl, {
+                    headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     }
@@ -339,13 +339,13 @@
         // Handle department filter change
         const departmentFilter = document.getElementById('department_filter');
         const gradeLevelFilter = document.getElementById('grade_level_filter');
-        
+
         if (departmentFilter) {
             departmentFilter.addEventListener('change', function() {
                 filterForm.submit();
             });
         }
-        
+
         if (gradeLevelFilter) {
             gradeLevelFilter.addEventListener('change', function() {
                 filterForm.submit();
@@ -364,37 +364,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = String(today.getMonth() + 1).padStart(2, '0');
         statutoryMonthInput.value = `${year}-${month}`;
     }
-    
-    // Set default value for start date
+
+    // Set default value for start date to first day of current month
     const startDateInput = document.getElementById('start_date');
     if (startDateInput && !startDateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
-    }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set default value for statutory deduction month
-    const statutoryMonthInput = document.getElementById('statutory_deduction_month');
-    if (statutoryMonthInput && !statutoryMonthInput.value) {
         const today = new Date();
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        statutoryMonthInput.value = `${year}-${month}`;
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const startDate = `${year}-${month}-01`;
+        startDateInput.value = startDate;
     }
-    
-    // Set default value for start date
-    const startDateInput = document.getElementById('start_date');
-    if (startDateInput && !startDateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
+
+    // Set default value for end date to last day of current month
+    const endDateInput = document.getElementById('end_date');
+    if (endDateInput && !endDateInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+        const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+        const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+        endDateInput.value = endDate;
     }
-    
+
     // Show/hide sections based on selection
     const typeIdSelect = document.getElementById('type_id');
     const nonStatutoryFields = document.querySelectorAll('#amount, #amount_type, #period, #start_date, #end_date');
-    
+
     if (typeIdSelect) {
         typeIdSelect.addEventListener('change', function() {
             const showNonStatutory = this.value !== '';

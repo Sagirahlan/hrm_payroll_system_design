@@ -62,15 +62,7 @@
                                     <select name="nationality" class="form-select" required>
                                         <option value="">-- Select Nationality --</option>
                                         <option value="Nigeria" {{ old('nationality', $employee->nationality) == 'Nigeria' ? 'selected' : '' }}>Nigeria</option>
-                                        <option value="Benin" {{ old('nationality', $employee->nationality) == 'Benin' ? 'selected' : '' }}>Benin</option>
-                                        <option value="Cameroon" {{ old('nationality', $employee->nationality) == 'Cameroon' ? 'selected' : '' }}>Cameroon</option>
-                                        <option value="Chad" {{ old('nationality', $employee->nationality) == 'Chad' ? 'selected' : '' }}>Chad</option>
-                                        <option value="Ghana" {{ old('nationality', $employee->nationality) == 'Ghana' ? 'selected' : '' }}>Ghana</option>
-                                        <option value="Niger" {{ old('nationality', $employee->nationality) == 'Niger' ? 'selected' : '' }}>Niger</option>
-                                        <option value="Togo" {{ old('nationality', $employee->nationality) == 'Togo' ? 'selected' : '' }}>Togo</option>
-                                        <option value="Burkina Faso" {{ old('nationality', $employee->nationality) == 'Burkina Faso' ? 'selected' : '' }}>Burkina Faso</option>
-                                        <option value="Equatorial Guinea" {{ old('nationality', $employee->nationality) == 'Equatorial Guinea' ? 'selected' : '' }}>Equatorial Guinea</option>
-                                        <option value="Central African Republic" {{ old('nationality', $employee->nationality) == 'Central African Republic' ? 'selected' : '' }}>Central African Republic</option>
+                                        
                                     </select>
                                     @error('nationality') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -200,24 +192,25 @@
                                     </div>
                                     <div class="col-md-6 col-12">
                                         <label class="form-label font-weight-bold">Salary Scale <span class="text-danger">*</span></label>
-                                        <select id="salary_scale_id" name="salary_scale_id" class="form-select">
+                                        <select id="salary_scale_id" name="salary_scale_id_display" class="form-select" disabled>
                                             <option value="">-- Select Salary Scale --</option>
                                             @foreach ($salaryScales as $scale)
                                                 <option value="{{ $scale->id }}" {{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') == $scale->id ? 'selected' : '' }}>{{ $scale->acronym }} - {{ $scale->full_name }}</option>
                                             @endforeach
                                         </select>
+                                        <input type="hidden" name="salary_scale_id" value="{{ old('salary_scale_id', $employee->gradeLevel->salary_scale_id ?? '') }}">
                                         @error('salary_scale_id') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-4 col-12">
                                         <label class="form-label font-weight-bold">Grade Level <span class="text-danger">*</span></label>
-                                        <select id="grade_level_name" name="grade_level_name" class="form-select">
+                                        <select id="grade_level_name" name="grade_level_name" class="form-select" disabled>
                                             <option value="">-- Select Grade Level --</option>
                                         </select>
                                         @error('grade_level_name') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-2 col-12">
                                         <label class="form-label font-weight-bold">Step <span class="text-danger">*</span></label>
-                                        <select id="step_level" name="step_level" class="form-select">
+                                        <select id="step_level" name="step_level" class="form-select" disabled>
                                             <option value="">-- Step --</option>
                                         </select>
                                         @error('step_level') <small class="text-danger">{{ $message }}</small> @enderror
@@ -379,12 +372,13 @@
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
-                                    <select name="bank_name" id="bank_name" class="form-select" required>
+                                    <select name="bank_name_display" id="bank_name" class="form-select" disabled>
                                         <option value="">Select Bank</option>
                                         @foreach($banks as $bank)
                                             <option value="{{ $bank->bank_name }}" data-code="{{ $bank->bank_code }}" {{ old('bank_name', $employee->bank->bank_name ?? '') == $bank->bank_name ? 'selected' : '' }}>{{ $bank->bank_name }}</option>
                                         @endforeach
                                     </select>
+                                    <input type="hidden" name="bank_name" value="{{ old('bank_name', $employee->bank->bank_name ?? '') }}">
                                     @error('bank_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
@@ -394,12 +388,12 @@
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_name" class="form-control" required value="{{ old('account_name', $employee->bank->account_name ?? '') }}">
+                                    <input type="text" name="account_name" class="form-control" required value="{{ old('account_name', $employee->bank->account_name ?? '') }}" readonly>
                                     @error('account_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Number <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_no" class="form-control" required value="{{ old('account_no', $employee->bank->account_no ?? '') }}">
+                                    <input type="text" name="account_no" class="form-control" required value="{{ old('account_no', $employee->bank->account_no ?? '') }}" readonly>
                                     @error('account_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                             </div>
@@ -566,7 +560,11 @@
             const selectedOption = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex];
             const appointmentTypeName = selectedOption.dataset.name;
 
-            regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
+            regularAppointmentFields.querySelectorAll('input, select').forEach(field => {
+                if (!['salary_scale_id', 'grade_level_name', 'step_level'].includes(field.id)) {
+                    field.disabled = false;
+                }
+            });
             contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
 
             if (appointmentTypeName === 'Contract') {

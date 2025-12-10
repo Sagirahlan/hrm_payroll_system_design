@@ -10,6 +10,11 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                         <div class="col-12 mb-3">
+                            <a href="{{ url()->previous() }}" class="btn btn-outline-primary">
+                                &larr; Back
+                            </a>
+                        </div>
                         <!-- Addition Form -->
                         <div class="col-lg-6 mb-4">
                             <div class="card border-success shadow">
@@ -52,8 +57,8 @@
                                             <input type="date" name="start_date" id="start_date" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date" class="form-label">End Date (Optional)</label>
-                                            <input type="date" name="end_date" id="end_date" class="form-control">
+                                            <label for="end_date" class="form-label">End Date</label>
+                                            <input type="date" name="end_date" id="end_date" class="form-control" required>
                                         </div>
                                         <button type="submit" class="btn btn-success">Add Addition</button>
                                     </form>
@@ -74,8 +79,8 @@
                                                     <th>Type</th>
                                                     <th>Amount</th>
                                                     <th>Period</th>
-                                                    <th>Start</th>
-                                                    <th>End</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -84,8 +89,8 @@
                                                         <td>{{ $addition->addition_type }}</td>
                                                         <td>₦{{ number_format($addition->amount, 2) }}</td>
                                                         <td>{{ $addition->addition_period }}</td>
-                                                        <td>{{ $addition->start_date }}</td>
-                                                        <td>{{ $addition->end_date ?? 'N/A' }}</td>
+                                                        <td>{{ \Carbon\Carbon::parse($addition->start_date)->format('M d, Y') }}</td>
+                                                        <td>{{ $addition->end_date ? \Carbon\Carbon::parse($addition->end_date)->format('M d, Y') : 'N/A' }}</td>
                                                     </tr>
                                                 @empty
                                                     <tr>
@@ -118,32 +123,40 @@
         const endDateInput = document.getElementById('end_date');
         const endDateContainer = endDateInput.closest('.mb-3');
 
+        // Set default dates (start of month and end of month)
+        function setDefaultDates() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+
+            // Set start date to first day of current month
+            const startDate = `${year}-${month}-01`;
+            startDateInput.value = startDate;
+
+            // Calculate last day of current month
+            const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+            const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+            endDateInput.value = endDate;
+        }
+
         function toggleEndDate() {
-            if (periodSelect.value === 'OneTime') {
-                endDateContainer.style.display = 'none';
-                endDateInput.required = false;
-                endDateInput.value = ''; // Clear value
-            } else {
-                endDateContainer.style.display = 'block';
-                // End date is optional for Perpetual, but let's keep it consistent with request
-                // Request says: "if montly use the start date and end date"
-                // It implies end date is important for Monthly.
-                // However, existing backend validation might treat it as optional.
-                // Let's just control visibility for now.
-            }
+            // End date is always required and visible now
+            endDateContainer.style.display = 'block';
+            endDateInput.required = true;
         }
 
         periodSelect.addEventListener('change', function () {
             toggleEndDate();
-            
+
             if (this.value === 'OneTime' && startDateInput.value) {
-                // Optional: logic to set start date to first of month if needed, 
-                // but user request didn't explicitly ask for this auto-correction here,
-                // just "use that start date".
+                // For OneTime, use current date as start date
+                const today = new Date().toISOString().split('T')[0];
+                startDateInput.value = today;
             }
         });
 
-        // Initial check
+        // Initialize default dates and visibility
+        setDefaultDates();
         toggleEndDate();
     });
 </script>

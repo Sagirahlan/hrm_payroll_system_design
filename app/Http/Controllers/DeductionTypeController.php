@@ -30,14 +30,20 @@ class DeductionTypeController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20|unique:deduction_types',
             'description' => 'nullable|string',
             'is_statutory' => 'required|boolean',
-            'calculation_type' => 'required|in:fixed_amount,percentage',
-            'rate_or_amount' => 'nullable|numeric',
-        ]);
+        ];
+
+        // Add conditional validation rules based on is_statutory value
+        if ($request->is_statutory == 1) {
+            $rules['calculation_type'] = 'required|in:fixed_amount,percentage';
+            $rules['rate_or_amount'] = 'required|numeric';
+        }
+
+        $request->validate($rules);
 
         $deductionType = DeductionType::create($request->all());
 
@@ -60,14 +66,20 @@ class DeductionTypeController extends Controller
 
     public function update(Request $request, DeductionType $deductionType)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20|unique:deduction_types,code,' . $deductionType->id,
             'description' => 'nullable|string',
             'is_statutory' => 'required|boolean',
-            'calculation_type' => 'required|in:fixed_amount,percentage',
-            'rate_or_amount' => 'nullable|numeric',
-        ]);
+        ];
+
+        // Add conditional validation rules based on is_statutory value
+        if ($request->is_statutory == 1) {
+            $rules['calculation_type'] = 'required|in:fixed_amount,percentage';
+            $rules['rate_or_amount'] = 'required|numeric';
+        }
+
+        $request->validate($rules);
 
         $deductionType->update($request->all());
 

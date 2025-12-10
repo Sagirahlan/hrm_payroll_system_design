@@ -13,10 +13,12 @@ use App\Http\Controllers\RetirementController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\BiometricController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BankDetailsController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PensionerController;
+use App\Http\Controllers\PensionComputationController;
 use App\Http\Controllers\GradeLevelController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportController;
@@ -97,10 +99,20 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/export/filtered', [EmployeeController::class, 'exportFiltered'])->name('employees.export.filtered');
         Route::resource('roles', RoleController::class);
 
-        // Leave Management Routes
-        // Keep only the store and update methods under manage_employees middleware for admin functions
-        Route::post('leaves/{leave}/approve', [\App\Http\Controllers\LeaveController::class, 'approve'])->name('leaves.approve');
     });
+
+    // Bank Details Management
+    Route::middleware('permission:manage_bank_details')->group(function () {
+        Route::get('/bank-details', [BankDetailsController::class, 'index'])->name('bank-details.index');
+        Route::get('/bank-details/{employeeId}', [BankDetailsController::class, 'show'])->name('bank-details.show');
+        Route::put('/bank-details/{employeeId}', [BankDetailsController::class, 'update'])->name('bank-details.update');
+        Route::post('/bank-details/search', [BankDetailsController::class, 'search'])->name('bank-details.search');
+    });
+
+    // Leave Management Routes
+    // Keep only the store and update methods under manage_employees middleware for admin functions
+    Route::post('leaves/{leave}/approve', [\App\Http\Controllers\LeaveController::class, 'approve'])->name('leaves.approve');
+
 
     // Probation Management - HR and Admin only
     Route::middleware('permission:view_probation')->group(function () {
@@ -324,6 +336,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('loans', \App\Http\Controllers\LoanController::class)->except(['edit', 'update']);
             Route::get('/loans/employees/{employee}/additions', [LoanController::class, 'getAdditionsForEmployee'])->name('loans.employee.additions');
             Route::get('/loans/employees/{employee}/salary', [LoanController::class, 'getEmployeeSalary'])->name('loans.employee.salary');
+            Route::get('/loans/types/{loanType}/principal-amount', [LoanController::class, 'getLoanTypePrincipalAmount'])->name('loans.type.principal-amount');
 
             // Grade Level Adjustments
             Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
@@ -391,3 +404,12 @@ Route::get('/clear-cache', function() {
 
 // Employee CSV Export Route
 Route::get('/employees/export/csv', [EmployeeController::class, 'exportCsv'])->name('employees.export.csv')->middleware('permission:manage_employees');
+
+// Pension Computation Routes
+Route::prefix('pension')->name('pension.')->group(function () {
+    Route::get('/computation/create', [PensionComputationController::class, 'create'])->name('create');
+    Route::post('/computation/compute', [PensionComputationController::class, 'compute'])->name('compute');
+    Route::post('/computation/store', [PensionComputationController::class, 'store'])->name('store');
+    Route::get('/steps', [PensionComputationController::class, 'getStepsByGL'])->name('get-steps');
+});
+

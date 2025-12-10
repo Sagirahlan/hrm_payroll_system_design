@@ -342,6 +342,9 @@
                         @can('manage_probation')
                         <li><a class="nav-link {{ request()->routeIs('probation.*') ? 'active' : '' }}" href="{{ route('probation.index') }}">Probation Management</a></li>
                         @endcan
+                        @can('manage_bank_details')
+                        <li><a class="nav-link {{ request()->routeIs('bank-details.*') ? 'active' : '' }}" href="{{ route('bank-details.index') }}">Bank Details Management</a></li>
+                        @endcan
 
                     </ul>
                 </div>
@@ -440,6 +443,11 @@
             <li>
                 <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
                     <i class="fas fa-user-shield"></i> Pensioners
+                </a>
+            </li>
+            <li>
+                <a class="nav-link {{ request()->routeIs('pension.create') ? 'active' : '' }}" href="{{ route('pension.create') }}">
+                    <i class="fas fa-calculator"></i> Pension Computation
                 </a>
             </li>
             @endcan

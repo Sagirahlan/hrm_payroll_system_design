@@ -7,7 +7,6 @@ use App\Models\Employee;
 use App\Models\Deduction;
 use App\Models\DeductionType;
 use App\Models\Addition;
-use App\Models\AdditionType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +25,7 @@ class LoanController extends Controller
     public function index()
     {
         $loans = Loan::with(['employee', 'deductionType'])->paginate(15);
-
+        
         return view('loans.index', compact('loans'));
     }
 
@@ -53,23 +52,7 @@ class LoanController extends Controller
             return false; // All loan-related additions for this employee have active loans
         });
 
-        // Get deduction types that match loan-related addition types
-        $loanRelatedAdditionTypes = AdditionType::whereRaw("LOWER(name) LIKE '%loan%' OR LOWER(name) LIKE '%advance%'")->get();
-
-        // Create corresponding deduction types based on addition types
-        $deductionTypes = collect();
-        foreach ($loanRelatedAdditionTypes as $additionType) {
-            // Look for a matching deduction type with the same name
-            $deductionType = DeductionType::where('name', $additionType->name)->first();
-            if ($deductionType) {
-                $deductionTypes->push($deductionType);
-            }
-        }
-
-        // If no corresponding deduction types are found, use all deduction types
-        if ($deductionTypes->isEmpty()) {
-            $deductionTypes = DeductionType::all();
-        }
+        $deductionTypes = DeductionType::all();
 
         return view('loans.create', compact('filteredEmployees', 'deductionTypes'));
     }
@@ -91,25 +74,7 @@ class LoanController extends Controller
             }
         }
 
-        // Prepare response data to include both additions and matching deduction types
-        $response = [];
-        foreach ($availableAdditions as $addition) {
-            // Find matching deduction type for each addition type
-            $deductionType = DeductionType::where('name', $addition->additionType->name)->first();
-
-            $item = [
-                'addition_id' => $addition->addition_id,
-                'amount' => $addition->amount,
-                'addition_type' => $addition->additionType,
-                'has_matching_deduction' => $deductionType !== null,
-                'deduction_type_id' => $deductionType ? $deductionType->id : null,
-                'addition_date' => $addition->start_date ? $addition->start_date->format('Y-m-d') : ($addition->created_at ? $addition->created_at->format('Y-m-d') : null)
-            ];
-
-            $response[] = $item;
-        }
-
-        return response()->json($response);
+        return response()->json($availableAdditions);
     }
 
     /**
@@ -119,7 +84,7 @@ class LoanController extends Controller
     {
         // Check if employee is a contract employee using the new method
         $isContractEmployee = $employee->isContractEmployee();
-
+        
         if ($isContractEmployee) {
             // For contract employees, use the amount field
             if ($employee->amount) {
@@ -130,14 +95,14 @@ class LoanController extends Controller
         } else {
             // For permanent/temporary employees, use grade level step
             $step = $employee->step;
-
+            
             if ($step && $step->basic_salary) {
                 return response()->json([
                     'basic_salary' => $step->basic_salary
                 ]);
             }
         }
-
+        
         return response()->json([
             'basic_salary' => null,
             'error' => 'Employee does not have a valid salary configured'
@@ -153,6 +118,7 @@ class LoanController extends Controller
         'employee_id' => 'required|exists:employees,employee_id',
         'addition_id' => 'required|exists:additions,addition_id',
         'principal_amount' => 'required|numeric|min:0',
+        'interest_rate' => 'nullable|numeric|min:0|max:100',
         'monthly_percentage' => 'nullable|numeric|min:0|max:100',
         'monthly_deduction' => 'nullable|numeric|min:0',
         'loan_duration_months' => 'nullable|integer|min:1',
@@ -170,11 +136,11 @@ class LoanController extends Controller
 
         $addition = Addition::find($request->addition_id);
         $employee = Employee::find($request->employee_id);
-
+        
         // Determine if employee is contract or regular using the new method
         $isContractEmployee = $employee->isContractEmployee();
         $salary = 0;
-
+        
         if ($isContractEmployee) {
             // For contract employees, use the amount field
             $salary = $employee->amount;
@@ -193,27 +159,27 @@ class LoanController extends Controller
 
         // CRITICAL: Principal amount is FIXED - never modify it
         $principalAmount = (float) $request->principal_amount;
-
-        // Interest rate is no longer collected, so default to 0
-        $interestRate = 0;
-
-        // Calculate interest and total repayment (interest is 0)
-        $totalInterest = 0;
-        $totalRepayment = $principalAmount;
-
+        
+        // Get interest rate from request (default to 0 if not provided)
+        $interestRate = (float) ($request->interest_rate ?? 0);
+        
+        // Calculate interest and total repayment
+        $totalInterest = ($principalAmount * $interestRate) / 100;
+        $totalRepayment = $principalAmount + $totalInterest;
+        
         // Priority order: loan_duration_months > monthly_deduction > monthly_percentage
         // This ensures the user's primary choice is respected
-
+        
         if ($request->filled('loan_duration_months') && $request->loan_duration_months > 0) {
             // PRIORITY 1: User specified EXACT number of months
             $totalMonths = (int) $request->loan_duration_months;
-
+            
             // Calculate exact monthly deduction: Total Repayment ÷ Exact Months
             $monthlyDeduction = $totalRepayment / $totalMonths;
-
+            
             // Calculate what percentage this represents
             $monthlyPercentage = ($monthlyDeduction / $salary) * 100;
-
+            
             \Log::info('Loan Duration Method', [
                 'months_input' => $request->loan_duration_months,
                 'total_months' => $totalMonths,
@@ -223,30 +189,30 @@ class LoanController extends Controller
                 'total_repayment' => $totalRepayment,
                 'monthly_deduction' => $monthlyDeduction
             ]);
-
+            
         } elseif ($request->filled('monthly_deduction') && $request->monthly_deduction > 0) {
             // PRIORITY 2: User specified monthly deduction amount
             $monthlyDeduction = (float) $request->monthly_deduction;
-
+            
             // Calculate months needed - round up to ensure loan is fully paid
             $totalMonths = (int) ceil($totalRepayment / $monthlyDeduction);
-
+            
             // Calculate percentage
             $monthlyPercentage = ($monthlyDeduction / $salary) * 100;
-
+            
         } elseif ($request->filled('monthly_percentage') && $request->monthly_percentage > 0) {
             // PRIORITY 3: User specified percentage of salary
             $monthlyPercentage = (float) $request->monthly_percentage;
-
+            
             // Calculate monthly deduction from percentage
             $monthlyDeductionBasedOnPercentage = ($monthlyPercentage / 100) * $salary;
-
+            
             // Calculate months needed based on the percentage-based deduction
             $totalMonths = (int) ceil($totalRepayment / $monthlyDeductionBasedOnPercentage);
-
+            
             // To ensure total repayment is fully covered, adjust the monthly deduction
             $monthlyDeduction = $totalRepayment / $totalMonths;
-
+            
         } else {
             return redirect()->back()
                 ->withInput()
@@ -307,15 +273,15 @@ class LoanController extends Controller
 
         return redirect()->route('loans.index')
             ->with('success', 'Loan created successfully.');
-
+            
     } catch (\Exception $e) {
         DB::rollback();
-
+        
         \Log::error('Loan Creation Failed', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
         ]);
-
+        
         return redirect()->back()
             ->withInput()
             ->withErrors(['error' => 'Failed to create loan: ' . $e->getMessage()]);
@@ -328,7 +294,7 @@ class LoanController extends Controller
     public function show(Loan $loan)
     {
         $loan->load(['employee', 'deductionType']);
-
+        
         return view('loans.show', compact('loan'));
     }
 

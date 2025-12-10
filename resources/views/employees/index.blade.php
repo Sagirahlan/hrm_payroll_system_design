@@ -11,7 +11,7 @@
             <div class="d-flex flex-wrap gap-2 justify-content-center">
                 @can('create_employees')
                 <a href="{{ route('employees.create') }}" class="btn btn-light btn-sm rounded-pill me-2 font-weight-bold shadow-sm">
-                    <i class="fas fa-plus me-1"></i>hfhhhdhhdhdhdhdhdh
+                    <i class="fas fa-plus me-1"></i>Add Employee
                 </a>
                 @endcan
                 <a href="{{ route('probation.index') }}" class="btn btn-info btn-sm rounded-pill me-2 font-weight-bold shadow-sm">

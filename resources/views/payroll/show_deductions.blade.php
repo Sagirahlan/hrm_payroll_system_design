@@ -10,6 +10,11 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <div class="col-12 mb-3">
+                            <a href="{{ url()->previous() }}" class="btn btn-outline-primary">
+                                &larr; Back
+                            </a>
+                        </div>
                         <!-- Deduction Form -->
                         <div class="col-lg-6 mb-4">
                             <div class="card border-danger shadow">
@@ -25,7 +30,7 @@
                                                 <option value="">-- Select Non-Statutory Deduction --</option>
                                                 @foreach($deductionTypes as $type)
                                                     @if(!$type->is_statutory)
-                                                        <option value="{{ $type->id }}" 
+                                                        <option value="{{ $type->id }}"
                                                                 data-calculation-type="{{ $type->calculation_type }}"
                                                                 data-rate-or-amount="{{ $type->rate_or_amount }}">
                                                             {{ $type->name }}
@@ -58,8 +63,8 @@
                                             <input type="date" name="start_date" id="start_date" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="end_date" class="form-label">End Date (Optional)</label>
-                                            <input type="date" name="end_date" id="end_date" class="form-control">
+                                            <label for="end_date" class="form-label">End Date</label>
+                                            <input type="date" name="end_date" id="end_date" class="form-control" required>
                                         </div>
                                         <button type="submit" class="btn btn-danger">Add Deduction</button>
                                     </form>
@@ -80,8 +85,8 @@
                                                     <th>Type</th>
                                                     <th>Amount</th>
                                                     <th>Period</th>
-                                                    <th>Start</th>
-                                                    <th>End</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -90,8 +95,8 @@
                                                         <td>{{ $deduction->deduction_type }}</td>
                                                         <td>₦{{ number_format($deduction->amount, 2) }}</td>
                                                         <td>{{ $deduction->deduction_period }}</td>
-                                                        <td>{{ $deduction->start_date }}</td>
-                                                        <td>{{ $deduction->end_date ?? 'N/A' }}</td>
+                                                        <td>{{ \Carbon\Carbon::parse($deduction->start_date)->format('M d, Y') }}</td>
+                                                        <td>{{ $deduction->end_date ? \Carbon\Carbon::parse($deduction->end_date)->format('M d, Y') : 'N/A' }}</td>
                                                     </tr>
                                                 @empty
                                                     <tr>
@@ -115,6 +120,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const deductionTypeSelect = document.getElementById('deduction_type_id');
@@ -122,13 +128,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const amountSection = document.getElementById('amount_section');
     const amountTypeSelect = document.getElementById('amount_type');
     const amountInput = document.getElementById('amount');
-    
+    const periodSelect = document.getElementById('period');
+    const endDateInput = document.getElementById('end_date');
+    const endDateContainer = endDateInput.closest('.mb-3');
+
+    // Set default dates (start of month and end of month)
+    function setDefaultDates() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+
+        // Set start date to first day of current month
+        const startDate = `${year}-${month}-01`;
+        document.getElementById('start_date').value = startDate;
+
+        // Calculate last day of current month
+        const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+        const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+        endDateInput.value = endDate;
+    }
+
+    function toggleEndDate() {
+        // End date is always required and visible now
+        endDateContainer.style.display = 'block';
+        endDateInput.required = true;
+    }
+
+    periodSelect.addEventListener('change', function () {
+        toggleEndDate();
+
+        if (this.value === 'OneTime' && document.getElementById('start_date').value) {
+            // For OneTime, use current date as start date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start_date').value = today;
+        }
+    });
+
     deductionTypeSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const isStatutory = selectedOption.getAttribute('data-is-statutory') === '1';
         const calculationType = selectedOption.getAttribute('data-calculation-type');
         const rateOrAmount = selectedOption.getAttribute('data-rate-or-amount');
-        
+
         if (isStatutory) {
             // Hide amount fields for statutory deductions
             amountTypeSection.style.display = 'none';
@@ -137,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show amount fields for non-statutory deductions
             amountTypeSection.style.display = 'block';
             amountSection.style.display = 'block';
-            
+
             // Set default values based on deduction type
             if (calculationType === 'percentage') {
                 amountTypeSelect.value = 'percentage';
@@ -146,13 +187,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 amountTypeSelect.value = 'fixed';
                 amountInput.placeholder = 'Enter fixed amount';
             }
-            
+
             // Pre-fill with rate_or_amount if available
             if (rateOrAmount) {
                 amountInput.value = rateOrAmount;
             }
         }
     });
+
+    // Initialize default dates and visibility
+    setDefaultDates();
+    toggleEndDate();
 });
 </script>
+@endpush
 @endsection
