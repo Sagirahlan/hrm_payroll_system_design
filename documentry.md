@@ -404,7 +404,6 @@ The Employee Management module serves as the foundation of the entire system, co
 - Biometric data tracking (if applicable)
 - Disciplinary action history
 - Payroll history and records
-- Pension information
 
 #### Key Features
 - Bulk employee import functionality via Excel
@@ -802,7 +801,6 @@ Dashboard
 ├── Retirements
 │   ├── Retirement List (view_retirement permission)
 │   └── Add Retirement (manage_retirement permission)
-├── Pensioners (manage_employees permission)
 ├── SMS Notifications (manage_sms permission)
 ├── Payroll (manage_payroll permission)
 │   ├── Process Payroll
@@ -1647,7 +1645,6 @@ For background processing:
 **Retired Status Rules**
 - No ongoing payroll processing
 - Final settlement calculations
-- Pension transition management
 - Access restriction to active employee features
 
 #### Workflow Business Logic
@@ -1690,7 +1687,6 @@ Net Salary = Basic Salary - Total Statutory Deductions - Total Non-Statutory Ded
 #### Tax and Compliance Calculations
 
 **Statutory Requirement Processing**
-- Pension contributions calculated on basic salary
 - Tax calculations based on current tax brackets
 - National Health Insurance contributions
 - Social security contributions

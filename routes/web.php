@@ -17,8 +17,6 @@ use App\Http\Controllers\BankDetailsController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\PensionerController;
-use App\Http\Controllers\PensionComputationController;
 use App\Http\Controllers\GradeLevelController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportController;
@@ -26,6 +24,8 @@ use App\Http\Controllers\ComprehensiveReportController;
 use App\Http\Controllers\PendingEmployeeChangeController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ProbationController;
+use App\Http\Controllers\PensionComputationController;
+use App\Http\Controllers\PensionerController;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
@@ -74,7 +74,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reports/bulk-generate', [ReportController::class, 'bulkGenerate'])->name('reports.bulk_generate');
     Route::get('/reports/{id}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::get('/reports/export', [ReportController::class, 'exportFiltered'])->name('reports.export');
-    Route::post('/reports/generate-pensioners', [ReportController::class, 'generatePensionersReport'])->name('reports.generate_pensioners');
 
     // New Comprehensive Report System
     Route::get('/comprehensive-reports', [ComprehensiveReportController::class, 'index'])->name('reports.comprehensive.index');
@@ -232,19 +231,30 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/employees/{employee}/retire', [RetirementController::class, 'retire'])->name('retirement.retire');
         Route::get('/retirements', [RetirementController::class, 'index'])->name('retirements.index');
         Route::get('/retirements/{retirement}', [RetirementController::class, 'show'])->name('retirements.show');
+        Route::get('/retirements/{employeeId}/pension-compute', [RetirementController::class, 'redirectToPensionComputation'])->name('retirements.pension-compute');
+    });
+
+    // Pensioner Management - HR and Admin only
+    Route::middleware('permission:manage_pensioners')->group(function () {
+        Route::resource('pensioners', PensionerController::class);
+        Route::get('/pensioners', [PensionerController::class, 'index'])->name('pensioners.index');
+        Route::get('/pensioners/create', [PensionerController::class, 'create'])->name('pensioners.create');
+        Route::get('/pensioners/{pensioner}', [PensionerController::class, 'show'])->name('pensioners.show');
+        Route::get('/pensioners/{pensioner}/edit', [PensionerController::class, 'edit'])->name('pensioners.edit');
+        Route::post('/pensioners/move-retired', [PensionerController::class, 'moveRetiredToPensioners'])->name('pensioners.move-retired');
+        Route::get('/pensioners/type/{type}', [PensionerController::class, 'getPensionersByType'])->name('pensioners.by-type');
+
+        // Pension Computation
+        Route::get('/pension/computation/create', [PensionComputationController::class, 'create'])->name('pension.create');
+        Route::post('/pension/computation', [PensionComputationController::class, 'compute'])->name('pension.compute');
+        Route::post('/pension/computation/store', [PensionComputationController::class, 'store'])->name('pension.store');
+        Route::get('/pension/computation/steps', [PensionComputationController::class, 'getStepsByGL'])->name('pension.steps');
+        Route::get('/pension/computation/employee-details', [PensionComputationController::class, 'getEmployeeDetails'])->name('pension.employee-details');
     });
 
     // Retirement Viewing - HR, Admin, and Bursary
     Route::middleware('permission:view_retirement')->group(function () {
 
-    });
-
-    // Pensioner Management - HR and Admin only
-    Route::middleware('permission:manage_employees')->group(function () {
-        Route::resource('pensioners', PensionerController::class);
-        Route::post('pensioners/{pensioner_id}/status', [PensionerController::class, 'updateStatus'])->name('pensioners.updateStatus');
-        Route::post('pensioners/{pensioner_id}/track-payment', [PensionerController::class, 'trackPayment'])->name('pensioners.trackPayment');
-        Route::get('pensioners/{pensioner_id}/payment-history', [PensionerController::class, 'paymentHistory'])->name('pensioners.paymentHistory');
     });
 
     // Payroll Management - Bursary and Admin only (ENHANCED WITH SEARCH & FILTERS)
@@ -352,21 +362,6 @@ Route::middleware(['auth'])->group(function () {
                 Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
                 Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
             });
-
-            // Grade Level Adjustments
-            Route::get('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'index'])->name('grade-levels.adjustments.index');
-            Route::post('grade-levels/{gradeLevel}/adjustments', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'store'])->name('grade-levels.adjustments.store');
-            Route::delete('grade-levels/{gradeLevel}/adjustments/{adjustmentId}', [\App\Http\Controllers\GradeLevelAdjustmentController::class, 'destroy'])->name('grade-levels.adjustments.destroy');
-
-            // Step Management Routes
-            Route::prefix('salary-scales/{salaryScale}/grade-levels/{gradeLevel}')->group(function () {
-                // Steps
-                Route::get('/steps/create', [\App\Http\Controllers\SalaryScale\StepController::class, 'create'])->name('salary-scales.grade-levels.steps.create');
-                Route::post('/steps', [\App\Http\Controllers\SalaryScale\StepController::class, 'store'])->name('salary-scales.grade-levels.steps.store');
-                Route::get('/steps/{step}/edit', [\App\Http\Controllers\SalaryScale\StepController::class, 'edit'])->name('salary-scales.grade-levels.steps.edit');
-                Route::put('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'update'])->name('salary-scales.grade-levels.steps.update');
-                Route::delete('/steps/{step}', [\App\Http\Controllers\SalaryScale\StepController::class, 'destroy'])->name('salary-scales.grade-levels.steps.destroy');
-            });
         });
 
         // Promotion and Demotion Management
@@ -404,12 +399,3 @@ Route::get('/clear-cache', function() {
 
 // Employee CSV Export Route
 Route::get('/employees/export/csv', [EmployeeController::class, 'exportCsv'])->name('employees.export.csv')->middleware('permission:manage_employees');
-
-// Pension Computation Routes
-Route::prefix('pension')->name('pension.')->group(function () {
-    Route::get('/computation/create', [PensionComputationController::class, 'create'])->name('create');
-    Route::post('/computation/compute', [PensionComputationController::class, 'compute'])->name('compute');
-    Route::post('/computation/store', [PensionComputationController::class, 'store'])->name('store');
-    Route::get('/steps', [PensionComputationController::class, 'getStepsByGL'])->name('get-steps');
-});
-

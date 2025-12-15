@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ComputeBeneficiary; // This should probably be renamed to Pensioner now
+use App\Models\ComputeBeneficiary;
 use App\Services\PensionCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,33 +15,21 @@ class PensionComputationController extends Controller
     public function __construct(PensionCalculationService $calculationService)
     {
         $this->calculationService = $calculationService;
+        $this->middleware(['auth']);
+        // Apply permissions to all methods except create
+        $this->middleware(['permission:manage_pensioners'], ['except' => ['create']]);
     }
 
     /**
      * Display the pension computation form
      */
-    public function create()
+    public function create(Request $request)
     {
-        $retiredEmployees = DB::table('employees')
-            ->leftJoin('banks', 'employees.employee_id', '=', 'banks.employee_id')
-            ->where('employees.status', 'Retired')
-            ->select(
-                'employees.employee_id', 
-                'employees.first_name', 
-                'employees.middle_name', 
-                'employees.surname', 
-                'employees.staff_no', 
-                'employees.date_of_birth', 
-                'employees.date_of_first_appointment', 
-                'employees.department_id', 
-                'employees.rank_id', 
-                'employees.grade_level_id', 
-                'employees.step_id', 
-                'employees.mobile_no',
-                'banks.account_no',
-                'banks.bank_name'
-            )
-            ->get();
+        // Check that user has either pension management or retirement management permissions
+        $user = auth()->user();
+        if (!$user || (!$user->can('manage_pensioners') && !$user->can('manage_retirement'))) {
+            abort(403, 'Unauthorized access to pension computation.');
+        }
 
         $data = [
             'banks' => $this->getBanks(),
@@ -51,10 +39,128 @@ class PensionComputationController extends Controller
             'salaryScales' => $this->getSalaryScales(),
             'gradeLevels' => $this->getGradeLevels(),
             'steps' => $this->getSteps(),
-            'retiredEmployees' => $retiredEmployees,
+            'retiredEmployees' => $this->getRetiredEmployees(),
         ];
 
+        // Check if there are query parameters to pre-fill the form
+        if ($request->has('employee_id')) {
+            $employee = \App\Models\Employee::with(['bank', 'nextOfKin', 'gradeLevel', 'gradeLevel.salaryScale', 'department', 'rank', 'step'])->where('employee_id', $request->query('employee_id'))->first();
+
+            if ($employee) {
+                // Try to get the corresponding bank from bank_list table
+                $bankId = null;
+                if ($employee->bank) {
+                    // First try to look up the bank in bank_list table by bank code
+                    $bankList = DB::table('bank_list')
+                        ->where('bank_code', $employee->bank->bank_code ?? $employee->bank->id)
+                        ->first();
+
+                    // If not found by code, try by name if available
+                    if (!$bankList && isset($employee->bank->bank_name)) {
+                        $bankList = DB::table('bank_list')
+                            ->where(function($query) use ($employee) {
+                                $query->where('bank_name', 'LIKE', '%' . $employee->bank->bank_name . '%')
+                                      ->orWhere('bank_name', 'LIKE', '%' . str_replace(' ', '', $employee->bank->bank_name ?? '') . '%');
+                            })
+                            ->first();
+                    }
+
+                    if ($bankList) {
+                        $bankId = $bankList->id;
+                    }
+                }
+
+                $data['pre_filled_data'] = [
+                    'fulname' => trim("{$employee->surname} {$employee->first_name} {$employee->middle_name}"),
+                    'id_no' => $employee->staff_no ?? $employee->employee_id,
+                    'appt_date' => $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('Y-m-d') : null,
+                    'dob' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : null,
+                    'mobile' => $employee->mobile_no, // Correct field name
+                    'deptid' => $employee->department_id,
+                    'rankid' => $employee->rank_id,
+                    'lgaid' => $employee->lga_id,
+                    'gl_id' => $employee->grade_level_id,
+                    'stepid' => $employee->step_id,
+                    'salary_scale_id' => $employee->gradeLevel && $employee->gradeLevel->salaryScale ? $employee->gradeLevel->salaryScale->id : null,
+                    'bankid' => $bankId, // Use the bank_id from bank_list table
+                    'acc_no' => $employee->bank ? $employee->bank->account_no : null, // Correct field from bank model
+                    'nxtkin_fulname' => $employee->nextOfKin ? $employee->nextOfKin->name : null, // From nextOfKin relationship
+                    'nxtkin_mobile' => $employee->nextOfKin ? $employee->nextOfKin->mobile_no : null, // From nextOfKin relationship
+                    'dod_r' => $request->query('retire_date', now()->toDateString()), // Use provided retire_date or default to today
+                ];
+            }
+        }
+
         return view('pension.computation', $data);
+    }
+
+
+    /**
+     * Get retired employees
+     */
+    private function getRetiredEmployees()
+    {
+        return DB::table('employees')
+            ->where('status', 'Retired')
+            ->orderBy('surname', 'asc')
+            ->select('employee_id', 'first_name', 'surname', 'middle_name', 'staff_no')
+            ->get()
+            ->map(function($emp) {
+                // Ensure unique name handling if needed, or just formatting
+                $emp->fullname = trim("{$emp->surname} {$emp->first_name} {$emp->middle_name}");
+                return $emp;
+            });
+    }
+
+    /**
+     * Get employee details for auto-filling form
+     */
+    public function getEmployeeDetails(Request $request) 
+    {
+        $employeeId = $request->query('employee_id');
+        
+        if (!$employeeId) {
+            return response()->json(['success' => false, 'message' => 'Employee ID required'], 400);
+        }
+
+        $employee = \App\Models\Employee::with(['bank', 'nextOfKin', 'gradeLevel', 'gradeLevel.salaryScale'])
+            ->where('employee_id', $employeeId)
+            ->first();
+
+        if (!$employee) {
+            return response()->json(['success' => false, 'message' => 'Employee not found'], 404);
+        }
+
+        // Determine retirement date - check retirement record first, or calculate
+        $retirementDate = null;
+        $retirementRecord = \App\Models\Retirement::where('employee_id', $employeeId)->first();
+        if ($retirementRecord) {
+            $retirementDate = $retirementRecord->retirement_date->format('Y-m-d');
+        } elseif ($employee->expected_retirement_date) {
+            $retirementDate = \Carbon\Carbon::parse($employee->expected_retirement_date)->format('Y-m-d');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'fulname' => trim("{$employee->surname} {$employee->first_name} {$employee->middle_name}"),
+                'id_no' => $employee->staff_no ?? $employee->employee_id,
+                'appt_date' => $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('Y-m-d') : null,
+                'dob' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : null,
+                'mobile' => $employee->mobile_no,
+                'deptid' => $employee->department_id,
+                'rankid' => $employee->rank_id,
+                'lgaid' => $employee->lga_id,
+                'gl_id' => $employee->grade_level_id,
+                'stepid' => $employee->step_id,
+                'salary_scale_id' => $employee->gradeLevel && $employee->gradeLevel->salaryScale ? $employee->gradeLevel->salaryScale->id : null,
+                'bankid' => $employee->bank ? $employee->bank->bank_id : null, // Note: Assuming bank_id in employees table or linked bank model
+                'acc_no' => $employee->bank ? $employee->bank->account_no : null,
+                'dod_r' => $retirementDate,
+                'nxtkin_fulname' => $employee->nextOfKin ? $employee->nextOfKin->name : null,
+                'nxtkin_mobile' => $employee->nextOfKin ? $employee->nextOfKin->mobile_no : null, // Assuming mobile column in NextOfKin
+            ]
+        ]);
     }
 
     /**
@@ -63,7 +169,7 @@ class PensionComputationController extends Controller
     public function getStepsByGL(Request $request)
     {
         $glId = $request->input('gl_id');
-
+        
         if (!$glId) {
             return response()->json(['steps' => []]);
         }
@@ -71,7 +177,8 @@ class PensionComputationController extends Controller
         $steps = DB::table('steps')
             ->where('grade_level_id', $glId)
             ->orderBy('name', 'asc')
-            ->get(['id as stepid', 'name as step']);
+            ->select('id as stepid', 'name as step')
+            ->get();
 
         return response()->json(['steps' => $steps]);
     }
@@ -86,13 +193,14 @@ class PensionComputationController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation Error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
             $data = $request->all();
-
+            
             // Calculate date span
             $apptDate = \Carbon\Carbon::parse($data['appt_date']);
             $retirementDate = \Carbon\Carbon::parse($data['dod_r']);
@@ -124,7 +232,17 @@ class PensionComputationController extends Controller
                 $dateSpan['years']
             );
 
+            \Illuminate\Support\Facades\Log::info('Pension Computation Debug:', [
+                'appt_date' => $data['appt_date'],
+                'retirement_date' => $data['dod_r'],
+                'date_span' => $dateSpan,
+                'is_elevated' => $isElevated,
+                'computation_years' => $computationYrs
+            ]);
+
             $percentages = $this->calculationService->getComputationPercentages($computationYrs);
+
+            \Illuminate\Support\Facades\Log::info('Fetched Percentages:', $percentages);
 
             if ($percentages['gratuity_pct'] <= 0) {
                 return response()->json([
@@ -218,6 +336,7 @@ class PensionComputationController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation Error',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -241,13 +360,7 @@ class PensionComputationController extends Controller
                 ->where('id', $data['rankid'])
                 ->value('name');
 
-            // Get salary scale
-            $salaryScale = DB::table('salary_scales')
-                ->where('id', $data['salary_scale_id'])
-                ->first();
-
-            // Use the ComputeBeneficiary model for pension computations
-            $beneficiary = \App\Models\ComputeBeneficiary::create([
+            $beneficiary = ComputeBeneficiary::create([
                 'fulname' => ucwords(strtolower($data['fulname'])),
                 'lgaid' => $data['lgaid'],
                 'gtype' => $data['gtype'],
@@ -298,18 +411,89 @@ class PensionComputationController extends Controller
                 'salary_scale_id' => $data['salary_scale_id'],
             ]);
 
+            // Update employee status to Retired
+            $employee = \App\Models\Employee::find($data['employee_id']);
+            if ($employee) {
+                $employee->update(['status' => 'Retired']);
+
+                // Create or update Retirement record
+                $retirement = \App\Models\Retirement::firstOrCreate(
+                    ['employee_id' => $employee->employee_id],
+                    [
+                        'retirement_date' => $data['dod_r'],
+                        'notification_date' => now(), // Default to now if unknown
+                        'gratuity_amount' => str_replace(',', '', $computation['gratuity']['amount']),
+                        'status' => 'Approved',
+                        'retire_reason' => 'Statutory', // Default or fetch if available
+                        'years_of_service' => $computation['service_yrs_for_compute'],
+                    ]
+                );
+
+                // Create Pensioner record if not exists
+                if (!\App\Models\Pensioner::where('retirement_id', $retirement->id)->exists()) {
+                    \Log::info('Attempting to create Pensioner record for Employee: ' . $employee->employee_id);
+                    try {
+                     $pensioner = \App\Models\Pensioner::create([
+                        'employee_id' => $employee->employee_id,
+                        'full_name' => $employee->full_name,
+                        'surname' => $employee->surname,
+                        'first_name' => $employee->first_name,
+                        'middle_name' => $employee->middle_name,
+                        'email' => $employee->email,
+                        'phone_number' => $employee->mobile_no, // Corrected from phone
+                        'date_of_birth' => $data['dob'],
+                        'place_of_birth' => null, // Employee model doesn't have this, setting to null
+                        'date_of_first_appointment' => $data['appt_date'],
+                        'date_of_retirement' => $data['dod_r'],
+                        'retirement_reason' => $retirement->retire_reason,
+                        'retirement_type' => $data['gtype'], // RB or DG
+                        'department_id' => $data['deptid'],
+                        'rank_id' => $data['rankid'],
+                        'step_id' => $data['stepid'],
+                        'grade_level_id' => $data['gl_id'],
+                        'salary_scale_id' => $data['salary_scale_id'],
+                        'local_gov_area_id' => $data['lgaid'],
+                        'bank_id' => $data['bankid'] ?? null,
+                        'account_number' => $data['acc_no'] ?? null,
+                        'account_name' => $data['fulname'], 
+                        'pension_amount' => str_replace(',', '', $computation['pension']['per_month']), // Monthly pension
+                        'gratuity_amount' => str_replace(',', '', $computation['gratuity']['amount']),
+                        'total_death_gratuity' => str_replace(',', '', $computation['total_death_gratuity']),
+                        'years_of_service' => $computation['service_yrs_for_compute'],
+                        'pension_percentage' => $computation['pension']['percentage'],
+                        'gratuity_percentage' => $computation['gratuity']['percentage'],
+                        'address' => $employee->address,
+                        'next_of_kin_name' => $data['nxtkin_fulname'] ?? null,
+                        'next_of_kin_phone' => $data['nxtkin_mobile'] ?? null,
+                        'next_of_kin_address' => $employee->next_of_kin_address, // Assuming exists
+                        'status' => 'Active',
+                        'retirement_id' => $retirement->id,
+                        'beneficiary_computation_id' => $beneficiary->id,
+                        'created_by' => auth()->id(),
+                    ]);
+                    \Log::info('Pensioner created: ' . $pensioner->id);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to create Pensioner record: ' . $e->getMessage());
+                        throw $e; // Re-throw to trigger rollback
+                    }
+                } else {
+                    \Log::info('Pensioner record already exists for Retirement ID: ' . $retirement->id);
+                }
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Beneficiary Saved Successfully.',
-                'computation_id' => $beneficiary->id
+                'message' => 'Beneficiary Saved & Pensioner Record Created Successfully.',
+                'computation_id' => $beneficiary->id,
+                'redirect_url' => route('pensioners.index')
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error saving beneficiary: ' . $e->getMessage());
-
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving beneficiary. Please try again. If the problem persists, contact Administrator.'
@@ -324,6 +508,7 @@ class PensionComputationController extends Controller
     {
         return Validator::make($request->all(), [
             'gtype' => 'required|in:RB,DG',
+            'employee_id' => 'required|exists:employees,employee_id',
             'fulname' => 'required|string|max:255',
             'lgaid' => 'required|integer',
             'deptid' => 'required|integer',
@@ -384,7 +569,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('lgas')
             ->orderBy('name', 'asc')
-            ->get(['id as lgaid', 'name as lga', 'state_id as zoneid']);
+            ->select('id as lgaid', 'name as lga')
+            ->get();
     }
 
     /**
@@ -394,7 +580,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('departments')
             ->orderBy('department_name', 'asc')
-            ->get(['department_id as deptid', 'department_name as dept']);
+            ->select('department_id as deptid', 'department_name as dept')
+            ->get();
     }
 
     /**
@@ -404,7 +591,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('ranks')
             ->orderBy('name', 'asc')
-            ->get(['id as rankid', 'name as rank']);
+            ->select('id as rankid', 'name as rank')
+            ->get();
     }
 
     /**
@@ -414,7 +602,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('salary_scales')
             ->orderBy('full_name', 'asc')
-            ->get(['id as salary_scale_id', 'full_name as salary_scale_title']);
+            ->select('id as salary_scale_id', 'full_name as salary_scale_title')
+            ->get();
     }
 
     /**
@@ -424,7 +613,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('grade_levels')
             ->orderBy('name', 'asc')
-            ->get(['id as gl_id', 'name as grade']);
+            ->select('id as gl_id', 'name as grade')
+            ->get();
     }
 
     /**
@@ -434,6 +624,8 @@ class PensionComputationController extends Controller
     {
         return DB::table('steps')
             ->orderBy('name', 'asc')
-            ->get(['id as stepid', 'grade_level_id as gl_id', 'name as step']);
+            ->select('id as stepid', 'grade_level_id as gl_id', 'name as step')
+            ->get();
     }
 }
+

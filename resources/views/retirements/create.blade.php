@@ -56,7 +56,7 @@
                                         $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
                                         $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
                                         $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
-                                        
+
                                         // Check if the employee has reached the maximum years of service first
                                         if ($serviceDuration >= $yearsOfService) {
                                             $retireReason = 'By Years of Service';
@@ -78,12 +78,17 @@
                                 {{ $retireReason }}
                             </td>
                             <td>
-                                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#retireModal{{ $employee->employee_id }}">
-                                    Retire
-                                </button>
+                                <div class="btn-group" role="group" aria-label="Action buttons">
+                                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#retireModal{{ $employee->employee_id }}">
+                                        Retire
+                                    </button>
+                                    <a href="{{ route('retirements.pension-compute', $employee->employee_id) }}" class="btn btn-primary btn-sm">
+                                        Pension Compute
+                                    </a>
+                                </div>
                             </td>
                         </tr>
-                        
+
                         <!-- Retire Modal -->
                         <div class="modal fade" id="retireModal{{ $employee->employee_id }}" tabindex="-1" aria-labelledby="retireModalLabel{{ $employee->employee_id }}" aria-hidden="true">
                             <div class="modal-dialog">
@@ -107,7 +112,7 @@
                                                         $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
                                                         $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
                                                         $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
-                                                        
+
                                                         // Check if the employee has reached the maximum years of service first
                                                         if ($serviceDuration >= $yearsOfService) {
                                                             $retireReason = 'By Years of Service';

@@ -91,3 +91,4 @@ class ComputeBeneficiary extends Model
         'status' => 'integer',
     ];
 }
+

@@ -13,10 +13,6 @@
                 <div class="card-body">
                     <form id="pensionComputationForm">
                         @csrf
-                        <input type="hidden" id="employee_id" name="employee_id" 
-                               @if(isset($pre_filled_data) && isset($pre_filled_data['id_no'])) 
-                                   value="{{ request()->query('employee_id') }}" 
-                               @endif>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -117,7 +113,12 @@
                                     <label for="stepid" class="form-label">Step <span class="text-danger">*</span></label>
                                     <select class="form-control" id="stepid" name="stepid" required>
                                         <option value="">Select Step</option>
-                                        <!-- Steps will be populated dynamically based on selected Grade Level -->
+                                        @foreach($steps as $step)
+                                            <option value="{{ $step->stepid }}" data-gl="{{ $step->gl_id }}"
+                                                @if(isset($pre_filled_data) && isset($pre_filled_data['stepid']) && $pre_filled_data['stepid'] == $step->stepid) selected @endif>
+                                                {{ $step->step }}
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -322,7 +323,6 @@
     <input type="hidden" name="nxtkin_fulname" id="save_nxtkin_fulname">
     <input type="hidden" name="nxtkin_mobile" id="save_nxtkin_mobile">
     <input type="hidden" name="open_file_no" id="save_open_file_no">
-    <input type="hidden" name="employee_id" id="save_employee_id">
 </form>
 @endsection
 
@@ -440,74 +440,19 @@
                     document.getElementById('save_nxtkin_fulname').value = data['nxtkin_fulname'] || '';
                     document.getElementById('save_nxtkin_mobile').value = data['nxtkin_mobile'] || '';
                     document.getElementById('save_open_file_no').value = data['open_file_no'] || '';
-                    
-                    // Map retired_employee_id to employee_id for saving
-                    document.getElementById('save_employee_id').value = data['retired_employee_id'] || data['employee_id'] || '';
                 } else {
-                    let errorMessage = result.message || 'Unknown error occurred';
-                    if (result.errors) {
-                        errorMessage += '\n';
-                        for (const [key, messages] of Object.entries(result.errors)) {
-                            errorMessage += `\n- ${messages.join(', ')}`;
-                        }
-                    }
-                    alert('Error: ' + errorMessage);
+                    alert('Error: ' + result.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while computing pension: ' + error.message);
+                alert('An error occurred while computing pension.');
             });
         }
 
         function handleSave(e) {
             e.preventDefault();
-            
-            const form = document.getElementById('saveForm');
-            const saveBtn = document.getElementById('saveBtn');
-            const originalText = saveBtn.innerText;
-            
-            saveBtn.disabled = true;
-            saveBtn.innerText = 'Saving...';
-
-            const formData = new FormData(form);
-
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert(result.message);
-                    if (result.redirect_url) {
-                        window.location.href = result.redirect_url;
-                    } else {
-                        // Fallback or maintain current behavior if no redirect
-                        location.reload(); 
-                    }
-                } else {
-                    let errorMessage = result.message || 'Error saving beneficiary';
-                    if (result.errors) {
-                        errorMessage += '\n';
-                        for (const [key, messages] of Object.entries(result.errors)) {
-                            errorMessage += `\n- ${messages.join(', ')}`;
-                        }
-                    }
-                    alert(errorMessage);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while saving: ' + error.message);
-            })
-            .finally(() => {
-                saveBtn.disabled = false;
-                saveBtn.innerText = originalText;
-            });
+            document.getElementById('saveForm').submit();
         }
 
         // Add event listeners to buttons
@@ -591,72 +536,29 @@
             });
         }
 
-        // Function to load steps based on selected grade level
-        function loadStepsForGradeLevel(selectedGlId, preselectedStepId = null) {
-            // Clear current options except the first one
-            const stepSelect = document.getElementById('stepid');
-            stepSelect.innerHTML = '<option value="">Select Step</option>';
-
-            if (!selectedGlId) {
-                return;
-            }
-
-            // Show loading state
-            stepSelect.innerHTML += '<option value="">Loading steps...</option>';
-            stepSelect.disabled = true;
-
-            // Fetch steps for the selected grade level
-            fetch("{{ route('pension.steps') }}?gl_id=" + selectedGlId)
-            .then(response => response.json())
-            .then(data => {
-                // Clear the loading option
-                stepSelect.innerHTML = '<option value="">Select Step</option>';
-
-                if (data.steps && data.steps.length > 0) {
-                    data.steps.forEach(function(step) {
-                        const option = document.createElement('option');
-                        option.value = step.stepid;
-                        option.textContent = step.step;
-                        stepSelect.appendChild(option);
-                    });
-
-                    // Pre-select the step if provided (for when loading from URL with stepid)
-                    if (preselectedStepId) {
-                        stepSelect.value = preselectedStepId;
-                    }
-                } else {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'No steps available';
-                    stepSelect.appendChild(option);
-                }
-
-                stepSelect.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error loading steps:', error);
-                stepSelect.innerHTML = '<option value="">Error loading steps</option>';
-                stepSelect.disabled = false;
-            });
-        }
-
         // Update steps when grade level changes
         const glElement = document.getElementById('gl_id');
         if (glElement) {
             glElement.addEventListener('change', function() {
                 const selectedGlId = this.value;
                 document.getElementById('stepid').value = ''; // Reset step selection
-                loadStepsForGradeLevel(selectedGlId);
+
+                const stepOptions = document.querySelectorAll('#stepid option');
+                stepOptions.forEach(function(option) {
+                    if (option.getAttribute('data-gl') == selectedGlId) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
             });
         }
 
-        // Load steps if grade level is pre-filled
+        // Trigger grade level change if pre-filled
         if (glElement && glElement.value) {
-            // Check if we have stepid in URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const stepInUrl = urlParams.get('stepid');
-
-            loadStepsForGradeLevel(glElement.value, stepInUrl); // Pass the stepid to be selected after loading
+            // Trigger the change to update steps
+            const event = new Event('change');
+            glElement.dispatchEvent(event);
         }
 
         // Auto-compute if employee_id is in URL and all required fields are filled

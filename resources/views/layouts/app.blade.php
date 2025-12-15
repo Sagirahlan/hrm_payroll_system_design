@@ -445,11 +445,7 @@
                     <i class="fas fa-user-shield"></i> Pensioners
                 </a>
             </li>
-            <li>
-                <a class="nav-link {{ request()->routeIs('pension.create') ? 'active' : '' }}" href="{{ route('pension.create') }}">
-                    <i class="fas fa-calculator"></i> Pension Computation
-                </a>
-            </li>
+           
             @endcan
 
             @can('manage_sms')

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Retirement, Pensioner, Employee, PayrollRecord, AuditTrail};
+use App\Models\{Retirement, Employee, PayrollRecord, AuditTrail};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class RetirementController extends Controller
 {
@@ -81,7 +82,7 @@ class RetirementController extends Controller
             // Determine retirement reason
             $age = Carbon::parse($employee->date_of_birth)->age;
             $serviceDuration = Carbon::parse($employee->date_of_first_appointment)->diffInYears(Carbon::now());
-            
+
             // Check if the employee has reached the maximum years of service first
             if ($serviceDuration >= $yearsOfService) {
                 $employee->retirement_reason = 'By Years of Service';
@@ -225,7 +226,7 @@ class RetirementController extends Controller
     {
         try {
             \Log::info('Retirement store method called with data:', $request->all());
-            
+
             $validated = $request->validate([
                 'employee_id' => 'required|exists:employees,employee_id',
                 'retirement_date' => 'required|date',
@@ -295,19 +296,8 @@ class RetirementController extends Controller
 
             $employee->update(['status' => 'Retired']);
 
-            // Calculate pension details based on RSA
-            $pensionDetails = $this->calculatePensionDetails($employee);
-            
-            Pensioner::create([
-                'employee_id' => $employee->employee_id,
-                'pension_start_date' => $validated['retirement_date'],
-                'pension_amount' => $pensionDetails['monthly_pension'],
-                'rsa_balance_at_retirement' => $pensionDetails['rsa_balance'],
-                'lump_sum_amount' => $pensionDetails['lump_sum'],
-                'pension_type' => $pensionDetails['pension_type'],
-                'expected_lifespan_months' => $pensionDetails['expected_lifespan_months'],
-                'status' => 'Active',
-            ]);
+            // Now move the retired employee to the pensioners table
+            $this->moveToPensioners($employee, $retirement);
 
             AuditTrail::create([
                 'user_id' => auth()->id(),
@@ -321,19 +311,18 @@ class RetirementController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Retirement processed successfully.',
+                    'message' => 'Retirement processed successfully and employee moved to pensioners.',
                     'data' => [
                         'employee_id' => $employee->employee_id,
                         'retirement_id' => $retirement->id,
                         'retire_reason' => $retireReason,
-                        'gratuity_amount' => $retirement->gratuity_amount,
-                        'pension_amount' => $this->calculatePension($employee)
+                        'gratuity_amount' => $retirement->gratuity_amount
                     ]
                 ]);
             }
 
             return redirect()->route('retirements.create')->with([
-                'success' => 'Retirement processed successfully.',
+                'success' => 'Retirement processed successfully and employee moved to pensioners.',
                 'processed_employee_id' => $employee->employee_id,
             ]);
 
@@ -342,7 +331,7 @@ class RetirementController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-            
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -366,7 +355,7 @@ class RetirementController extends Controller
         }
 
         // Use the retirement date if available, otherwise use today
-        $retirementDate = $employee->retirement_date 
+        $retirementDate = $employee->retirement_date
             ? \Carbon\Carbon::parse($employee->retirement_date)
             : now();
 
@@ -388,57 +377,148 @@ class RetirementController extends Controller
         return round($gratuity, 2);
     }
 
-
-    private function calculatePension(Employee $employee)
+    /**
+     * Redirect to pension computation form with employee data pre-filled
+     */
+    public function redirectToPensionComputation($employeeId)
     {
-        $lastPayroll = PayrollRecord::where('employee_id', $employee->employee_id)->latest()->first();
-        return $lastPayroll ? ($lastPayroll->basic_salary * 0.5) : 0;
-    }
-    
-    private function calculatePensionDetails(Employee $employee)
-    {
-        // Get the last payroll record for the employee (by created_at, fallback to payroll_date)
-        $lastPayroll = \App\Models\PayrollRecord::where('employee_id', $employee->employee_id)
-            ->orderByDesc('created_at')
-            ->first();
+        try {
+            \Log::info('Redirecting to pension computation for employee ID: ' . $employeeId);
 
-        if (!$lastPayroll || !$employee->rsa_balance) {
-            return [
-                'monthly_pension' => 0,
-                'rsa_balance' => 0,
-                'lump_sum' => 0,
-                'pension_type' => 'PW',
-                'expected_lifespan_months' => 240
+            $employee = Employee::with(['bank', 'nextOfKin', 'gradeLevel', 'gradeLevel.salaryScale', 'department', 'rank', 'step'])->where('employee_id', $employeeId)->first();
+
+            if (!$employee) {
+                \Log::error('Employee not found for ID: ' . $employeeId);
+                return redirect()->route('retirements.create')->with('error', 'Employee not found.');
+            }
+
+            \Log::info('Found employee: ' . $employee->first_name . ' ' . $employee->surname);
+
+            // Try to get the corresponding bank from bank_list table
+            $bankId = null;
+            if ($employee->bank) {
+                \Log::info('Employee has bank: ' . $employee->bank->bank_name ?? 'Unknown');
+
+                // First try to look up the bank in bank_list table by bank code
+                $bankList = DB::table('bank_list')
+                    ->where('bank_code', $employee->bank->bank_code ?? $employee->bank->id)
+                    ->first();
+
+                \Log::info('Bank lookup by code result: ' . ($bankList ? 'Found' : 'Not found'));
+
+                // If not found by code, try by name if available
+                if (!$bankList && isset($employee->bank->bank_name)) {
+                    $bankList = DB::table('bank_list')
+                        ->where(function($query) use ($employee) {
+                            $query->where('bank_name', 'LIKE', '%' . $employee->bank->bank_name . '%')
+                                  ->orWhere('bank_name', 'LIKE', '%' . str_replace(' ', '', $employee->bank->bank_name ?? '') . '%');
+                        })
+                        ->first();
+
+                    \Log::info('Bank lookup by name result: ' . ($bankList ? 'Found' : 'Not found'));
+                }
+
+                if ($bankList) {
+                    $bankId = $bankList->id;
+                }
+            }
+
+            // Build query parameters for the pension computation form
+            $params = [
+                'employee_id' => $employee->employee_id,
+                'fulname' => trim("{$employee->surname} {$employee->first_name} {$employee->middle_name}"),
+                'id_no' => $employee->staff_no ?? $employee->employee_id,
+                'appt_date' => $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('Y-m-d') : null,
+                'dob' => $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : null,
+                'mobile' => $employee->mobile_no, // Correct field name
+                'deptid' => $employee->department_id,
+                'rankid' => $employee->rank_id,
+                'lgaid' => $employee->lga_id,
+                'gl_id' => $employee->grade_level_id,
+                'stepid' => $employee->step_id,
+                'salary_scale_id' => $employee->gradeLevel && $employee->gradeLevel->salaryScale ? $employee->gradeLevel->salaryScale->id : null,
+                'bankid' => $bankId, // Use the bank_id from bank_list table
+                'acc_no' => $employee->bank ? $employee->bank->account_no : null, // Correct field from bank model
+                'nxtkin_fulname' => $employee->nextOfKin ? $employee->nextOfKin->name : null, // From nextOfKin relationship
+                'nxtkin_mobile' => $employee->nextOfKin ? $employee->nextOfKin->mobile_no : null, // From nextOfKin relationship
+                'retire_date' => now()->toDateString(), // Default to current date
             ];
+
+            \Log::info('Redirecting to pension computation with params: ' . json_encode($params));
+
+            return redirect()->route('pension.create', $params);
+        } catch (\Exception $e) {
+            \Log::error('Error in redirectToPensionComputation: ' . $e->getMessage());
+            return redirect()->route('retirements.create')->with('error', 'Error processing employee data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Move retired employee to pensioners table
+     */
+    private function moveToPensioners(Employee $employee, $retirement)
+    {
+        // Check if pensioner already exists
+        if (\App\Models\Pensioner::where('employee_id', $employee->employee_id)->exists()) {
+            return; // Already exists, don't duplicate
         }
 
-        $rsaBalance = $employee->rsa_balance;
-        
-        // Calculate lump sum (up to 25% of RSA balance)
-        $lumpSum = min($rsaBalance * 0.25, $rsaBalance); // At most 25% of the balance or the whole balance if less than 25%
-        
-        // Calculate remaining RSA balance after lump sum for monthly payments
-        $remainingRsaBalance = $rsaBalance - $lumpSum;
-        
-        // Default to Programmed Withdrawal (PW) method
-        $pensionType = 'PW'; // Could be 'PW' for Programmed Withdrawal or 'Annuity'
-        
-        // Expected lifespan: default to 20 years (240 months) for PW calculation
-        $expectedLifespanMonths = 240;
-        
-        // Monthly pension calculation based on Programmed Withdrawal method
-        $monthlyPension = $remainingRsaBalance / $expectedLifespanMonths;
-        
-        // Ensure minimum pension guarantee as per Nigerian CPS (₦32,000/month as of Sept 2025)
-        $minimumPension = 32000;
-        $monthlyPension = max($monthlyPension, $minimumPension);
-        
-        return [
-            'monthly_pension' => $monthlyPension,
-            'rsa_balance' => $rsaBalance,
-            'lump_sum' => $lumpSum,
-            'pension_type' => $pensionType,
-            'expected_lifespan_months' => $expectedLifespanMonths
-        ];
+        // Get the beneficiary computation record if it exists
+        $beneficiaryComputation = \App\Models\ComputeBeneficiary::where('id_no', $employee->employee_id)
+            ->orWhere('id_no', $employee->staff_id ?? $employee->employee_id)
+            ->first();
+
+        // Calculate years of service
+        $dateOfFirstAppointment = \Carbon\Carbon::parse($employee->date_of_first_appointment);
+        $retirementDate = \Carbon\Carbon::parse($retirement->retirement_date);
+        $yearsOfService = $dateOfFirstAppointment->diffInYears($retirementDate);
+
+        // Determine pension and gratuity amounts from computation if available
+        $pensionAmount = $beneficiaryComputation ? $beneficiaryComputation->pension_per_mnth : $retirement->gratuity_amount;
+        $gratuityAmount = $beneficiaryComputation ? $beneficiaryComputation->gratuity_amt : $retirement->gratuity_amount;
+        $totalDeathGratuity = $beneficiaryComputation ? $beneficiaryComputation->total_death_gratuity : $retirement->gratuity_amount;
+        $retirementType = $beneficiaryComputation ? $beneficiaryComputation->gtype : 'RB'; // RB (Retirement Benefits) or DG (Death Gratuity)
+
+        // Create pensioner record
+        \App\Models\Pensioner::create([
+            'employee_id' => $employee->employee_id,
+            'full_name' => $employee->full_name,
+            'surname' => $employee->surname,
+            'first_name' => $employee->first_name,
+            'middle_name' => $employee->middle_name,
+            'email' => $employee->email,
+            'phone_number' => $employee->phone,
+            'date_of_birth' => $employee->date_of_birth,
+            'place_of_birth' => $employee->place_of_birth,
+            'date_of_first_appointment' => $employee->date_of_first_appointment,
+            'date_of_retirement' => $retirement->retirement_date,
+            'retirement_reason' => $retirement->retire_reason,
+            'retirement_type' => $retirementType,
+            'department_id' => $employee->department_id,
+            'rank_id' => $employee->rank_id,
+            'step_id' => $employee->step_id,
+            'grade_level_id' => $employee->grade_level_id,
+            'salary_scale_id' => $employee->salary_scale_id,
+            'local_gov_area_id' => $employee->lga_id,
+            'bank_id' => $employee->bank_id,
+            'account_number' => $employee->account_number,
+            'account_name' => $employee->account_name,
+            'pension_amount' => $pensionAmount,
+            'gratuity_amount' => $gratuityAmount,
+            'total_death_gratuity' => $totalDeathGratuity,
+            'years_of_service' => $yearsOfService,
+            'pension_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_pension : 0,
+            'gratuity_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_gratuity : 0,
+            'address' => $employee->address,
+            'next_of_kin_name' => $employee->next_of_kin_name,
+            'next_of_kin_phone' => $employee->next_of_kin_phone,
+            'next_of_kin_address' => $employee->next_of_kin_address,
+            'status' => 'Active',
+            'retirement_id' => $retirement->id,
+            'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
+            'created_by' => auth()->id() ?? 1, // Use 1 as default if no authenticated user
+        ]);
     }
+
+
 }

@@ -22,12 +22,13 @@ class DatabaseSeeder extends Seeder
             LgaSeeder::class,
             WardSeeder::class,
             UserSeeder::class,
-            
+            SalaryScaleCircularsSeeder::class,
             DeductionTypesSeeder::class,
             NonStatutoryItemsSeeder::class,
             AppointmentTypeSeeder::class,
             RankSeeder::class,
             BankListSeeder::class,
+            ComputePercentageSeeder::class,
         ]);
     }
-}
+}   

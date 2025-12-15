@@ -8,127 +8,188 @@ use Illuminate\Support\Facades\DB;
 class PensionCalculationService
 {
     /**
-     * Calculate the date span between two dates (appointment date to retirement date)
+     * Get date span between two dates (years, months, days)
      */
-    public function getDateSpan(Carbon $startDate, Carbon $endDate)
+    public function getDateSpan(Carbon $fromDate, Carbon $toDate): array
     {
-        $diff = $startDate->diff($endDate);
+        $years = 0;
+        $months = 0;
+        $days = 0;
+
+        $tempDate = clone $toDate;
+
+        // Calculate years
+        while ($tempDate->copy()->subYear() >= $fromDate) {
+            $years++;
+            $tempDate->subYear();
+        }
+
+        // Calculate months
+        while ($tempDate->copy()->subMonth() >= $fromDate) {
+            $months++;
+            $tempDate->subMonth();
+        }
+
+        // Calculate days
+        while ($tempDate->copy()->subDay() >= $fromDate) {
+            $days++;
+            $tempDate->subDay();
+        }
 
         return [
-            'years' => $diff->y,
-            'months' => $diff->m,
-            'days' => $diff->d
+            'years' => $years,
+            'months' => $months,
+            'days' => $days,
         ];
     }
 
     /**
-     * Get total months of service between two dates
+     * Get total months between two dates
      */
-    public function getTotalMonths(Carbon $startDate, Carbon $endDate)
+    public function getTotalMonths(Carbon $fromDate, Carbon $toDate): int
     {
-        $diff = $startDate->diff($endDate);
-        return ($diff->y * 12) + $diff->m + ($diff->d > 0 ? 1 : 0);
+        return $fromDate->diffInMonths($toDate);
     }
 
     /**
-     * Get staff's basic salary at retirement date
+     * Get staff basic salary at retirement from archive
      */
-    public function getStaffBasicSalaryAtRetirement($stepId, Carbon $retirementDate, $salaryScaleId)
+    public function getStaffBasicSalaryAtRetirement(string $stepId, Carbon $retirementDate, string $salaryScaleId): array
     {
-        // Get the step details
-        $step = DB::table('gl_steps')
+        $retirementDateStr = $retirementDate->format('Y-m-d');
+        $salaryScaleCircularId = $this->getStaffSalaryScaleCircularID($retirementDateStr);
+
+        if ($salaryScaleCircularId <= 0) {
+            return [
+                'salary_scale_circular_id' => 0,
+                'rate_per_mnth' => 0,
+                'rate_per_annum' => 0,
+            ];
+        }
+
+        $salary = DB::table('salary_scale_archives')
+            ->where('sscale_circular_id', $salaryScaleCircularId)
             ->where('stepid', $stepId)
-            ->first();
-
-        if (!$step) {
-            return [
-                'salary_scale_circular_id' => 0,
-                'rate_per_annum' => 0,
-                'rate_per_mnth' => 0
-            ];
-        }
-
-        // Get the salary scale circular that was effective at retirement date
-        $salaryScaleCircular = DB::table('salary_scale_circulars')
             ->where('salary_scale_id', $salaryScaleId)
-            ->where('effective_date', '<=', $retirementDate)
-            ->orderBy('effective_date', 'desc')
-            ->first();
+            ->first(['rate_per_mnth', 'rate_per_annum']);
 
-        if (!$salaryScaleCircular) {
+        if (!$salary) {
             return [
-                'salary_scale_circular_id' => 0,
+                'salary_scale_circular_id' => $salaryScaleCircularId,
+                'rate_per_mnth' => 0,
                 'rate_per_annum' => 0,
-                'rate_per_mnth' => 0
             ];
         }
 
-        // Calculate the rate based on step and salary circular
-        $ratePerAnnum = $this->calculateSalaryRate($step, $salaryScaleCircular);
-
         return [
-            'salary_scale_circular_id' => $salaryScaleCircular->id,
-            'rate_per_annum' => $ratePerAnnum,
-            'rate_per_mnth' => $ratePerAnnum / 12
+            'salary_scale_circular_id' => $salaryScaleCircularId,
+            'rate_per_mnth' => (float) ($salary->rate_per_mnth ?? 0),
+            'rate_per_annum' => (float) ($salary->rate_per_annum ?? 0),
         ];
     }
 
     /**
-     * Calculate salary rate based on step and salary scale circular
+     * Get salary scale circular ID for a given retirement date
      */
-    private function calculateSalaryRate($step, $salaryScaleCircular)
+    public function getStaffSalaryScaleCircularID(string $retirementDate): int
     {
-        // This is a simplified calculation - you should adjust this based on your business logic
-        // Typically, this would involve looking up rates from the salary scale circular data
-        return $step->rate ?? 0; // Using the step rate directly as an example
-    }
+        $result = DB::selectOne("
+            SELECT 
+                (SELECT id 
+                 FROM salary_scale_circulars 
+                 WHERE ? >= effect_from AND is_current = 1 
+                 LIMIT 1) AS is_current_sscale_id,
+                (SELECT id 
+                 FROM salary_scale_circulars 
+                 WHERE effect_to >= ? AND effect_from <= ? AND is_current = 0 
+                 LIMIT 1) AS others_sscale_id
+        ", [$retirementDate, $retirementDate, $retirementDate]);
 
-    /**
-     * Get computation years based on service elevation
-     */
-    public function getComputationYears($isElevated, $serviceYears)
-    {
-        // If service years should be elevated (6+ months in final year)
-        if ($isElevated) {
-            return $serviceYears + 1;
+        if ($result) {
+            // Check current circular first
+            if (!empty($result->is_current_sscale_id) && (int)$result->is_current_sscale_id > 0) {
+                return (int)$result->is_current_sscale_id;
+            }
+            
+            // Check old circulars
+            if (!empty($result->others_sscale_id) && (int)$result->others_sscale_id > 0) {
+                return (int)$result->others_sscale_id;
+            }
         }
-        return $serviceYears;
+
+        return 0;
     }
 
     /**
-     * Get computation percentages based on years of service
+     * Get computation years based on elevated status and years of service
      */
-    public function getComputationPercentages($yearsOfService)
+    public function getComputationYears(int $isElevated, int $yearsOfService): int
     {
-        // Define your pension computation logic here
-        // These are example values - you should adjust them based on your business rules
-        
-        // Example: For every 1 year of service, gratuity increases by 10%, max 20 years = 200%
-        $gratuityPct = min($yearsOfService * 10, 200); // Max 200% gratuity
-        
-        // Example: Pension is typically 50% of basic salary after 15+ years
-        $pensionPct = min(($yearsOfService / 2), 50); // Max 50% pension
+        if ($isElevated == 1) {
+            if ($yearsOfService < 35) {
+                return $yearsOfService + 1; // add 1 year
+            } else {
+                return 35; // cap at 35 years
+            }
+        } else {
+            if ($yearsOfService < 35) {
+                return $yearsOfService;
+            } else {
+                return 35; // cap at 35 years
+            }
+        }
+    }
+
+    /**
+     * Get computation percentages (gratuity and pension)
+     */
+    public function getComputationPercentages(int $yearsOfService): array
+    {
+        $percentage = DB::table('compute_percentage')
+            ->where('years_of_service', $yearsOfService)
+            ->first(['gratuity_pct', 'pension_pct']);
+
+        if (!$percentage) {
+            return [
+                'gratuity_pct' => 0,
+                'pension_pct' => 0,
+            ];
+        }
 
         return [
-            'gratuity_pct' => $gratuityPct,
-            'pension_pct' => $pensionPct
+            'gratuity_pct' => (int)$percentage->gratuity_pct,
+            'pension_pct' => (int)$percentage->pension_pct,
         ];
     }
 
     /**
-     * Calculate overstay based on age and service span
+     * Calculate overstay remark based on age and service
      */
-    public function calculateOverstay($ageSpan, $dateSpan)
+    public function calculateOverstay(array $ageSpan, array $serviceSpan): string
     {
-        // Default retirement age might be 60
-        $retirementAge = 60;
-        $currentAge = $ageSpan['years'];
+        $overstayRemark = '';
 
-        if ($currentAge > $retirementAge) {
-            $overstayYears = $currentAge - $retirementAge;
-            return "Overstay of {$overstayYears} year(s)";
+        // Check overstay by age (60 years)
+        if ($ageSpan['years'] >= 60 && ($ageSpan['months'] > 0 || $ageSpan['days'] > 0)) {
+            $overstayRemark = 'Over Stayed by Age: ' . 
+                ($ageSpan['years'] - 60) . ' Years ' . 
+                $ageSpan['months'] . ' Months ' . 
+                $ageSpan['days'] . ' Days';
         }
 
-        return "Normal service";
+        // Check overstay by service (35 years)
+        $totalServiceDays = ($serviceSpan['years'] * 365) + ($serviceSpan['months'] * 30) + $serviceSpan['days'];
+        $maxServiceDays = 35 * 365;
+
+        if ($totalServiceDays > $maxServiceDays) {
+            $overstayYears = $serviceSpan['years'] - 35;
+            $overstayRemark .= ($overstayRemark ? ' ' : '') . 
+                'Over Stayed by Service: ' . 
+                $overstayYears . ' Years ' . 
+                $serviceSpan['months'] . ' Months ' . 
+                $serviceSpan['days'] . ' Days';
+        }
+
+        return $overstayRemark;
     }
 }

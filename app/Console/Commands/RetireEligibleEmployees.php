@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Employee;
 use App\Models\Retirement;
-use App\Models\Pensioner;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log; // Added Log facade
 
@@ -79,21 +78,6 @@ class RetireEligibleEmployees extends Command
             'notification_date' => now(),
             'gratuity_amount' => $this->calculateGratuity($employee),
         ]);
-
-        // Calculate pension details based on RSA
-        $pensionDetails = $this->calculatePensionDetails($employee);
-        
-        // Create pensioner record
-        Pensioner::create([
-            'employee_id' => $employee->employee_id,
-            'pension_start_date' => now()->toDateString(),
-            'pension_amount' => $pensionDetails['monthly_pension'],
-            'rsa_balance_at_retirement' => $pensionDetails['rsa_balance'],
-            'lump_sum_amount' => $pensionDetails['lump_sum'],
-            'pension_type' => $pensionDetails['pension_type'],
-            'expected_lifespan_months' => $pensionDetails['expected_lifespan_months'],
-            'status' => 'Active',
-        ]);
     }
 
     private function calculateGratuity(Employee $employee)
@@ -122,58 +106,5 @@ class RetireEligibleEmployees extends Command
         $gratuity = $grossAnnualEmoluments;
 
         return round($gratuity, 2);
-    }
-
-    private function calculatePension(Employee $employee)
-    {
-        $lastPayroll = \App\Models\PayrollRecord::where('employee_id', $employee->employee_id)->latest()->first();
-        return $lastPayroll ? ($lastPayroll->basic_salary * 0.5) : 0;
-    }
-    
-    private function calculatePensionDetails(Employee $employee)
-    {
-        // Get the last payroll record for the employee (by created_at, fallback to payroll_date)
-        $lastPayroll = \App\Models\PayrollRecord::where('employee_id', $employee->employee_id)
-            ->orderByDesc('created_at')
-            ->first();
-
-        if (!$lastPayroll || !$employee->rsa_balance) {
-            return [
-                'monthly_pension' => 0,
-                'rsa_balance' => 0,
-                'lump_sum' => 0,
-                'pension_type' => 'PW',
-                'expected_lifespan_months' => 240
-            ];
-        }
-
-        $rsaBalance = $employee->rsa_balance;
-        
-        // Calculate lump sum (up to 25% of RSA balance)
-        $lumpSum = min($rsaBalance * 0.25, $rsaBalance); // At most 25% of the balance or the whole balance if less than 25%
-        
-        // Calculate remaining RSA balance after lump sum for monthly payments
-        $remainingRsaBalance = $rsaBalance - $lumpSum;
-        
-        // Default to Programmed Withdrawal (PW) method
-        $pensionType = 'PW'; // Could be 'PW' for Programmed Withdrawal or 'Annuity'
-        
-        // Expected lifespan: default to 20 years (240 months) for PW calculation
-        $expectedLifespanMonths = 240;
-        
-        // Monthly pension calculation based on Programmed Withdrawal method
-        $monthlyPension = $remainingRsaBalance / $expectedLifespanMonths;
-        
-        // Ensure minimum pension guarantee as per Nigerian CPS (₦32,000/month as of Sept 2025)
-        $minimumPension = 32000;
-        $monthlyPension = max($monthlyPension, $minimumPension);
-        
-        return [
-            'monthly_pension' => $monthlyPension,
-            'rsa_balance' => $rsaBalance,
-            'lump_sum' => $lumpSum,
-            'pension_type' => $pensionType,
-            'expected_lifespan_months' => $expectedLifespanMonths
-        ];
     }
 }

@@ -3,109 +3,100 @@
 @section('title', 'Edit Pensioner')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="card border-primary shadow">
-        <div class="card-header" style="background-color: skyblue; color: white;">
-            <h5 class="mb-0">Edit Pensioner</h5>
-        </div>
-        <div class="card-body">
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Edit Pensioner - {{ $pensioner->full_name }}</h4>
+                    <a href="{{ route('pensioners.show', $pensioner->id) }}" class="btn btn-secondary float-end">Cancel</a>
                 </div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
+                <div class="card-body">
+                    <form action="{{ route('pensioners.update', $pensioner->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pension_amount" class="form-label">Pension Amount</label>
+                                    <input type="number" step="0.01" class="form-control" id="pension_amount" name="pension_amount" value="{{ old('pension_amount', $pensioner->pension_amount) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gratuity_amount" class="form-label">Gratuity Amount</label>
+                                    <input type="number" step="0.01" class="form-control" id="gratuity_amount" name="gratuity_amount" value="{{ old('gratuity_amount', $pensioner->gratuity_amount) }}" required>
+                                </div>
+                            </div>
+                        </div>
 
-            <form method="POST" action="{{ route('pensioners.update', $pensioner->pensioner_id) }}">
-                @csrf
-                @method('PUT')
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="employee_id" class="form-label">Employee</label>
-                            <select name="employee_id" class="form-select" disabled>
-                                <option value="{{ $pensioner->employee_id }}" selected>
-                                    {{ $pensioner->employee ? $pensioner->employee->first_name . ' ' . $pensioner->employee->surname . ' (' . $pensioner->employee_id . ')' : 'N/A' }}
-                                </option>
-                            </select>
-                            <div class="form-text">Employee cannot be changed once pensioner record is created</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="bank_id" class="form-label">Bank</label>
+                                    <select class="form-control" id="bank_id" name="bank_id">
+                                        <option value="">Select Bank</option>
+                                        @foreach($banks as $bank)
+                                            <option value="{{ $bank->id }}" {{ $pensioner->bank_id == $bank->id ? 'selected' : '' }}>
+                                                {{ $bank->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="account_number" class="form-label">Account Number</label>
+                                    <input type="text" class="form-control" id="account_number" name="account_number" value="{{ old('account_number', $pensioner->account_number) }}">
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="pension_start_date" class="form-label">Pension Start Date</label>
-                            <input type="date" class="form-control" id="pension_start_date" name="pension_start_date" 
-                                   value="{{ old('pension_start_date', $pensioner->pension_start_date) }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="pension_amount" class="form-label">Pension Amount</label>
-                            <input type="number" class="form-control" id="pension_amount" name="pension_amount" 
-                                   value="{{ old('pension_amount', $pensioner->pension_amount) }}" step="0.01" min="0" required>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select name="status" class="form-select" id="status" required>
-                                <option value="Active" {{ old('status', $pensioner->status) === 'Active' ? 'selected' : '' }}>Active</option>
-                                <option value="Deceased" {{ old('status', $pensioner->status) === 'Deceased' ? 'selected' : '' }}>Deceased</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="pension_type" class="form-label">Pension Type</label>
-                            <select name="pension_type" class="form-select" id="pension_type">
-                                <option value="">Select Pension Type</option>
-                                <option value="PW" {{ old('pension_type', $pensioner->pension_type) === 'PW' ? 'selected' : '' }}>Programmed Withdrawal (PW)</option>
-                                <option value="Annuity" {{ old('pension_type', $pensioner->pension_type) === 'Annuity' ? 'selected' : '' }}>Annuity</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="rsa_balance_at_retirement" class="form-label">RSA Balance at Retirement</label>
-                            <input type="number" class="form-control" id="rsa_balance_at_retirement" name="rsa_balance_at_retirement" 
-                                   value="{{ old('rsa_balance_at_retirement', $pensioner->rsa_balance_at_retirement) }}" step="0.01" min="0">
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="lump_sum_amount" class="form-label">Lump Sum Amount</label>
-                            <input type="number" class="form-control" id="lump_sum_amount" name="lump_sum_amount" 
-                                   value="{{ old('lump_sum_amount', $pensioner->lump_sum_amount) }}" step="0.01" min="0">
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="expected_lifespan_months" class="form-label">Expected Lifespan (Months)</label>
-                            <input type="number" class="form-control" id="expected_lifespan_months" name="expected_lifespan_months" 
-                                   value="{{ old('expected_lifespan_months', $pensioner->expected_lifespan_months) }}" min="1">
-                        </div>
-                    </div>
-                </div>
 
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{{ route('pensioners.index') }}" class="btn btn-secondary rounded-pill px-4">Cancel</a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Update Pensioner</button>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="account_name" class="form-label">Account Name</label>
+                                    <input type="text" class="form-control" id="account_name" name="account_name" value="{{ old('account_name', $pensioner->account_name) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="Active" {{ $pensioner->status == 'Active' ? 'selected' : '' }}>Active</option>
+                                        <option value="Terminated" {{ $pensioner->status == 'Terminated' ? 'selected' : '' }}>Terminated</option>
+                                        <option value="Deceased" {{ $pensioner->status == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="next_of_kin_name" class="form-label">Next of Kin Name</label>
+                            <input type="text" class="form-control" id="next_of_kin_name" name="next_of_kin_name" value="{{ old('next_of_kin_name', $pensioner->next_of_kin_name) }}">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="next_of_kin_phone" class="form-label">Next of Kin Phone</label>
+                                    <input type="text" class="form-control" id="next_of_kin_phone" name="next_of_kin_phone" value="{{ old('next_of_kin_phone', $pensioner->next_of_kin_phone) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="next_of_kin_address" class="form-label">Next of Kin Address</label>
+                                    <textarea class="form-control" id="next_of_kin_address" name="next_of_kin_address" rows="2">{{ old('next_of_kin_address', $pensioner->next_of_kin_address) }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Pensioner</button>
+                        <a href="{{ route('pensioners.show', $pensioner->id) }}" class="btn btn-secondary">Cancel</a>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>

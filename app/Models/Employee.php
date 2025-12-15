@@ -151,6 +151,11 @@ public function retirement()
     return $this->hasOne(Retirement::class, 'employee_id', 'employee_id');
 }
 
+public function pensioner()
+{
+    return $this->hasOne(Pensioner::class, 'employee_id', 'employee_id');
+}
+
 public function getCalculatedRetirementDateAttribute()
 {
     if (!$this->gradeLevel || !$this->gradeLevel->salaryScale) {
@@ -275,6 +280,11 @@ public function getCalculatedRetirementDateAttribute()
 
         // Check if at least 3 months have passed since the probation start date
         return $probationStartDate->addMonths(3)->lte($today);
+    }
+
+    public function getFullNameAttribute()
+    {
+        return trim($this->first_name . ' ' . $this->middle_name . ' ' . $this->surname);
     }
 
 }
