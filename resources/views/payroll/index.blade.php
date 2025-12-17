@@ -26,12 +26,20 @@
                 <div class="card-body">
                     <form action="{{ route('payroll.generate') }}" method="POST" class="row g-3 align-items-end">
                         @csrf
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="month" class="form-label">Select Month</label>
                             <input type="month" name="month" id="month" value="{{ now()->format('Y-m') }}"
                                    class="form-control">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="payroll_category" class="form-label">Payroll Category</label>
+                            <select name="payroll_category" id="payroll_category" class="form-select">
+                                <option value="staff">Staff (Active/Suspended)</option>
+                                <option value="pensioners">Pensioners</option>
+                                <option value="gratuity">Gratuity (Pensioners)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="appointment_type_id" class="form-label">Appointment Type</label>
                             <select name="appointment_type_id" id="appointment_type_id" class="form-select">
                                 <option value="">All Types</option>
@@ -118,6 +126,7 @@
                                         <option value="">All Employee Statuses</option>
                                         <option value="Active" {{ request('employee_status') == 'Active' ? 'selected' : '' }}>Active</option>
                                         <option value="Suspended" {{ request('employee_status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
+                                        <option value="Retired" {{ request('employee_status') == 'Retired' ? 'selected' : '' }}>Retired (Pensioners)</option>
                                     </select>
                                 </div>
 
@@ -333,6 +342,7 @@
                                         <th class="align-middle">Status</th>
                                         <th class="align-middle">Payment Date</th>
                                         <th class="align-middle">Month</th>
+                                        <th class="align-middle">Type</th>
                                         <th class="align-middle">Actions</th>
                                     </tr>
                                 </thead>
@@ -492,6 +502,19 @@
                                                     @endif
                                                 @else
                                                     <span class="text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($payroll->payment_type === 'Gratuity')
+                                                    <span class="badge bg-purple text-white" style="background-color: #6f42c1;">Gratuity</span>
+                                                @elseif($payroll->payment_type === 'Pension')
+                                                    <span class="badge bg-info text-white">Pension</span>
+                                                @elseif($payroll->payment_type === 'Contract')
+                                                    <span class="badge bg-warning text-dark">Contract</span>
+                                                @elseif($payroll->payment_type === 'Permanent')
+                                                    <span class="badge bg-success text-white">Permanent</span>
+                                                @else
+                                                    <span class="badge bg-light text-dark">Regular</span>
                                                 @endif
                                             </td>
                                             <td>

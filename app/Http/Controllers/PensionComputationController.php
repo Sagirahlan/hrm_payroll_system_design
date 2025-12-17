@@ -275,6 +275,17 @@ class PensionComputationController extends Controller
             $ageSpan = $this->calculationService->getDateSpan($dob, $retirementDate);
             $overstayRemark = $this->calculationService->calculateOverstay($ageSpan, $dateSpan);
 
+            // Calculate overstay amount using new service method
+            // Sanitize salary input to remove commas if present
+            $monthlySalaryClean = str_replace(',', '', $salaryData['rate_per_mnth']);
+            
+            $overstayData = $this->calculationService->calculateOverstayAmount(
+                $dob, 
+                $apptDate, 
+                $retirementDate, 
+                (float)$monthlySalaryClean
+            );
+
             // Calculate apportionment (if needed)
             $apportionment = $this->calculateApportionment($calculatedGratuity, $calculatedPensionPerAnnum, $data);
 
@@ -293,6 +304,11 @@ class PensionComputationController extends Controller
                         'per_annum' => number_format($basicSalaryPerAnnum, 2),
                         'per_month' => number_format($salaryData['rate_per_mnth'], 2),
                     ],
+                    // Add overstay data to response
+                    'overstay' => $overstayRemark,
+                    'overstay_amount' => number_format($overstayData['amount'], 2),
+                    'overstay_days' => $overstayData['days'],
+
                     'total_emolument' => number_format($totalEmolument, 2),
                     'gratuity' => [
                         'type' => $gratuityType,
@@ -417,14 +433,19 @@ class PensionComputationController extends Controller
                 $employee->update(['status' => 'Retired']);
 
                 // Create or update Retirement record
+                $retireReason = ($data['gtype'] === 'DG') ? 'Death in Service' : 'Statutory';
+                $storedGratuityAmount = ($data['gtype'] === 'DG') 
+                    ? str_replace(',', '', $computation['total_death_gratuity']) 
+                    : str_replace(',', '', $computation['gratuity']['amount']);
+
                 $retirement = \App\Models\Retirement::firstOrCreate(
                     ['employee_id' => $employee->employee_id],
                     [
                         'retirement_date' => $data['dod_r'],
                         'notification_date' => now(), // Default to now if unknown
-                        'gratuity_amount' => str_replace(',', '', $computation['gratuity']['amount']),
+                        'gratuity_amount' => $storedGratuityAmount,
                         'status' => 'Approved',
-                        'retire_reason' => 'Statutory', // Default or fetch if available
+                        'retire_reason' => $retireReason,
                         'years_of_service' => $computation['service_yrs_for_compute'],
                     ]
                 );
@@ -433,6 +454,8 @@ class PensionComputationController extends Controller
                 if (!\App\Models\Pensioner::where('retirement_id', $retirement->id)->exists()) {
                     \Log::info('Attempting to create Pensioner record for Employee: ' . $employee->employee_id);
                     try {
+                     $pensionerStatus = ($data['gtype'] === 'DG') ? 'Deceased' : 'Active';
+                     
                      $pensioner = \App\Models\Pensioner::create([
                         'employee_id' => $employee->employee_id,
                         'full_name' => $employee->full_name,
@@ -457,7 +480,7 @@ class PensionComputationController extends Controller
                         'account_number' => $data['acc_no'] ?? null,
                         'account_name' => $data['fulname'], 
                         'pension_amount' => str_replace(',', '', $computation['pension']['per_month']), // Monthly pension
-                        'gratuity_amount' => str_replace(',', '', $computation['gratuity']['amount']),
+                        'gratuity_amount' => $storedGratuityAmount,
                         'total_death_gratuity' => str_replace(',', '', $computation['total_death_gratuity']),
                         'years_of_service' => $computation['service_yrs_for_compute'],
                         'pension_percentage' => $computation['pension']['percentage'],
@@ -466,7 +489,7 @@ class PensionComputationController extends Controller
                         'next_of_kin_name' => $data['nxtkin_fulname'] ?? null,
                         'next_of_kin_phone' => $data['nxtkin_mobile'] ?? null,
                         'next_of_kin_address' => $employee->next_of_kin_address, // Assuming exists
-                        'status' => 'Active',
+                        'status' => $pensionerStatus,
                         'retirement_id' => $retirement->id,
                         'beneficiary_computation_id' => $beneficiary->id,
                         'created_by' => auth()->id(),

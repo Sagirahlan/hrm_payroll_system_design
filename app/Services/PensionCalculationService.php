@@ -192,4 +192,66 @@ class PensionCalculationService
 
         return $overstayRemark;
     }
+
+    /**
+     * Calculate overstay deduction amount
+     */
+    public function calculateOverstayDeduction(array $ageSpan, array $serviceSpan, float $monthlySalary): float
+    {
+        $deductionAmount = 0;
+
+        // Check overstay by age (60 years)
+        if ($ageSpan['years'] >= 60 && ($ageSpan['months'] > 0 || $ageSpan['days'] > 0)) {
+            // Calculate overstay duration in months
+            $yearsOver = $ageSpan['years'] - 60;
+            $monthsOver = $yearsOver * 12 + $ageSpan['months'] + ($ageSpan['days'] / 30.44);
+            $deductionAmount = $monthsOver * $monthlySalary;
+        }
+
+        // Check overstay by service (35 years)
+        // We take the higher of the two if both apply? Or cumulative?
+        // Usually, retirement is triggered by whichever comes FIRST. 
+        // So overstay is the duration AFTER the valid retirement date.
+        // It's safer to rely on the "Expected Date" logic used in Controller, but here we only have spans.
+        // Let's refine this. The most accurate way is Date Comparison (Actual - Expected).
+        // Reuse the logic I put in PayrollController but strictly date-based.
+        // Wait, passing dates is better than spans for this.
+        
+        return 0; // Placeholder, I will use a different signature or logic
+    }
+
+    /**
+     * Calculate Overstay Amount based on dates
+     */
+    public function calculateOverstayAmount(\Carbon\Carbon $dob, \Carbon\Carbon $dofa, \Carbon\Carbon $retirementDate, float $monthlySalary): array
+    {
+         // 60 years age
+         $expectedByAge = $dob->copy()->addYears(60);
+         // 35 years service
+         $expectedByService = $dofa->copy()->addYears(35);
+         
+         $expectedRetirement = $expectedByAge->min($expectedByService);
+         
+         \Illuminate\Support\Facades\Log::info("Calculate Overstay: DOB={$dob}, DOFA={$dofa}, Retirement={$retirementDate}, Salary={$monthlySalary}");
+         \Illuminate\Support\Facades\Log::info("Expected Retirement: {$expectedRetirement}");
+
+         if ($retirementDate->gt($expectedRetirement)) {
+             // Ensure absolute positive difference
+             $daysOverstayed = $retirementDate->diffInDays($expectedRetirement, false);
+             $daysOverstayed = abs($daysOverstayed);
+             
+             $monthsOverstayed = $daysOverstayed / 30.44; // Approx
+             
+             \Illuminate\Support\Facades\Log::info("Overstayed (Fixed): Days={$daysOverstayed}, Months={$monthsOverstayed}");
+
+             if ($monthlySalary > 0 && $monthsOverstayed > 0) {
+                 return [
+                    'amount' => round($monthlySalary * $monthsOverstayed, 2),
+                    'days' => $daysOverstayed
+                 ];
+             }
+         }
+         
+         return ['amount' => 0, 'days' => 0];
+    }
 }

@@ -18,6 +18,7 @@ class PayrollRecord extends Model
         'net_salary',
         'payment_date',
         'payroll_month', // Added payroll_month
+        'payment_type',
         'remarks',
     ];
 

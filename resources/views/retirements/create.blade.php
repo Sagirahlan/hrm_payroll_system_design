@@ -51,7 +51,9 @@
                             <td>
                                 @php
                                     $retireReason = 'N/A';
-                                    if ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                                    if ($employee->status === 'Deceased') {
+                                        $retireReason = 'Death in Service';
+                                    } elseif ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
                                         $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
                                         $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
                                         $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
@@ -107,7 +109,9 @@
                                                 <label for="retire_reason_{{ $employee->employee_id }}" class="form-label">Retire Reason</label>
                                                 @php
                                                     $retireReason = 'N/A';
-                                                    if ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                                                    if ($employee->status === 'Deceased') {
+                                                        $retireReason = 'Death in Service';
+                                                    } elseif ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
                                                         $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
                                                         $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
                                                         $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;

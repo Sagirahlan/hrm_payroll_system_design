@@ -41,10 +41,19 @@
                                     <td>{{ $pensioner->department ? $pensioner->department->department_name : 'N/A' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($pensioner->date_of_retirement)->format('d M, Y') }}</td>
                                     <td>{{ number_format($pensioner->years_of_service, 1) }}</td>
-                                    <td>{{ number_format($pensioner->gratuity_amount, 2) }}</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>{{ number_format($pensioner->gratuity_amount, 2) }}</span>
+                                            @if($pensioner->is_gratuity_paid)
+                                                <span class="badge bg-success btn-sm p-1" style="font-size: 0.7rem;">Paid on {{ \Carbon\Carbon::parse($pensioner->gratuity_paid_date)->format('d/m/Y') }}</span>
+                                            @else
+                                                <span class="badge bg-warning text-dark btn-sm p-1" style="font-size: 0.7rem;">Unpaid</span>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td>{{ number_format($pensioner->pension_amount, 2) }}</td>
                                     <td>
-                                        <span class="badge {{ $pensioner->status === 'Active' ? 'bg-success' : 'bg-secondary' }}">
+                                        <span class="badge {{ $pensioner->status === 'Active' ? 'bg-success' : ($pensioner->status === 'Deceased' ? 'bg-dark' : 'bg-secondary') }}">
                                             {{ $pensioner->status }}
                                         </span>
                                     </td>
@@ -56,8 +65,28 @@
                                             <ul class="dropdown-menu">
                                                 <li><a class="dropdown-item" href="{{ route('pensioners.show', $pensioner->id) }}">View Details</a></li>
                                                 <li><a class="dropdown-item" href="{{ route('pensioners.edit', $pensioner->id) }}">Edit Record</a></li>
-                                                {{-- <li><hr class="dropdown-divider"></li> --}}
-                                                {{-- <li><a class="dropdown-item text-danger" href="#">Delete</a></li> --}}
+                                                
+                                                @if(!$pensioner->is_gratuity_paid)
+                                                    <li>
+                                                        <form action="{{ route('pensioners.mark-gratuity-paid', $pensioner->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-primary" onclick="return confirm('Are you sure you want to mark gratuity as paid?')">
+                                                                <i class="fas fa-check-circle me-1"></i> Pay Gratuity
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @endif
+
+                                                @if($pensioner->status !== 'Deceased')
+                                                    <li>
+                                                        <form action="{{ route('pensioners.mark-deceased', $pensioner->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to mark this pensioner as deceased? This will stop future pension payments.')">
+                                                                <i class="fas fa-book-dead me-1"></i> Mark Deceased
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @endif
                                             </ul>
                                         </div>
                                     </td>

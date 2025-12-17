@@ -197,10 +197,15 @@ class RetirementController extends Controller
     public function create()
     {
         $employees = Employee::with(['gradeLevel.salaryScale', 'department', 'rank', 'step'])
-            ->where('status', 'Active')
+            ->whereIn('status', ['Active', 'Deceased'])
             ->get();
 
         $eligibleEmployees = $employees->filter(function ($employee) {
+            // Automatically include Deceased employees
+            if ($employee->status === 'Deceased') {
+                return true;
+            }
+
             if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
                 return false;
             }
@@ -253,7 +258,13 @@ class RetirementController extends Controller
 
             // Determine the actual retirement reason based on which condition was met
             $retireReason = $validated['retire_reason'] ?? null;
-            if (!$retireReason && $employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+            
+            // For Deceased employees, force the reason
+            if ($employee->status === 'Deceased') {
+                $retireReason = 'Death in Service';
+            }
+            // Logic for active employees if reason not provided
+            elseif (!$retireReason && $employee->gradeLevel && $employee->gradeLevel->salaryScale) {
                 $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
                 $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
 
@@ -294,7 +305,10 @@ class RetirementController extends Controller
                 'retire_reason' => $retireReason,
             ]);
 
-            $employee->update(['status' => 'Retired']);
+            $employee->update([
+                'status' => 'Retired',
+                'date_of_retirement' => $validated['retirement_date']
+            ]);
 
             // Now move the retired employee to the pensioners table
             $this->moveToPensioners($employee, $retirement);

@@ -50,10 +50,187 @@ class PayrollController extends Controller
     {
         set_time_limit(0); // Set no time limit for this script
         $month = $request->input('month', now()->format('Y-m'));
+        $category = $request->input('payroll_category', 'staff');
         $appointmentTypeId = $request->input('appointment_type_id');
 
-        // Fetch employees (Active and Suspended) excluding those on probation and on hold
-        $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
+        if ($category === 'pensioners') {
+            // --- Pensioner Payroll Generation ---
+            // Exclude Deceased pensioners and those retired by 'Death in Service'
+            $pensioners = \App\Models\Pensioner::where('status', '!=', 'Deceased')
+                ->where('retirement_reason', '!=', 'Death in Service')
+                ->where('status', 'Active') // Explicitly check for Active status as well needed? 
+                // Let's stick to user request: "avoid fetching the pensioners with deceased status and which reason of there retirement is by deaths"
+                // The status check 'Active' in original code might already cover it, but explicit exclusion covers user intent.
+                // Original: where('status', 'Active')
+                // Let's refine to: where('status', 'Active') AND exclusions just to be safe if status names vary.
+                ->where('status', 'Active') 
+                ->get();
+            $count = 0;
+
+            foreach ($pensioners as $pensioner) {
+                // Ensure we have an employee record link if needed, or create payroll record directly
+                // Assuming PayrollRecord relies on employee_id.
+                // Checks if the pensioner has a valid employee_id
+                if (!$pensioner->employee_id) continue;
+
+                $monthlyPension = $pensioner->pension_amount;
+
+                // Create or update payroll record
+                PayrollRecord::updateOrCreate(
+                    [
+                        'employee_id' => $pensioner->employee_id,
+                        'payroll_month' => $month . '-01',
+                        'payment_type' => 'Pension',
+                    ],
+                    [
+                        'grade_level_id' => $pensioner->grade_level_id,
+                        'basic_salary' => $monthlyPension,
+                        'payment_type' => 'Pension', // Explicitly set type to Pension
+                        'total_additions' => 0, // Deductions/Additions logic for pensioners can be added later
+                        'total_deductions' => 0,
+                        'net_salary' => $monthlyPension,
+                        'status' => 'Pending Review',
+                        'payment_date' => null,
+                        'remarks' => 'Pension for ' . $month,
+                    ]
+                );
+
+                // Create Payment Transaction
+                // Check if transaction exists to avoid duplicates
+                $payrollRecord = PayrollRecord::where('employee_id', $pensioner->employee_id)
+                                ->where('payroll_month', $month . '-01')
+                                ->first();
+
+                if ($payrollRecord) {
+                    \App\Models\PaymentTransaction::firstOrCreate(
+                        ['payroll_id' => $payrollRecord->payroll_id],
+                        [
+                            'employee_id' => $pensioner->employee_id,
+                            'amount' => $monthlyPension,
+                            'payment_date' => null,
+                            'bank_code' => $pensioner->bank->bank_code ?? null,
+                            'account_name' => $pensioner->account_name ?? ($pensioner->first_name . ' ' . $pensioner->surname),
+                            'account_number' => $pensioner->account_number ?? '0000000000',
+                        ]
+                    );
+                }
+                $count++;
+            }
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'generated_pension_payroll',
+                'description' => "Generated pension payroll for month: {$month} for {$count} pensioners.",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $month, 'pensioner_count' => $count]),
+            ]);
+
+            return redirect()->route('payroll.index')
+                ->with('success', 'Pension Payroll generated successfully for ' . $month . ' (' . $count . ' pensioners processed)');
+        } elseif ($category === 'gratuity') {
+             // --- Gratuity Payroll Generation ---
+            // Include Deceased pensioners for Gratuity as they are entitled to it (via Next of Kin usually)
+            $pensioners = \App\Models\Pensioner::with('beneficiaryComputation')
+                ->where('is_gratuity_paid', false)
+                ->where('gratuity_amount', '>', 0)
+                ->get();
+
+            $count = 0;
+            foreach ($pensioners as $pensioner) {
+                // Check if gratuity record already exists for this pensioner (one-off)
+                $existingRecord = PayrollRecord::where('employee_id', $pensioner->employee_id)
+                    ->where('payment_type', 'Gratuity')
+                    ->exists();
+
+                if ($existingRecord) continue; 
+                
+                $deductionAmount = 0;
+                $remarks = 'Gratuity Payment';
+
+                // Check for Overstay
+                if ($pensioner->beneficiaryComputation && !empty($pensioner->beneficiaryComputation->overstay_remark)) {
+                     // Calculate Overstay Deduction
+                     // Logic: Check Expected Retirement Date vs Actual.
+                     // Expected = Earlier of (DOB + 60) or (First Appt + 35)
+                     
+                     $dob = \Carbon\Carbon::parse($pensioner->date_of_birth);
+                     $dofa = \Carbon\Carbon::parse($pensioner->date_of_first_appointment);
+                     $actualRetirement = \Carbon\Carbon::parse($pensioner->date_of_retirement);
+                     
+                     // Get Annual Emolument and convert to Monthly
+                     $annualEmolument = (float)($pensioner->beneficiaryComputation->total_emolument ?? 0);
+                     $monthlySalary = $annualEmolument / 12;
+
+                     // Use the service to calculate, ensuring consistency
+                     $calculationService = app(\App\Services\PensionCalculationService::class);
+                     $overstayData = $calculationService->calculateOverstayAmount(
+                         $dob, 
+                         $dofa, 
+                         $actualRetirement, 
+                         $monthlySalary
+                     );
+
+                     if ($overstayData['amount'] > 0) {
+                         $deductionAmount = $overstayData['amount'];
+                         $remarks .= " - Overstay Deduction: " . number_format($deductionAmount, 2);
+                     }
+                }
+
+                $netSalary = $pensioner->gratuity_amount - $deductionAmount;
+                // Ensure net salary is not negative?
+                if ($netSalary < 0) $netSalary = 0;
+                
+                $payrollRecord = PayrollRecord::create([
+                    'employee_id' => $pensioner->employee_id,
+                    'payroll_month' => $month . '-01', // Record it in the current processing month
+                    'grade_level_id' => $pensioner->grade_level_id,
+                    'basic_salary' => $pensioner->gratuity_amount,
+                    'payment_type' => 'Gratuity',
+                    'status' => 'Pending Review',
+                    'total_additions' => 0,
+                    'total_deductions' => $deductionAmount,
+                    'net_salary' => $netSalary,
+                    'payment_date' => null,
+                    'remarks' => $remarks,
+                ]);
+                
+                 \App\Models\PaymentTransaction::create([
+                        'payroll_id' => $payrollRecord->payroll_id,
+                        'employee_id' => $payrollRecord->employee_id,
+                        'amount' => $payrollRecord->net_salary,
+                        'transaction_type' => 'Bank Transfer',
+                        'transaction_date' => null,
+                        'status' => 'Pending',
+                        'bank_code' => $pensioner->bank->bank_code ?? null,
+                        'account_name' => $pensioner->account_name ?? ($pensioner->first_name . ' ' . $pensioner->surname),
+                        'account_number' => $pensioner->account_number ?? '0000000000',
+                        'reference_id' => 'GRAT-' . strtoupper(uniqid()),
+                ]);
+
+                $count++;
+            }
+
+            AuditTrail::create([
+                'user_id' => Auth::id(),
+                'action' => 'generated_gratuity_payroll',
+                'description' => "Generated gratuity payroll for month: {$month} for {$count} pensioners.",
+                'action_timestamp' => now(),
+                'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $month, 'pensioner_count' => $count, 'type' => 'Gratuity']),
+            ]);
+
+            return redirect()->route('payroll.index')
+                ->with('success', 'Gratuity Payroll generated successfully for ' . $month . ' (' . $count . ' records processed)');
+        }
+
+        // --- Standard Staff Payroll Generation ---
+        // Fetch employees (Active and Suspended) and those Retiring this month
+        $startOfMonth = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
+
+        $employeesQuery = Employee::where(function($query) use ($startOfMonth, $endOfMonth, $appointmentTypeId) {
+                // Strictly Active and Suspended staff only
+                $query->whereIn('status', ['Active', 'Suspended']);
+            })
             ->where(function($query) {
                 // Exclude employees who are on probation
                 $query->whereNull('on_probation')
@@ -106,57 +283,73 @@ class PayrollController extends Controller
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, true);
 
                 // Create the payroll record for suspended employee with 'Pending Review' status
-                $payroll = PayrollRecord::create([
-                    'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
-                    'payroll_month' => $month . '-01',
-                    'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
-                    'total_additions' => $calculation['total_additions'], // Additions still apply
-                    'total_deductions' => $calculation['total_deductions'], // Deductions still apply
-                    'net_salary' => $calculation['net_salary'], // Net salary with special calculation for suspended
-                    'status' => 'Pending Review',
-                    'payment_date' => null,
-                    'remarks' => 'Generated for ' . $month . ' (Suspended - Special Calculation Applied)',
-                ]);
+                $payroll = PayrollRecord::updateOrCreate(
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'payroll_month' => $month . '-01',
+                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                    ],
+                    [
+                        'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                        'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
+                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'total_additions' => $calculation['total_additions'], // Additions still apply
+                        'total_deductions' => $calculation['total_deductions'], // Deductions still apply
+                        'net_salary' => $calculation['net_salary'], // Net salary with special calculation for suspended
+                        'status' => 'Pending Review',
+                        'payment_date' => null,
+                        'remarks' => 'Generated for ' . $month . ' (Suspended - Special Calculation Applied)',
+                    ]
+                );
 
                 // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::create([
-                    'payroll_id' =>  $payroll->payroll_id,
-                    'employee_id' => $employee->employee_id,
-                    'amount' => $calculation['net_salary'],
-                    'payment_date' => null,
-                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                    'account_number' => $employee->bank->account_no ?? '0000000000',
-                ]);
+                \App\Models\PaymentTransaction::firstOrCreate(
+                    ['payroll_id' =>  $payroll->payroll_id],
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'amount' => $calculation['net_salary'],
+                        'payment_date' => null,
+                        'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
+                        'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
+                        'account_number' => $employee->bank->account_no ?? '0000000000',
+                    ]
+                );
             } else {
                 // For active employees, use normal calculation
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, false);
 
                 // Create the payroll record for active employee with 'Pending Review' status
-                $payroll = PayrollRecord::create([
-                    'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
-                    'payroll_month' => $month . '-01',
-                    'basic_salary' => $calculation['basic_salary'],
-                    'total_additions' => $calculation['total_additions'],
-                    'total_deductions' => $calculation['total_deductions'],
-                    'net_salary' => $calculation['net_salary'],
-                    'status' => 'Pending Review',
-                    'payment_date' => null,
-                    'remarks' => 'Generated for ' . $month,
-                ]);
+                $payroll = PayrollRecord::updateOrCreate(
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'payroll_month' => $month . '-01',
+                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                    ],
+                    [
+                        'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                        'basic_salary' => $calculation['basic_salary'],
+                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'total_additions' => $calculation['total_additions'],
+                        'total_deductions' => $calculation['total_deductions'],
+                        'net_salary' => $calculation['net_salary'],
+                        'status' => 'Pending Review',
+                        'payment_date' => null,
+                        'remarks' => 'Generated for ' . $month,
+                    ]
+                );
 
                 // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::create([
-                    'payroll_id' =>  $payroll->payroll_id,
-                    'employee_id' => $employee->employee_id,
-                    'amount' => $calculation['net_salary'],
-                    'payment_date' => null,
-                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                    'account_number' => $employee->bank->account_no ?? '0000000000',
-                ]);
+                \App\Models\PaymentTransaction::firstOrCreate(
+                    ['payroll_id' =>  $payroll->payroll_id],
+                    [
+                        'employee_id' => $employee->employee_id,
+                        'amount' => $calculation['net_salary'],
+                        'payment_date' => null,
+                        'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
+                        'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
+                        'account_number' => $employee->bank->account_no ?? '0000000000',
+                    ]
+                );
             }
         }
 

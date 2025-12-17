@@ -95,6 +95,67 @@ class PayrollCalculationService
         $deductionRecords = [];
         $additionRecords = [];
 
+        // --- Pro-Rata Logic for Transition Month (Retirement) ---
+        $isTransitionMonth = false;
+        $daysInMonth = $payrollStart->daysInMonth;
+        
+        if ($employee->date_of_retirement) {
+            $retirementDate = Carbon::parse($employee->date_of_retirement);
+            // Check if retirement date is within this payroll month
+            if ($retirementDate->between($payrollStart, $payrollEnd)) {
+                $isTransitionMonth = true;
+                
+                // Calculate Active Days (1st to Retirement Date inclusive)
+                $activeDays = $retirementDate->day; // e.g., if 12th, then 12 days
+                
+                // Calculate Pension Days (Retirement Date + 1 to End of Month)
+                $pensionDays = $daysInMonth - $activeDays;
+                
+                // 1. Calculate Pro-Rata Salary
+                // Formula: (Monthly Basic / Total Days) * Active Days
+                $originalBasicSalary = $basicSalary;
+                $dailySalaryRate = $originalBasicSalary / $daysInMonth;
+                $proRataSalary = round($dailySalaryRate * $activeDays, 2);
+                
+                // Update basic salary to the pro-rata amount for subsequent calculations (deductions etc.)
+                $basicSalary = $proRataSalary;
+                
+                // 2. Calculate Pro-Rata Pension
+                // Formula: (Monthly Pension / Total Days) * Pension Days
+                $pensionPerMonth = 0;
+                
+                // Attempt to find pension amount from Pensioner record first
+                $pensioner = \App\Models\Pensioner::where('employee_id', $employee->employee_id)->first();
+                if ($pensioner) {
+                    $pensionPerMonth = $pensioner->pension_amount;
+                } else {
+                    // Fallback to ComputeBeneficiary if Pensioner record not created yet
+                    $beneficiary = \App\Models\ComputeBeneficiary::where('id_no', $employee->employee_id)
+                        ->orWhere('id_no', $employee->staff_id)
+                        ->first();
+                    if ($beneficiary) {
+                        // basic_sal_mnth or pension_per_mnth ? User said "Pension Per Month"
+                        $pensionPerMonth = $beneficiary->pension_per_mnth;
+                    }
+                }
+                
+                if ($pensionPerMonth > 0 && $pensionDays > 0) {
+                    $dailyPensionRate = $pensionPerMonth / $daysInMonth;
+                    $proRataPension = round($dailyPensionRate * $pensionDays, 2);
+                    
+                    // Add as an Addition
+                    $totalAdditions += $proRataPension;
+                    $additionRecords[] = [
+                        'type' => 'addition',
+                        'name_type' => 'Pro-rata Pension (Transition)',
+                        'amount' => $proRataPension,
+                        'frequency' => 'OneTime',
+                    ];
+                }
+            }
+        }
+        // --------------------------------------------------------
+
         // Statutory deductions from grade level (only for non-contract employees)
         if (!$isContractEmployee && $gradeLevel) {
             foreach ($gradeLevel->deductionTypes as $deductionType) {

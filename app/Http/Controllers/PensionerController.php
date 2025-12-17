@@ -126,7 +126,7 @@ class PensionerController extends Controller
                 'next_of_kin_name' => $employee->next_of_kin_name,
                 'next_of_kin_phone' => $employee->next_of_kin_phone,
                 'next_of_kin_address' => $employee->next_of_kin_address,
-                'status' => $validated['status'] ?? 'Active',
+                'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : ($validated['status'] ?? 'Active'),
                 'retirement_id' => $validated['retirement_id'],
                 'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
                 'created_by' => auth()->id(),
@@ -162,8 +162,24 @@ class PensionerController extends Controller
         $serviceSpan = $this->calculationService->getDateSpan($apptDate, $retirementDate);
         
         $overstayRemark = $this->calculationService->calculateOverstay($ageSpan, $serviceSpan);
+        
+        // Calculate overstay amount if linked computation exists, use its total emolument
+        // Otherwise try to determine salary (fallback to 0 if not easily available without computation)
+        $monthlySalary = 0;
+        if ($pensioner->beneficiaryComputation) {
+             // total_emolument is Annual, so divide by 12
+             $monthlySalary = (float)$pensioner->beneficiaryComputation->total_emolument / 12;
+        }
+        
+        $overstayData = $this->calculationService->calculateOverstayAmount(
+            $dob, 
+            $apptDate, 
+            $retirementDate, 
+            $monthlySalary
+        );
+        $overstayAmount = $overstayData['amount'];
 
-        return view('pensioners.show', compact('pensioner', 'overstayRemark'));
+        return view('pensioners.show', compact('pensioner', 'overstayRemark', 'overstayAmount'));
     }
 
     /**
@@ -289,7 +305,7 @@ class PensionerController extends Controller
                     'next_of_kin_name' => $employee->next_of_kin_name,
                     'next_of_kin_phone' => $employee->next_of_kin_phone,
                     'next_of_kin_address' => $employee->next_of_kin_address,
-                    'status' => 'Active',
+                    'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : 'Active',
                     'retirement_id' => $retirement->id,
                     'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
                     'created_by' => auth()->id(),
@@ -342,5 +358,47 @@ class PensionerController extends Controller
             'pensioners' => $pensioners,
             'count' => $pensioners->count()
         ]);
+    }
+
+    /**
+     * Mark gratuity as paid for a pensioner
+     */
+    public function markGratuityPaid(Request $request, $id)
+    {
+        try {
+            $pensioner = Pensioner::findOrFail($id);
+            
+            $pensioner->update([
+                'is_gratuity_paid' => true,
+                'gratuity_paid_date' => now(),
+                'updated_by' => auth()->id()
+            ]);
+
+            return redirect()->back()->with('success', 'Gratuity marked as paid successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Error marking gratuity as paid: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error marking gratuity as paid.');
+        }
+    }
+
+    /**
+     * Mark a pensioner as deceased
+     */
+    public function markDeceased(Request $request, $id)
+    {
+        try {
+            $pensioner = Pensioner::findOrFail($id);
+            
+            $pensioner->update([
+                'status' => 'Deceased',
+                'retirement_reason' => 'Death in Service',
+                'updated_by' => auth()->id()
+            ]);
+
+            return redirect()->back()->with('success', 'Pensioner marked as deceased successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Error marking pensioner as deceased: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error marking pensioner as deceased.');
+        }
     }
 }

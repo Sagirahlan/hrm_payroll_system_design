@@ -27,7 +27,7 @@ class SalaryScaleGradeLevelSeeder extends Seeder
                 'full_name' => 'Harmonized Public Service Structure ',
                 'sector_coverage' => 'Harmonized salary structure for public sevices',
                 'grade_levels' => ' 01 –  17',
-                'max_retirement_age' => '65 years',
+                'max_retirement_age' => '60 years',
                 'max_years_of_service' => '35 years',
                 'notes' => 'Harmonized salary structure for public sevices'
             ]

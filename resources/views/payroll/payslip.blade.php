@@ -143,7 +143,7 @@
 
     <!-- Deductions Section -->
     <h4>Deductions</h4>
-    @if($deductions->count() > 0)
+    @if($deductions->count() > 0 || ($payroll->payment_type == 'Gratuity' && $payroll->total_deductions > 0))
         <table>
             <thead>
                 <tr>
@@ -160,9 +160,20 @@
                         <td>{{ $deduction->deduction_period }}</td>
                     </tr>
                 @endforeach
+
+                {{-- Special Case for Gratuity Overstay --}}
+                @if($payroll->payment_type == 'Gratuity' && $payroll->total_deductions > 0)
+                    <tr>
+                        <td>Overstay Deduction</td>
+                        <td>₦{{ number_format($payroll->total_deductions, 2) }}</td>
+                        <td>ONE-OFF</td>
+                    </tr>
+                @endif
+
                 <tr class="total-row">
                     <td><strong>Total Deductions</strong></td>
-                    <td><strong>₦{{ number_format($deductions->sum('amount'), 2) }}</strong></td>
+                    {{-- Use payroll total directly to ensure it captures everything --}}
+                    <td><strong>₦{{ number_format($payroll->total_deductions, 2) }}</strong></td>
                     <td></td>
                 </tr>
             </tbody>

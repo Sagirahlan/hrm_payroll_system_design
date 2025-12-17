@@ -243,6 +243,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pensioners/{pensioner}/edit', [PensionerController::class, 'edit'])->name('pensioners.edit');
         Route::post('/pensioners/move-retired', [PensionerController::class, 'moveRetiredToPensioners'])->name('pensioners.move-retired');
         Route::get('/pensioners/type/{type}', [PensionerController::class, 'getPensionersByType'])->name('pensioners.by-type');
+        Route::post('/pensioners/{pensioner}/mark-gratuity-paid', [PensionerController::class, 'markGratuityPaid'])->name('pensioners.mark-gratuity-paid');
+        Route::post('/pensioners/{pensioner}/mark-deceased', [PensionerController::class, 'markDeceased'])->name('pensioners.mark-deceased');
 
         // Pension Computation
         Route::get('/pension/computation/create', [PensionComputationController::class, 'create'])->name('pension.create');

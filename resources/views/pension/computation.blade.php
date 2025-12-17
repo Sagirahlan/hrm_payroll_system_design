@@ -366,7 +366,13 @@
             }
 
             if (computation.overstay) {
-                document.getElementById('overstayText').textContent = computation.overstay;
+                let overstayHtml = `<strong>${computation.overstay}</strong>`;
+                // Check if amount exists and is not zero (handle string or number)
+                let amt = computation.overstay_amount;
+                if (amt && amt != 0 && amt !== '0.00') {
+                    overstayHtml += `<br><span class="text-danger">Deduction Amount: ₦${amt}</span>`;
+                }
+                document.getElementById('overstayText').innerHTML = overstayHtml;
                 document.getElementById('overstaySection').style.display = '';
             } else {
                 document.getElementById('overstaySection').style.display = 'none';

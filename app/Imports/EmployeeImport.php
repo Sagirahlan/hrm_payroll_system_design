@@ -112,10 +112,26 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
 
         if (!empty($row['step_id'])) {
             // Try to find step by name first, then try the ID
-            $step = \App\Models\Step::where('name', 'like', '%' . $row['step_id'] . '%')->first();
-            if (!$step) {
-                $step = \App\Models\Step::where('id', $row['step_id'])->first(); // If it's already an ID
+            $stepQuery = \App\Models\Step::query();
+
+            // If we have a grade level resolved, scope the step search to it
+            if ($gradeLevelId) {
+                $stepQuery->where('grade_level_id', $gradeLevelId);
             }
+
+            // Search by name (like) or exact ID
+            $searchValue = $row['step_id'];
+            
+            // Clone query for first attempt (by name)
+            $stepByName = clone $stepQuery;
+            $step = $stepByName->where('name', 'like', '%' . $searchValue . '%')->first();
+
+            if (!$step) {
+                // Clone query for second attempt (by ID)
+                $stepById = clone $stepQuery;
+                $step = $stepById->where('id', $searchValue)->first(); 
+            }
+            
             $stepId = $step ? $step->id : null;
         }
 

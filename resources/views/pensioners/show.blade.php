@@ -95,6 +95,12 @@
                                     <th>Overstayed:</th>
                                     <td class="text-danger fw-bold">{{ $overstayRemark ?: 'N/A' }}</td>
                                 </tr>
+                                @if(isset($overstayAmount) && $overstayAmount > 0)
+                                <tr>
+                                    <th>Overstay Amount:</th>
+                                    <td class="text-danger fw-bold">₦{{ number_format($overstayAmount, 2) }}</td>
+                                </tr>
+                                @endif
                             </table>
                         </div>
                     </div>
