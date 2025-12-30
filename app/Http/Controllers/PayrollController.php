@@ -56,14 +56,11 @@ class PayrollController extends Controller
         if ($category === 'pensioners') {
             // --- Pensioner Payroll Generation ---
             // Exclude Deceased pensioners and those retired by 'Death in Service'
+            // Also exclude 'Not Eligible'
             $pensioners = \App\Models\Pensioner::where('status', '!=', 'Deceased')
                 ->where('retirement_reason', '!=', 'Death in Service')
-                ->where('status', 'Active') // Explicitly check for Active status as well needed? 
-                // Let's stick to user request: "avoid fetching the pensioners with deceased status and which reason of there retirement is by deaths"
-                // The status check 'Active' in original code might already cover it, but explicit exclusion covers user intent.
-                // Original: where('status', 'Active')
-                // Let's refine to: where('status', 'Active') AND exclusions just to be safe if status names vary.
-                ->where('status', 'Active') 
+                ->where('status', '!=', 'Not Eligible') 
+                ->where('status', 'Active') // Explicitly ensure they are Active (double check)
                 ->get();
             $count = 0;
 
@@ -128,11 +125,13 @@ class PayrollController extends Controller
             return redirect()->route('payroll.index')
                 ->with('success', 'Pension Payroll generated successfully for ' . $month . ' (' . $count . ' pensioners processed)');
         } elseif ($category === 'gratuity') {
-             // --- Gratuity Payroll Generation ---
+            // --- Gratuity Payroll Generation ---
             // Include Deceased pensioners for Gratuity as they are entitled to it (via Next of Kin usually)
+            // But exclude 'Not Eligible' (those with 0 amounts)
             $pensioners = \App\Models\Pensioner::with('beneficiaryComputation')
                 ->where('is_gratuity_paid', false)
                 ->where('gratuity_amount', '>', 0)
+                ->where('status', '!=', 'Not Eligible') // Explicit exclusion
                 ->get();
 
             $count = 0;
@@ -1206,6 +1205,26 @@ class PayrollController extends Controller
             'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $request->payroll_ids, 'status' => $request->status]),
         ]);
 
+        // --- Gratuity Paid Status Update Logic for Bulk Update ---
+        if ($request->status === 'Approved' || $request->status === 'Paid') {
+            $gratuityRecords = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                ->where('payment_type', 'Gratuity')
+                ->get();
+
+            foreach ($gratuityRecords as $record) {
+                $pensioner = \App\Models\Pensioner::where('employee_id', $record->employee_id)->first();
+                
+                if ($pensioner && !$pensioner->is_gratuity_paid) {
+                    $pensioner->update([
+                        'is_gratuity_paid' => true,
+                        'gratuity_paid_date' => now()
+                    ]);
+                    \Illuminate\Support\Facades\Log::info("Auto-marked Gratuity as PAID for Pensioner ID: {$pensioner->id} (Employee: {$pensioner->employee_id}) upon Bulk Update to {$request->status}.");
+                }
+            }
+        }
+        // ----------------------------------------
+
         return redirect()->back()->with('success', "Updated {$updated} payroll records to {$request->status} status.");
     }
 
@@ -1274,6 +1293,19 @@ class PayrollController extends Controller
             'action_timestamp' => now(),
             'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => $payrollId]),
         ]);
+
+        // --- Gratuity Paid Status Update Logic for Single Approve ---
+        if ($payroll->payment_type === 'Gratuity') {
+             $pensioner = \App\Models\Pensioner::where('employee_id', $payroll->employee_id)->first();
+             if ($pensioner && !$pensioner->is_gratuity_paid) {
+                 $pensioner->update([
+                     'is_gratuity_paid' => true,
+                     'gratuity_paid_date' => now()
+                 ]);
+                 \Illuminate\Support\Facades\Log::info("Auto-marked Gratuity as PAID for Pensioner ID: {$pensioner->id} (Employee: {$pensioner->employee_id}) upon Single Approval.");
+             }
+        }
+        // ----------------------------------------
 
         return redirect()->back()
             ->with('success', 'Payroll record approved successfully.');
@@ -1871,28 +1903,54 @@ class PayrollController extends Controller
             // Only payroll records with 'Pending Final Approval' status can be finally approved
             $query->where('status', 'Pending Final Approval');
 
+            // FIX: Fetch IDs BEFORE update, otherwise query returns empty
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+
             $updated = $query->update([
                 'status' => 'Approved',
                 'updated_at' => now()
             ]);
-
-            $payrollIds = $query->pluck('payroll_id')->toArray();
         } else {
             $request->validate([
                 'payroll_ids' => 'required|array',
                 'payroll_ids.*' => 'exists:payroll_records,payroll_id',
             ]);
 
+            $payrollIds = $request->payroll_ids;
+            
             // Only payroll records with 'Pending Final Approval' status can be finally approved
-            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+             $updated = PayrollRecord::whereIn('payroll_id', $payrollIds)
                                     ->where('status', 'Pending Final Approval')
                                     ->update([
                                         'status' => 'Approved',
                                         'updated_at' => now()
                                     ]);
-
-            $payrollIds = $request->payroll_ids;
         }
+
+        // --- Gratuity Paid Status Update Logic ---
+        \Illuminate\Support\Facades\Log::info("Bulk Final Approve: checking IDs: " . implode(',', $payrollIds));
+
+        // Fetch approved records that are for Gratuity
+        $gratuityRecords = PayrollRecord::whereIn('payroll_id', $payrollIds)
+            ->where('payment_type', 'Gratuity')
+            ->get();
+
+        \Illuminate\Support\Facades\Log::info("Bulk Final Approve: Found " . $gratuityRecords->count() . " Gratuity records.");
+
+        foreach ($gratuityRecords as $record) {
+            $pensioner = \App\Models\Pensioner::where('employee_id', $record->employee_id)->first();
+            
+            \Illuminate\Support\Facades\Log::info("Processing Record {$record->payroll_id}: Employee {$record->employee_id}, Pensioner found? " . ($pensioner ? 'Yes' : 'No'));
+
+            if ($pensioner && !$pensioner->is_gratuity_paid) {
+                $pensioner->update([
+                    'is_gratuity_paid' => true,
+                    'gratuity_paid_date' => now()
+                ]);
+                \Illuminate\Support\Facades\Log::info("Auto-marked Gratuity as PAID for Pensioner ID: {$pensioner->id} (Employee: {$pensioner->employee_id}) upon Final Approval.");
+            }
+        }
+        // ----------------------------------------
 
         AuditTrail::create([
             'user_id' => Auth::id(),
@@ -2006,6 +2064,19 @@ class PayrollController extends Controller
             'updated_at' => now()
         ]);
 
+        // --- Gratuity Paid Status Update Logic ---
+        if ($payroll->payment_type === 'Gratuity') {
+             $pensioner = \App\Models\Pensioner::where('employee_id', $payroll->employee_id)->first();
+             if ($pensioner && !$pensioner->is_gratuity_paid) {
+                 $pensioner->update([
+                     'is_gratuity_paid' => true,
+                     'gratuity_paid_date' => now()
+                 ]);
+                 \Illuminate\Support\Facades\Log::info("Auto-marked Gratuity as PAID for Pensioner ID: {$pensioner->id} (Employee: {$pensioner->employee_id}) upon Single Final Approval.");
+             }
+        }
+        // ----------------------------------------
+
         AuditTrail::create([
             'user_id' => Auth::id(),
             'action' => 'finally_approved_payroll',
@@ -2019,5 +2090,130 @@ class PayrollController extends Controller
     }
 
 
+
+
+    // Bulk request deletion of payroll records
+    public function bulkRequestDelete(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            
+            // Safety Check: Require month filter for bulk deletion request
+            if (!$request->filled('month_filter')) {
+                return redirect()->back()->with('error', 'Action Aborted: You must select a specific month filter to perform a bulk delete of all pages.');
+            }
+
+            $query = PayrollRecord::query();
+
+            // Apply filters similar to index method
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Can only request delete for specific statuses if needed, or allow all except already deleted (which aren't here)
+            // For now, let's allow requesting delete for anything that isn't already 'Pending Deletion'
+            $query->where('status', '!=', 'Pending Deletion');
+
+            $updated = $query->update([
+                'status' => 'Pending Deletion',
+                'updated_at' => now()
+            ]);
+            
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            // Safety Check: Require month filter for bulk deletion request if checking multiple items manually, 
+            // though client-side check should catch it. Let's enforce it here too for consistency if desired.
+            if (!$request->filled('month_filter')) {
+                 return redirect()->back()->with('error', 'Action Aborted: You must select a specific month filter to perform a bulk delete.');
+            }
+
+            $updated = PayrollRecord::whereIn('payroll_id', $request->payroll_ids)
+                                    ->where('status', '!=', 'Pending Deletion')
+                                    ->update([
+                                        'status' => 'Pending Deletion',
+                                        'updated_at' => now()
+                                    ]);
+            $payrollIds = $request->payroll_ids;
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_requested_delete_payroll',
+            'description' => "Bulk requested deletion for {$updated} payroll records",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'payroll_ids' => $payrollIds ?? [], 'updated_count' => $updated]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully requested deletion for {$updated} payroll records.");
+    }
+
+    // Bulk approve deletion of payroll records (Permanent Delete)
+    public function bulkApproveDelete(Request $request)
+    {
+        if ($request->has('select_all_pages') && $request->input('select_all_pages') == '1') {
+            $query = PayrollRecord::query();
+
+            // Apply filters
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+            if ($request->filled('month_filter')) {
+                $monthFilter = $request->month_filter . '-01';
+                $query->whereYear('payroll_month', Carbon::parse($monthFilter)->year)
+                      ->whereMonth('payroll_month', Carbon::parse($monthFilter)->month);
+            }
+
+            // Only 'Pending Deletion' records can be permanently deleted
+            $query->where('status', 'Pending Deletion');
+            
+            // Get IDs for cascading delete
+            $payrollIds = $query->pluck('payroll_id')->toArray();
+            
+            // Delete related records first
+            if (!empty($payrollIds)) {
+                \App\Models\PaymentTransaction::whereIn('payroll_id', $payrollIds)->delete();
+            }
+
+            $count = $query->count();
+            $query->delete(); 
+            
+        } else {
+            $request->validate([
+                'payroll_ids' => 'required|array',
+                'payroll_ids.*' => 'exists:payroll_records,payroll_id',
+            ]);
+
+            $payrollIds = $request->payroll_ids;
+            
+            // Delete related records first for selected items
+            \App\Models\PaymentTransaction::whereIn('payroll_id', $payrollIds)->delete();
+
+            $count = PayrollRecord::whereIn('payroll_id', $payrollIds)
+                                  ->where('status', 'Pending Deletion')
+                                  ->delete();
+        }
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_approved_delete_payroll',
+            'description' => "Bulk permanently deleted {$count} payroll records",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'PayrollRecord', 'entity_id' => null, 'deleted_count' => $count]),
+        ]);
+
+        return redirect()->back()
+            ->with('success', "Successfully deleted {$count} payroll records.");
+    }
 
 }

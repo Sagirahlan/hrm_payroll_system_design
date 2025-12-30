@@ -80,7 +80,9 @@
                                                     <th>Amount</th>
                                                     <th>Period</th>
                                                     <th>Start Date</th>
+                                                    <th>Start Date</th>
                                                     <th>End Date</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -91,6 +93,15 @@
                                                         <td>{{ $addition->addition_period }}</td>
                                                         <td>{{ \Carbon\Carbon::parse($addition->start_date)->format('M d, Y') }}</td>
                                                         <td>{{ $addition->end_date ? \Carbon\Carbon::parse($addition->end_date)->format('M d, Y') : 'N/A' }}</td>
+                                                        <td>
+                                                            <form action="{{ route('payroll.additions.destroy', ['employeeId' => $employee->employee_id, 'additionId' => $addition->addition_id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this addition?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        </td>
                                                     </tr>
                                                 @empty
                                                     <tr>

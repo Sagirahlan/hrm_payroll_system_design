@@ -244,12 +244,10 @@ class PensionComputationController extends Controller
 
             \Illuminate\Support\Facades\Log::info('Fetched Percentages:', $percentages);
 
-            if ($percentages['gratuity_pct'] <= 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No Valid Gratuity found for Staff!'
-                ], 422);
-            }
+            \Illuminate\Support\Facades\Log::info('Fetched Percentages:', $percentages);
+
+            // Allow 0% gratuity to proceed (for Non-Eligible staff)
+            // if ($percentages['gratuity_pct'] <= 0) { ... } REMOVED
 
             // Calculate amounts
             $basicSalaryPerAnnum = $salaryData['rate_per_annum'];
@@ -454,7 +452,8 @@ class PensionComputationController extends Controller
                 if (!\App\Models\Pensioner::where('retirement_id', $retirement->id)->exists()) {
                     \Log::info('Attempting to create Pensioner record for Employee: ' . $employee->employee_id);
                     try {
-                     $pensionerStatus = ($data['gtype'] === 'DG') ? 'Deceased' : 'Active';
+                     $pensionerStatus = ($data['gtype'] === 'DG') ? 'Deceased' : 
+                        ((float)$storedGratuityAmount <= 0.001 ? 'Not Eligible' : 'Active');
                      
                      $pensioner = \App\Models\Pensioner::create([
                         'employee_id' => $employee->employee_id,

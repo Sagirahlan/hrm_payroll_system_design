@@ -117,6 +117,7 @@
                                         <option value="Processed" {{ request('status') == 'Processed' ? 'selected' : '' }}>Processed</option>
                                         <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
                                         <option value="Paid" {{ request('status') == 'Paid' ? 'selected' : '' }}>Paid</option>
+                                        <option value="Pending Deletion" {{ request('status') == 'Pending Deletion' ? 'selected' : '' }}>Pending Deletion</option>
                                     </select>
                                 </div>
 
@@ -655,6 +656,10 @@
                                         @can('bulk_final_approve_payroll')
                                         <option value="final-approve">Final Approve All</option>
                                         @endcan
+                                        <option value="request-delete">Request Delete All</option>
+                                        @if(request('status') === 'Pending Deletion')
+                                        <option value="approve-delete">Approve Delete All</option>
+                                        @endif
                                         @can('bulk_update_payroll_status')
                                         <option value="bulk-update-status">Update All Status</option>
                                         @endcan
@@ -701,6 +706,12 @@
                 @csrf
             </form>
             <form id="bulk-final-approve-form" action="{{ route('payroll.bulk_final_approve') }}" method="POST" style="display: none;">
+                @csrf
+            </form>
+            <form id="bulk-request-delete-form" action="{{ route('payroll.bulk_request_delete') }}" method="POST" style="display: none;">
+                @csrf
+            </form>
+            <form id="bulk-approve-delete-form" action="{{ route('payroll.bulk_approve_delete') }}" method="POST" style="display: none;">
                 @csrf
             </form>
 
@@ -771,6 +782,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Safety Check for Delete Request
+        if (action === 'request-delete') {
+            const monthFilter = document.getElementById('month_filter');
+            if (monthFilter && !monthFilter.value) {
+                alert('Action Aborted: Please select a specific Payroll Month in the filters before checking "Select All" to request deletion. This prevents accidental deletion of all records.');
+                return;
+            }
+        }
+        
         // Confirm action before proceeding
         const recordCount = {{ $payrolls->total() }};
         const confirmationMessage = getConfirmationMessage(action, recordCount);
@@ -786,10 +806,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Set the form action and submit
+        // Set the form action
         const form = document.getElementById('bulk-actions-form');
         if (form) {
             form.action = actionUrl;
+            
+            // Append current filter values to the form so they are respected by the bulk action
+            const filters = ['search', 'status', 'employee_status', 'appointment_type', 'month_filter', 'salary_range', 'date_from', 'date_to', 'sort_by', 'sort_direction', 'per_page'];
+            
+            filters.forEach(filterName => {
+                const input = document.getElementById(filterName);
+                // Remove existing hidden input if any to avoid duplicates
+                const existing = form.querySelector(`input[name="${filterName}"]`);
+                if (existing) {
+                    existing.remove();
+                }
+                
+                if (input && input.value) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = filterName;
+                    hiddenInput.value = input.value;
+                    form.appendChild(hiddenInput);
+                }
+            });
+
             form.submit();
         }
     }
@@ -797,6 +838,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get confirmation message based on action
     function getConfirmationMessage(action, recordCount) {
         switch (action) {
+            case 'request-delete':
+                return `Are you sure you want to REQUEST DELETION for ${recordCount} payroll records? This will marking them for deletion.`;
+            case 'approve-delete':
+                return `Are you sure you want to PERMANENTLY DELETE ${recordCount} payroll records? This action cannot be undone!`;
             case 'send-for-review':
                 return `Are you sure you want to send ALL matching records for review? This will affect ${recordCount} records.`;
             case 'mark-as-reviewed':
@@ -823,6 +868,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return '{{ route("payroll.bulk_send_for_approval") }}';
             case 'final-approve':
                 return '{{ route("payroll.bulk_final_approve") }}';
+            case 'request-delete':
+                return '{{ route("payroll.bulk_request_delete") }}';
+            case 'approve-delete':
+                return '{{ route("payroll.bulk_approve_delete") }}';
             case 'bulk-update-status':
                 return '{{ route("payroll.bulk_update_status") }}';
             default:

@@ -53,7 +53,7 @@
                                     </td>
                                     <td>{{ number_format($pensioner->pension_amount, 2) }}</td>
                                     <td>
-                                        <span class="badge {{ $pensioner->status === 'Active' ? 'bg-success' : ($pensioner->status === 'Deceased' ? 'bg-dark' : 'bg-secondary') }}">
+                                        <span class="badge {{ $pensioner->status === 'Active' ? 'bg-success' : ($pensioner->status === 'Deceased' ? 'bg-dark' : ($pensioner->status === 'Not Eligible' ? 'bg-danger' : 'bg-secondary')) }}">
                                             {{ $pensioner->status }}
                                         </span>
                                     </td>

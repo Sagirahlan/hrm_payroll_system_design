@@ -86,7 +86,9 @@
                                                     <th>Amount</th>
                                                     <th>Period</th>
                                                     <th>Start Date</th>
+                                                    <th>Start Date</th>
                                                     <th>End Date</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -97,6 +99,15 @@
                                                         <td>{{ $deduction->deduction_period }}</td>
                                                         <td>{{ \Carbon\Carbon::parse($deduction->start_date)->format('M d, Y') }}</td>
                                                         <td>{{ $deduction->end_date ? \Carbon\Carbon::parse($deduction->end_date)->format('M d, Y') : 'N/A' }}</td>
+                                                        <td>
+                                                            <form action="{{ route('payroll.deductions.destroy', ['employeeId' => $employee->employee_id, 'deductionId' => $deduction->deduction_id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this deduction?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        </td>
                                                     </tr>
                                                 @empty
                                                     <tr>

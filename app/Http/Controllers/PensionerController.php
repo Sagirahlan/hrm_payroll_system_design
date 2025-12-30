@@ -126,7 +126,9 @@ class PensionerController extends Controller
                 'next_of_kin_name' => $employee->next_of_kin_name,
                 'next_of_kin_phone' => $employee->next_of_kin_phone,
                 'next_of_kin_address' => $employee->next_of_kin_address,
-                'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : ($validated['status'] ?? 'Active'),
+                'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : 
+                            (($validated['gratuity_amount'] == 0 && $validated['pension_amount'] == 0) ? 'Not Eligible' : 
+                            ($validated['status'] ?? 'Active')),
                 'retirement_id' => $validated['retirement_id'],
                 'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
                 'created_by' => auth()->id(),
@@ -271,6 +273,12 @@ class PensionerController extends Controller
                 $beneficiaryComputation = ComputeBeneficiary::where('id_no', $employee->employee_id)
                     ->orWhere('id_no', $employee->staff_id)->first();
 
+                $status = ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : 
+                          ((float)$retirement->gratuity_amount <= 0.001 ? 'Not Eligible' : 
+                          'Active');
+
+                \Illuminate\Support\Facades\Log::info("Moving Retired ID {$employee->employee_id}: Gratuity Amount [{$retirement->gratuity_amount}], Float Cast [" . (float)$retirement->gratuity_amount . "], Status assigned: [{$status}]");
+
                 // Create pensioner record
                 Pensioner::create([
                     'employee_id' => $employee->employee_id,
@@ -305,7 +313,7 @@ class PensionerController extends Controller
                     'next_of_kin_name' => $employee->next_of_kin_name,
                     'next_of_kin_phone' => $employee->next_of_kin_phone,
                     'next_of_kin_address' => $employee->next_of_kin_address,
-                    'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : 'Active',
+                    'status' => $status,
                     'retirement_id' => $retirement->id,
                     'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
                     'created_by' => auth()->id(),

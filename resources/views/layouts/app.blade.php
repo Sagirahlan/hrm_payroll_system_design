@@ -73,6 +73,14 @@
             box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
         }
 
+        /* Make sidebar sticky on desktop */
+        @media (min-width: 992px) {
+            .sidebar {
+                position: sticky;
+                top: 0;
+            }
+        }
+
         [data-bs-theme="dark"] .sidebar {
             background: linear-gradient(180deg, #1a2a3a 0%, #0f172a 100%);
             box-shadow: 3px 0 15px rgba(0, 0, 0, 0.4);
@@ -552,6 +560,12 @@
             @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+            @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             @endif

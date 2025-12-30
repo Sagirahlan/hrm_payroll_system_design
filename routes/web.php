@@ -280,6 +280,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/payroll/bulk/mark-as-reviewed', [PayrollController::class, 'bulkMarkAsReviewed'])->name('payroll.bulk_mark_as_reviewed');
             Route::post('/payroll/bulk/send-for-approval', [PayrollController::class, 'bulkSendForApproval'])->name('payroll.bulk_send_for_approval');
             Route::post('/payroll/bulk/final-approve', [PayrollController::class, 'bulkFinalApprove'])->name('payroll.bulk_final_approve');
+            Route::post('/payroll/bulk/request-delete', [PayrollController::class, 'bulkRequestDelete'])->name('payroll.bulk_request_delete');
+            Route::post('/payroll/bulk/approve-delete', [PayrollController::class, 'bulkApproveDelete'])->name('payroll.bulk_approve_delete');
 
             // Individual workflow operations
             Route::post('/payroll/{payrollId}/send-for-review', [PayrollController::class, 'sendForReview'])->name('payroll.send-for-review');
@@ -295,6 +297,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'showAdditions'])->name('payroll.additions.show');
             Route::post('/payroll/employee/{employeeId}/deductions', [PayrollController::class, 'storeDeduction'])->name('payroll.deductions.store');
             Route::post('/payroll/employee/{employeeId}/additions', [PayrollController::class, 'storeAddition'])->name('payroll.additions.store');
+            Route::delete('/payroll/employee/{employeeId}/deductions/{deductionId}', [PayrollController::class, 'destroyDeduction'])->name('payroll.deductions.destroy');
+            Route::delete('/payroll/employee/{employeeId}/additions/{additionId}', [PayrollController::class, 'destroyAddition'])->name('payroll.additions.destroy');
 
             // Manage All Adjustments
             Route::get('/payroll/adjustments', [PayrollController::class, 'manageAllAdjustments'])->name('payroll.adjustments.manage');
