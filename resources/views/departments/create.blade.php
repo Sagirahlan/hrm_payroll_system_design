@@ -4,6 +4,12 @@
 
 @section('content')
 <div class="container mt-5">
+    <div class="mb-3">
+        <a href="{{ route('departments.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Departments
+        </a>
+    </div>
+    
     <h1 class="mb-4 text-primary">Create Department</h1>
     <div class="card border-info shadow">
         <div class="card-body">

@@ -437,7 +437,7 @@
                 <div class="collapse {{ request()->routeIs('retirements.*') ? 'show' : '' }}" id="retirementsSubmenu">
                     <ul class="nav flex-column ms-1">
                          @can('view_retirement')
-                        <li><a class="nav-link {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}">Retirement List</a></li>
+                        <li><a class="nav-link {{ request()->routeIs('retirements.index') ? 'active' : '' }}" href="{{ route('retirements.index') }}">Retiring in 6 months</a></li>
                         @endcan
                         @can('create_retirement')
                         <li><a class="nav-link {{ request()->routeIs('retirements.create') ? 'active' : '' }}" href="{{ route('retirements.create') }}">Confirm Retirement</a></li>
@@ -449,11 +449,21 @@
 
             @can('manage_pensioners')
             <li>
-                <a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">
+                <a class="nav-link dropdown-toggle {{ request()->routeIs('pensioners.*', 'pending-pensioner-changes.*') ? 'active' : '' }}" href="#pensionersSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('pensioners.*', 'pending-pensioner-changes.*') ? 'true' : 'false' }}">
                     <i class="fas fa-user-shield"></i> Pensioners
                 </a>
+                <div class="collapse {{ request()->routeIs('pensioners.*', 'pending-pensioner-changes.*') ? 'show' : '' }}" id="pensionersSubmenu">
+                    <ul class="nav flex-column ms-1">
+                        @can('view_pensioners')
+                        <li><a class="nav-link {{ request()->routeIs('pensioners.index') ? 'active' : '' }}" href="{{ route('pensioners.index') }}">Pensioner List</a></li>
+                        @endcan
+                        
+                        @can('view_pensioner_changes')
+                        <li><a class="nav-link {{ request()->routeIs('pending-pensioner-changes.*') ? 'active' : '' }}" href="{{ route('pending-pensioner-changes.index') }}">Pending Changes</a></li>
+                        @endcan
+                    </ul>
+                </div>
             </li>
-           
             @endcan
 
             @can('manage_sms')
@@ -573,10 +583,9 @@
         </main>
     </div>
 </div>
-
-<footer>
-    <div class="container">
-        <p class="mb-0">© {{ date('Y') }} Powered by Steadfast Tech. All rights reserved.</p>
+<footer class="footer mt-auto py-3">
+    <div class="container text-center">
+        <p class="mb-0 fs-5">© {{ date('Y') }} Powered by Steadfast Tech. All rights reserved.</p>
     </div>
 </footer>
 

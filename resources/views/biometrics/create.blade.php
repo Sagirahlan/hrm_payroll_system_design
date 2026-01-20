@@ -3,6 +3,12 @@
 @section('content')
 <div class="container-fluid py-4">
     @can('create_biometrics')
+    <div class="mb-3">
+        <a href="{{ route('biometrics.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Biometrics
+        </a>
+    </div>
+    
     <div class="card border-primary shadow">
         <div class="card-header" style="background-color: skyblue; color: white;">
             <h5 class="mb-0">Add Biometric Data</h5>

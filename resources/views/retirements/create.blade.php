@@ -4,6 +4,12 @@
 
 @section('content')
 <div class="container mt-4">
+    <div class="mb-3">
+        <a href="{{ route('retirements.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Retirements
+        </a>
+    </div>
+    
     <div class="card shadow">
         <div class="card-header bg-info text-white">
             <h5 class="mb-0">Employees Eligible for Retirement</h5>
@@ -81,9 +87,7 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group" aria-label="Action buttons">
-                                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#retireModal{{ $employee->employee_id }}">
-                                        Retire
-                                    </button>
+                                  
                                     <a href="{{ route('retirements.pension-compute', $employee->employee_id) }}" class="btn btn-primary btn-sm">
                                         Pension Compute
                                     </a>

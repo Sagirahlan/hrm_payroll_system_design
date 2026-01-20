@@ -21,7 +21,7 @@ class Loan extends Model
         'total_months',
         'remaining_months',
         'monthly_percentage',
-        'start_date',
+        'deduction_start_month',
         'end_date',
         'total_repaid',
         'remaining_balance',
@@ -31,7 +31,6 @@ class Loan extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
         'end_date' => 'date',
         'principal_amount' => 'decimal:2',
         'total_interest' => 'decimal:2',
@@ -108,15 +107,15 @@ class Loan extends Model
     }
 
     /**
-     * Calculate the loan end date based on start date and total months
+     * Calculate the loan end date based on deduction start month and total months
      * End date should be the last day of the final month
-     * For example, if start date is Nov 1, 2025 and total months is 3:
+     * For example, if deduction start month is 2025-11 and total months is 3:
      * Month 1: November 2025, Month 2: December 2025, Month 3: January 2026
      * End date should be January 31, 2026 (last day of the 3rd month)
      */
     public function calculateEndDate()
     {
-        return Carbon::parse($this->start_date)->addMonths(max(0, $this->total_months - 1))->endOfMonth();
+        return Carbon::parse($this->deduction_start_month . '-01')->addMonths(max(0, $this->total_months - 1))->endOfMonth();
     }
 
     /**

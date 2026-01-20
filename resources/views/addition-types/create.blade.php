@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container">
+    <div class="mb-3">
+        <a href="{{ route('addition-types.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Addition Types
+        </a>
+    </div>
+    
     <h1>Create Addition Type</h1>
     <form action="{{ route('addition-types.store') }}" method="POST">
         @csrf

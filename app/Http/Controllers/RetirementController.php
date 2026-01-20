@@ -296,6 +296,28 @@ class RetirementController extends Controller
                 'retire_reason' => $retireReason,
             ]);
 
+            // Calculate expected retirement date and overstayed days
+            $expectedRetirementDate = null;
+            $overstayedDays = 0;
+            
+            if ($employee->date_of_birth && $employee->date_of_first_appointment) {
+                $dob = \Carbon\Carbon::parse($employee->date_of_birth);
+                $dofa = \Carbon\Carbon::parse($employee->date_of_first_appointment);
+                $retirementDate = \Carbon\Carbon::parse($validated['retirement_date']);
+                
+                // Calculate expected retirement date (60 years or 35 years service, whichever comes first)
+                $expectedByAge = $dob->copy()->addYears(60);
+                $expectedByService = $dofa->copy()->addYears(35);
+                $expectedRetirementDate = $expectedByAge->min($expectedByService);
+                
+                // Calculate overstayed days if retirement is after expected date
+                if ($retirementDate->gt($expectedRetirementDate)) {
+                    $overstayedDays = $retirementDate->diffInDays($expectedRetirementDate);
+                }
+                
+                \Log::info("Expected Retirement: {$expectedRetirementDate}, Actual: {$retirementDate}, Overstayed Days: {$overstayedDays}");
+            }
+
             $retirement = Retirement::create([
                 'employee_id' => $employee->employee_id,
                 'retirement_date' => $validated['retirement_date'],
@@ -303,6 +325,8 @@ class RetirementController extends Controller
                 'notification_date' => $validated['notification_date'] ?? now(),
                 'gratuity_amount' => $validated['gratuity_amount'] ?? $this->calculateGratuity($employee),
                 'retire_reason' => $retireReason,
+                'expected_retirement_date' => $expectedRetirementDate,
+                'overstayed_days' => $overstayedDays,
             ]);
 
             $employee->update([
@@ -493,6 +517,26 @@ class RetirementController extends Controller
         $totalDeathGratuity = $beneficiaryComputation ? $beneficiaryComputation->total_death_gratuity : $retirement->gratuity_amount;
         $retirementType = $beneficiaryComputation ? $beneficiaryComputation->gtype : 'RB'; // RB (Retirement Benefits) or DG (Death Gratuity)
 
+        // Calculate overstayed deduction with 25-day grace period
+        $overstayedDeductionAmount = 0;
+        $overstayedDays = $retirement->overstayed_days ?? 0;
+        $expectedRetirementDate = $retirement->expected_retirement_date;
+        
+        if ($overstayedDays > 25 && $employee->date_of_birth && $employee->date_of_first_appointment) {
+            // Get monthly salary for deduction calculation
+            $monthlySalary = 0;
+            if ($beneficiaryComputation && $beneficiaryComputation->total_emolument) {
+                $monthlySalary = (float)$beneficiaryComputation->total_emolument / 12;
+            }
+            
+            // Calculate deduction for ALL days from expected retirement date
+            if ($monthlySalary > 0) {
+                $monthsOverstayed = $overstayedDays / 30.44;
+                $overstayedDeductionAmount = round($monthlySalary * $monthsOverstayed, 2);
+                \Log::info("Overstayed deduction calculated: Days={$overstayedDays}, Monthly Salary={$monthlySalary}, Deduction={$overstayedDeductionAmount}");
+            }
+        }
+
         // Create pensioner record
         \App\Models\Pensioner::create([
             'employee_id' => $employee->employee_id,
@@ -531,6 +575,9 @@ class RetirementController extends Controller
             'retirement_id' => $retirement->id,
             'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
             'created_by' => auth()->id() ?? 1, // Use 1 as default if no authenticated user
+            'expected_retirement_date' => $expectedRetirementDate,
+            'overstayed_days' => $overstayedDays,
+            'overstayed_deduction_amount' => $overstayedDeductionAmount,
         ]);
     }
 

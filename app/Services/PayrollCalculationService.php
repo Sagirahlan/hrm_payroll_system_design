@@ -99,10 +99,17 @@ class PayrollCalculationService
         $isTransitionMonth = false;
         $daysInMonth = $payrollStart->daysInMonth;
         
-        if ($employee->date_of_retirement) {
-            $retirementDate = Carbon::parse($employee->date_of_retirement);
-            // Check if retirement date is within this payroll month
-            if ($retirementDate->between($payrollStart, $payrollEnd)) {
+        if ($employee->date_of_retirement || $employee->pensioner) {
+            $retirementDate = null;
+            
+            if ($employee->date_of_retirement) {
+                $retirementDate = Carbon::parse($employee->date_of_retirement);
+            } elseif ($employee->pensioner && $employee->pensioner->date_of_retirement) {
+                $retirementDate = Carbon::parse($employee->pensioner->date_of_retirement);
+            }
+            
+            // Check if valid retirement date found and is within this payroll month
+            if ($retirementDate && $retirementDate->between($payrollStart, $payrollEnd)) {
                 $isTransitionMonth = true;
                 
                 // Calculate Active Days (1st to Retirement Date inclusive)
@@ -120,38 +127,9 @@ class PayrollCalculationService
                 // Update basic salary to the pro-rata amount for subsequent calculations (deductions etc.)
                 $basicSalary = $proRataSalary;
                 
-                // 2. Calculate Pro-Rata Pension
-                // Formula: (Monthly Pension / Total Days) * Pension Days
-                $pensionPerMonth = 0;
-                
-                // Attempt to find pension amount from Pensioner record first
-                $pensioner = \App\Models\Pensioner::where('employee_id', $employee->employee_id)->first();
-                if ($pensioner) {
-                    $pensionPerMonth = $pensioner->pension_amount;
-                } else {
-                    // Fallback to ComputeBeneficiary if Pensioner record not created yet
-                    $beneficiary = \App\Models\ComputeBeneficiary::where('id_no', $employee->employee_id)
-                        ->orWhere('id_no', $employee->staff_id)
-                        ->first();
-                    if ($beneficiary) {
-                        // basic_sal_mnth or pension_per_mnth ? User said "Pension Per Month"
-                        $pensionPerMonth = $beneficiary->pension_per_mnth;
-                    }
-                }
-                
-                if ($pensionPerMonth > 0 && $pensionDays > 0) {
-                    $dailyPensionRate = $pensionPerMonth / $daysInMonth;
-                    $proRataPension = round($dailyPensionRate * $pensionDays, 2);
-                    
-                    // Add as an Addition
-                    $totalAdditions += $proRataPension;
-                    $additionRecords[] = [
-                        'type' => 'addition',
-                        'name_type' => 'Pro-rata Pension (Transition)',
-                        'amount' => $proRataPension,
-                        'frequency' => 'OneTime',
-                    ];
-                }
+                // 2. Calculate Pro-Rata Pension - MOVED TO PENSIONER PAYROLL
+                // OLD Logic removed: The pension portion for the remaining days is now handled 
+                // when generating the Pensioner Payroll for this month.
             }
         }
         // --------------------------------------------------------
@@ -377,21 +355,11 @@ class PayrollCalculationService
             } else {
                 // Regular deduction processing
                 if ($deduction->amount_type === 'percentage') {
-                    // For contract employees, use their contract amount for percentage calculations
-                    if ($isContractEmployee) {
-                        $deductionAmount = ($deduction->amount / 100) * $employee->amount;
-                        if ($isSuspended) {
-                            $deductionAmount /= 2;
-                        }
-                    } else {
-                        $step = $employee->relationLoaded('step') ? $employee->step : $employee->step()->first();
-                        if ($step && $step->basic_salary) {
-                            $deductionAmount = ($deduction->amount / 100) * $step->basic_salary;
-                            if ($isSuspended) {
-                                $deductionAmount /= 2;
-                            }
-                        }
-                    }
+                    // Standardize percentage calculations to always use the operative basic salary
+                    // This $basicSalary is already adjusted for:
+                    // 1. Suspension (50%)
+                    // 2. Mid-month Retirement (Pro-rata days)
+                    $deductionAmount = ($deduction->amount / 100) * $basicSalary;
                 } else {
                     $deductionAmount = $deduction->amount;
                 }

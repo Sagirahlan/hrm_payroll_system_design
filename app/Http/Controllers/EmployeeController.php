@@ -659,6 +659,23 @@ class EmployeeController extends Controller
 
             $validated = $request->validate($validationRules);
 
+            // STANDARD ENTRY AGE VALIDATION: 18-45 years at first appointment
+            $dateOfBirth = Carbon::parse($request->input('date_of_birth'));
+            $dateOfFirstAppointment = Carbon::parse($request->input('date_of_first_appointment'));
+            $ageAtAppointment = $dateOfBirth->diffInYears($dateOfFirstAppointment);
+
+            if ($ageAtAppointment < 18) {
+                throw ValidationException::withMessages([
+                    'date_of_birth' => 'Staff must be at least 18 years old at the time of first appointment. Current age at appointment: ' . $ageAtAppointment . ' years.'
+                ]);
+            }
+
+            if ($ageAtAppointment > 45) {
+                throw ValidationException::withMessages([
+                    'date_of_birth' => 'Staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
+                ]);
+            }
+
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('photos', 'public');
                 $validated['photo_path'] = $path;
@@ -836,6 +853,23 @@ class EmployeeController extends Controller
             }
 
             $validated = $request->validate($validationRules);
+
+            // STANDARD ENTRY AGE VALIDATION: 18-45 years at first appointment
+            $dateOfBirth = Carbon::parse($request->input('date_of_birth'));
+            $dateOfFirstAppointment = Carbon::parse($request->input('date_of_first_appointment'));
+            $ageAtAppointment = $dateOfBirth->diffInYears($dateOfFirstAppointment);
+
+            if ($ageAtAppointment < 18) {
+                throw ValidationException::withMessages([
+                    'date_of_birth' => 'Staff must be at least 18 years old at the time of first appointment. Current age at appointment: ' . $ageAtAppointment . ' years.'
+                ]);
+            }
+
+            if ($ageAtAppointment > 45) {
+                throw ValidationException::withMessages([
+                    'date_of_birth' => 'Staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
+                ]);
+            }
 
             $currentData = $employee->toArray();
             $currentData['kin_name'] = $employee->nextOfKin->name ?? null;

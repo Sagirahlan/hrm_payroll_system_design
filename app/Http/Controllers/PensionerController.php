@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pensioner;
+use App\Models\PendingPensionerChange;
 use App\Models\Employee;
 use App\Models\Retirement;
 use App\Models\ComputeBeneficiary;
@@ -20,6 +21,7 @@ class PensionerController extends Controller
         $this->middleware(['auth']);
         $this->middleware(['permission:view_pensioners'], ['only' => ['index', 'show']]);
         $this->middleware(['permission:manage_pensioners'], ['only' => ['create', 'store', 'edit', 'update', 'destroy']]);
+        $this->middleware(['permission:approve_pensioner_changes'], ['only' => ['approvePendingChange', 'rejectPendingChange']]);
         $this->calculationService = $calculationService;
     }
 
@@ -28,7 +30,7 @@ class PensionerController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pensioner::with(['department', 'rank', 'gradeLevel', 'bank', 'retirement'])
+        $query = Pensioner::with(['department', 'rank', 'gradeLevel', 'bank', 'retirement', 'employee'])
                           ->whereNotNull('beneficiary_computation_id');
 
         // Apply search filter
@@ -165,23 +167,34 @@ class PensionerController extends Controller
         
         $overstayRemark = $this->calculationService->calculateOverstay($ageSpan, $serviceSpan);
         
-        // Calculate overstay amount if linked computation exists, use its total emolument
-        // Otherwise try to determine salary (fallback to 0 if not easily available without computation)
-        $monthlySalary = 0;
-        if ($pensioner->beneficiaryComputation) {
-             // total_emolument is Annual, so divide by 12
-             $monthlySalary = (float)$pensioner->beneficiaryComputation->total_emolument / 12;
-        }
+        // Get overstay data from pensioner record (already calculated with grace period)
+        $overstayedDays = $pensioner->overstayed_days ?? 0;
+        $overstayAmount = $pensioner->overstayed_deduction_amount ?? 0;
+        $expectedRetirementDate = $pensioner->expected_retirement_date;
         
-        $overstayData = $this->calculationService->calculateOverstayAmount(
-            $dob, 
-            $apptDate, 
-            $retirementDate, 
-            $monthlySalary
-        );
-        $overstayAmount = $overstayData['amount'];
+        // Determine grace period status
+        $gracePeriodStatus = null;
+        $graceWaived = false;
+        
+        if ($overstayedDays > 0) {
+            if ($overstayedDays <= 25) {
+                $gracePeriodStatus = "Waived - Within 25-day grace period";
+                $graceWaived = true;
+            } else {
+                $gracePeriodStatus = "Applied - Exceeded 25-day grace period (deduction for all {$overstayedDays} days)";
+                $graceWaived = false;
+            }
+        }
 
-        return view('pensioners.show', compact('pensioner', 'overstayRemark', 'overstayAmount'));
+        return view('pensioners.show', compact(
+            'pensioner', 
+            'overstayRemark', 
+            'overstayAmount', 
+            'overstayedDays',
+            'expectedRetirementDate',
+            'gracePeriodStatus',
+            'graceWaived'
+        ));
     }
 
     /**
@@ -196,7 +209,7 @@ class PensionerController extends Controller
     }
 
     /**
-     * Update the specified pensioner in storage.
+     * Update the specified pensioner in storage. This will create a pending change that requires approval.
      */
     public function update(Request $request, $id)
     {
@@ -214,15 +227,33 @@ class PensionerController extends Controller
                 'next_of_kin_phone' => 'nullable|string|max:15',
             ]);
 
-            $pensioner->update(array_merge($validated, [
-                'updated_by' => auth()->id(),
-            ]));
+            // Create a pending change record instead of updating directly
+            $previousData = [
+                'pension_amount' => $pensioner->pension_amount,
+                'gratuity_amount' => $pensioner->gratuity_amount,
+                'bank_id' => $pensioner->bank_id,
+                'account_number' => $pensioner->account_number,
+                'account_name' => $pensioner->account_name,
+                'status' => $pensioner->status,
+                'next_of_kin_name' => $pensioner->next_of_kin_name,
+                'next_of_kin_phone' => $pensioner->next_of_kin_phone,
+            ];
 
-            return redirect()->route('pensioners.index')->with('success', 'Pensioner updated successfully.');
+            PendingPensionerChange::create([
+                'pensioner_id' => $pensioner->id,
+                'requested_by' => auth()->id(),
+                'change_type' => 'update',
+                'data' => $validated,
+                'previous_data' => $previousData,
+                'reason' => $request->reason ?? 'Pensioner information update',
+                'status' => 'pending',
+            ]);
+
+            return redirect()->route('pensioners.index')->with('success', 'Pensioner update request submitted successfully. Awaiting approval.');
         } catch (\Exception $e) {
-            \Log::error('Error updating pensioner: ' . $e->getMessage());
-            
-            return redirect()->back()->with('error', 'An error occurred while updating the pensioner: ' . $e->getMessage());
+            \Log::error('Error creating pending pensioner change: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred while submitting the pensioner update request: ' . $e->getMessage());
         }
     }
 
@@ -396,7 +427,7 @@ class PensionerController extends Controller
     {
         try {
             $pensioner = Pensioner::findOrFail($id);
-            
+
             $pensioner->update([
                 'status' => 'Deceased',
                 'retirement_reason' => 'Death in Service',
@@ -408,5 +439,76 @@ class PensionerController extends Controller
             \Log::error('Error marking pensioner as deceased: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error marking pensioner as deceased.');
         }
+    }
+
+    /**
+     * Approve a pending pensioner change
+     */
+    public function approvePendingChange(Request $request, $changeId)
+    {
+        $pendingChange = PendingPensionerChange::findOrFail($changeId);
+
+        // Verify user has permission to approve pensioner changes
+        if (!auth()->user()->can('approve_pensioner_changes')) {
+            abort(403, 'You do not have permission to approve pensioner changes.');
+        }
+
+        DB::transaction(function () use ($pendingChange) {
+            // Update the pending change status
+            $pendingChange->update([
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now()
+            ]);
+
+            // Apply the changes to the pensioner
+            $pensioner = $pendingChange->pensioner;
+            $pensioner->update($pendingChange->data);
+
+            // Add audit trail
+            \App\Models\AuditTrail::create([
+                'user_id' => auth()->id(),
+                'action' => 'approved_pensioner_change',
+                'description' => "Approved pensioner change for: " . $pendingChange->pensioner_name .
+                    ". Changes: " . $pendingChange->change_description,
+                'action_timestamp' => now(),
+                'entity_type' => 'PendingPensionerChange',
+                'entity_id' => $pendingChange->id,
+            ]);
+        });
+
+        return redirect()->back()->with('success', 'Pensioner change approved successfully.');
+    }
+
+    /**
+     * Reject a pending pensioner change
+     */
+    public function rejectPendingChange(Request $request, $changeId)
+    {
+        $pendingChange = PendingPensionerChange::findOrFail($changeId);
+
+        // Verify user has permission to approve pensioner changes
+        if (!auth()->user()->can('approve_pensioner_changes')) {
+            abort(403, 'You do not have permission to approve pensioner changes.');
+        }
+
+        $pendingChange->update([
+            'status' => 'rejected',
+            'approved_by' => auth()->id(),
+            'approved_at' => now()
+        ]);
+
+        // Add audit trail
+        \App\Models\AuditTrail::create([
+            'user_id' => auth()->id(),
+            'action' => 'rejected_pensioner_change',
+            'description' => "Rejected pensioner change for: " . $pendingChange->pensioner_name .
+                ". Changes: " . $pendingChange->change_description,
+            'action_timestamp' => now(),
+            'entity_type' => 'PendingPensionerChange',
+            'entity_id' => $pendingChange->id,
+        ]);
+
+        return redirect()->back()->with('success', 'Pensioner change rejected.');
     }
 }

@@ -54,12 +54,12 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(10)->withQueryString();
-        
+
         // Get available roles for filter dropdown
         $roles = Role::pluck('name');
-        
+
         // Get employees without users for bulk creation
-        $employeesWithoutUsers = Employee::whereNotIn('employee_id', 
+        $employeesWithoutUsers = Employee::whereNotIn('employee_id',
             User::whereNotNull('employee_id')->pluck('employee_id')
         )->count();
 
@@ -148,13 +148,13 @@ class UserController extends Controller
         try {
             // Get the employee role
             $employeeRole = Role::where('name', 'employee')->first();
-            
+
             if (!$employeeRole) {
                 return back()->with('error', 'Employee role not found. Please create an "employee" role first.');
             }
 
             // Get employees without user accounts
-            $employeesWithoutUsers = Employee::whereNotIn('employee_id', 
+            $employeesWithoutUsers = Employee::whereNotIn('employee_id',
                 User::whereNotNull('employee_id')->pluck('employee_id')
             )->whereNotNull('email')->take(30)->get();
 
@@ -171,7 +171,7 @@ class UserController extends Controller
                 try {
                     // Generate username from email (part before @)
                     $username = strtolower(explode('@', $employee->email)[0]);
-                    
+
                     // Ensure username is unique
                     $originalUsername = $username;
                     $counter = 1;
@@ -180,11 +180,11 @@ class UserController extends Controller
                         $counter++;
                     }
 
-                    // Create user
+                    // Create user with date of birth as password
                     $user = User::create([
                         'username' => $username,
                         'email' => $employee->email,
-                        'password_hash' => bcrypt('12345678'),
+                        'password_hash' => bcrypt($employee->date_of_birth),
                         'employee_id' => $employee->employee_id,
                     ]);
 
@@ -212,11 +212,11 @@ class UserController extends Controller
 
             DB::commit();
 
-            $remaining = Employee::whereNotIn('employee_id', 
+            $remaining = Employee::whereNotIn('employee_id',
                 User::whereNotNull('employee_id')->pluck('employee_id')
             )->whereNotNull('email')->count();
 
-            $message = "Successfully created {$createdCount} user accounts with default password '12345678'.";
+            $message = "Successfully created {$createdCount} user accounts with date of birth as default password.";
             if($remaining > 0) {
                 $message .= " There are {$remaining} more employees without user accounts. You can run this process again.";
             }
@@ -239,7 +239,7 @@ class UserController extends Controller
 
     public function showEmployeesWithoutUsers(Request $request)
     {
-        $query = Employee::whereNotIn('employee_id', 
+        $query = Employee::whereNotIn('employee_id',
             User::whereNotNull('employee_id')->pluck('employee_id')
         );
 
@@ -267,7 +267,7 @@ class UserController extends Controller
         }
 
         $employees = $query->paginate(15)->withQueryString();
-        
+
         // Get departments for filter
         $departments = \App\Models\Department::select('department_id', 'department_name')->get();
 
@@ -337,8 +337,16 @@ class UserController extends Controller
         try {
             Log::info('Resetting password', ['user_id' => $user->id]);
 
+            // Use employee's date of birth as password if the user has an associated employee
+            if ($user->employee) {
+                $password = $user->employee->date_of_birth;
+            } else {
+                // Fallback to default password if no employee is associated
+                $password = '12345678';
+            }
+
             $user->update([
-                'password_hash' => Hash::make('12345678'),
+                'password_hash' => Hash::make($password),
             ]);
 
             AuditTrail::create([
@@ -352,7 +360,8 @@ class UserController extends Controller
 
             Log::info('Password reset successfully', ['user_id' => $user->id]);
 
-            return redirect()->route('users.index')->with('success', 'Password reset to default successfully.');
+            $message = $user->employee ? 'Password reset to employee\'s date of birth successfully.' : 'Password reset to default successfully.';
+            return redirect()->route('users.index')->with('success', $message);
         } catch (\Exception $e) {
             Log::error('Password reset failed', [
                 'user_id' => $user->id,

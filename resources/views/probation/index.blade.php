@@ -6,6 +6,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+<div class="mb-3">
+    <a href="{{ route('employees.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Employees
+    </a>
+</div>
+
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">Employees on Probation</h4>

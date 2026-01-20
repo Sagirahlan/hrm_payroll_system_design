@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container">
+    <div class="mb-3">
+        <a href="{{ route('loans.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Loans
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
@@ -67,6 +73,12 @@
                                 <label for="addition_month" class="form-label">Addition Month</label>
                                 <input type="text" id="addition_month" class="form-control" readonly placeholder="Select loan type to see addition month">
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="deduction_start_month_display" class="form-label">Deduction Start Month</label>
+                                <input type="text" id="deduction_start_month_display" class="form-control" readonly placeholder="Auto-calculated from addition month">
+                                <input type="hidden" name="deduction_start_month" id="deduction_start_month" value="">
+                            </div>
                         </div>
 
                         <div class="row">
@@ -76,71 +88,55 @@
                             </div>
                         </div>
 
-                                                            <div class="row">
-                                            <div class="col-md-4 mb-3">
-                                                <label for="monthly_deduction" class="form-label">Monthly Deduction Amount</label>
-                                                <input type="number" step="0.01" name="monthly_deduction" id="monthly_deduction" class="form-control" value="{{ old('monthly_deduction') }}">
-                                                <small class="form-text text-muted">OR percentage below</small>
-                                                @error('monthly_deduction')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="monthly_deduction" class="form-label">Monthly Deduction Amount</label>
+                                <input type="number" step="0.01" name="monthly_deduction" id="monthly_deduction" class="form-control" value="{{ old('monthly_deduction') }}">
+                                <small class="form-text text-muted">OR percentage below</small>
+                                @error('monthly_deduction')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                                            <div class="col-md-4 mb-3">
-                                                <label for="monthly_percentage" class="form-label">Monthly Percentage of Salary (%)</label>
-                                                <input type="number" step="0.01" name="monthly_percentage" id="monthly_percentage" class="form-control" value="{{ old('monthly_percentage') }}" max="100">
-                                                <small class="form-text text-muted">OR number of months</small>
-                                                @error('monthly_percentage')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="monthly_percentage" class="form-label">Monthly Percentage of Salary (%)</label>
+                                <input type="number" step="0.01" name="monthly_percentage" id="monthly_percentage" class="form-control" value="{{ old('monthly_percentage') }}" max="100">
+                                <small class="form-text text-muted">OR number of months</small>
+                                @error('monthly_percentage')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                                            <div class="col-md-4 mb-3">
-                                                <label for="loan_duration_months" class="form-label">Number of Months to Pay</label>
-                                                <input type="number" name="loan_duration_months" id="loan_duration_months" class="form-control" value="{{ old('loan_duration_months') }}" min="1">
-                                                <small class="form-text text-muted">Enter exact months (e.g., 29)</small>
-                                                @error('loan_duration_months')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="auto_calculated_percentage" class="form-label">Auto-Calculated Percentage</label>
-                                                <input type="number" step="0.01" name="auto_calculated_percentage" id="auto_calculated_percentage" class="form-control" readonly>
-                                                <small class="form-text text-muted">Percentage based on salary and loan duration</small>
-                                            </div>
-
-                                            <div class="col-md-6 mb-3">
-                                                <label for="display_monthly_deduction" class="form-label">Calculated Monthly Deduction</label>
-                                                <input type="number" step="0.01" id="display_monthly_deduction" class="form-control" readonly>
-                                                <small class="form-text text-muted">Amount to be deducted monthly</small>
-                                            </div>
-                                        </div>
-
-<!-- REMOVE the hidden calculated_monthly_deduction field entirely -->
-
-                            <!-- Hidden field to store the calculated monthly deduction when using months input -->
-                            <input type="hidden" name="calculated_monthly_deduction" id="calculated_monthly_deduction" value="">
+                            <div class="col-md-4 mb-3">
+                                <label for="loan_duration_months" class="form-label">Number of Months to Pay</label>
+                                <input type="number" name="loan_duration_months" id="loan_duration_months" class="form-control" value="{{ old('loan_duration_months') }}" min="1">
+                                <small class="form-text text-muted">Enter exact months (e.g., 29)</small>
+                                @error('loan_duration_months')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" name="start_date" id="start_date" class="form-control" required>
-                                @error('start_date')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
+                                <label for="auto_calculated_percentage" class="form-label">Auto-Calculated Percentage</label>
+                                <input type="number" step="0.01" name="auto_calculated_percentage" id="auto_calculated_percentage" class="form-control" readonly>
+                                <small class="form-text text-muted">Percentage based on salary and loan duration</small>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea name="description" id="description" class="form-control" rows="3">{{ old('description') }}</textarea>
-                                @error('description')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
+                                <label for="display_monthly_deduction" class="form-label">Calculated Monthly Deduction</label>
+                                <input type="number" step="0.01" id="display_monthly_deduction" class="form-control" readonly>
+                                <small class="form-text text-muted">Amount to be deducted monthly</small>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea name="description" id="description" class="form-control" rows="3">{{ old('description') }}</textarea>
+                            @error('description')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
@@ -158,9 +154,6 @@
 <script>
     // Force clear any old values after DOM loads completely
     document.addEventListener('DOMContentLoaded', function () {
-        // Clear the start date immediately to ensure no preserved value
-        document.getElementById('start_date').value = '';
-
         const employeeSelect = document.getElementById('employee_id');
         const additionSelect = document.getElementById('addition_id');
         const principalAmountInput = document.getElementById('principal_amount');
@@ -301,8 +294,9 @@
                                 option.textContent = 'Unnamed Addition';
                             }
                             option.dataset.amount = addition.amount;
-                            // Store the addition date so we can use it later to set the start date
+                            // Store the addition date and month so we can use them later
                             option.dataset.additionDate = addition.addition_date;
+                            option.dataset.additionMonth = addition.addition_month;
                             additionSelect.appendChild(option);
                         });
                     });
@@ -317,6 +311,9 @@
                 loanDurationMonthsInput.value = '';
                 monthlyPercentageInput.value = '';
                 monthlyDeductionInput.value = '';
+                document.getElementById('addition_month').value = '';
+                document.getElementById('deduction_start_month_display').value = '';
+                document.getElementById('deduction_start_month').value = '';
             }
         });
 
@@ -357,6 +354,25 @@
             document.getElementById('start_date').value = formattedDate;
         }
 
+        // Function to calculate next month from a given date string
+        // Returns both formatted display and Y-m value
+        function calculateNextMonth(dateString) {
+            if (!dateString) return null;
+            
+            const date = new Date(dateString);
+            // Add one month
+            const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            
+            return {
+                display: `${monthNames[nextMonth.getMonth()]} ${nextMonth.getFullYear()}`,
+                value: `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`
+            };
+        }
+
         // Make principal amount readonly after loan type is selected
         additionSelect.addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
@@ -366,9 +382,6 @@
 
                 // Automatically select the matching deduction type
                 selectMatchingDeductionType();
-
-                // Set start date to first day of next month
-                setStartDateToNextMonth();
 
                 // Populate addition month field if addition date is available
                 if (selectedOption.dataset.additionDate) {
@@ -381,8 +394,18 @@
                     const additionMonth = `${monthNames[additionDate.getMonth()]} ${additionDate.getFullYear()}`;
                     console.log('Formatted addition month:', additionMonth);
                     document.getElementById('addition_month').value = additionMonth;
+                    
+                    // Calculate and set deduction start month (next month after addition month)
+                    const deductionStartMonth = calculateNextMonth(selectedOption.dataset.additionDate);
+                    if (deductionStartMonth) {
+                        document.getElementById('deduction_start_month_display').value = deductionStartMonth.display;
+                        document.getElementById('deduction_start_month').value = deductionStartMonth.value;
+                        console.log('Deduction start month:', deductionStartMonth);
+                    }
                 } else {
                     document.getElementById('addition_month').value = 'Month not available';
+                    document.getElementById('deduction_start_month_display').value = '';
+                    document.getElementById('deduction_start_month').value = '';
                 }
 
                 // Recalculate if months were already entered
@@ -393,20 +416,13 @@
                 principalAmountInput.value = '';
                 principalAmountInput.removeAttribute('readonly');
                 document.getElementById('addition_month').value = '';
+                document.getElementById('deduction_start_month_display').value = '';
+                document.getElementById('deduction_start_month').value = '';
             }
         });
 
         // Create reference to deduction type dropdown
         const deductionTypeSelect = document.getElementById('deduction_type_id');
-
-        // Set default start date to first day of next month when page loads
-        // This provides a good UX before any additions are selected
-        setTimeout(function() {
-            const today = new Date();
-            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-            const formattedDate = nextMonth.toISOString().split('T')[0];
-            document.getElementById('start_date').value = formattedDate;
-        }, 100); // Small delay to ensure the value is set after other processes
     });
 </script>
 @endpush

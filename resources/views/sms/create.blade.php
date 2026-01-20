@@ -3,6 +3,12 @@
 @section('content')
 <div class="container">
     @can('manage_sms')
+    <div class="mb-3">
+        <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
     <h1>Send SMS Notification</h1>
     <form action="{{ route('sms.store') }}" method="POST">
         @csrf

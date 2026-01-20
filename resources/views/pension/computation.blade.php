@@ -20,15 +20,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="retired_employee_id" class="form-label">Select Retired Employee (Optional)</label>
-                                    <select class="form-control" id="retired_employee_id" name="retired_employee_id">
-                                        <option value="">Select Employee</option>
-                                        @if(isset($retiredEmployees))
-                                            @foreach($retiredEmployees as $emp)
-                                                <option value="{{ $emp->employee_id }}">{{ $emp->fullname }} ({{ $emp->staff_no }})</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
+                                   
                                 </div>
 
                                 <div class="form-group mb-3">
@@ -132,6 +124,14 @@
                                     <input type="date" class="form-control" id="appt_date" name="appt_date" required
                                            @if(isset($pre_filled_data) && isset($pre_filled_data['appt_date'])) value="{{ $pre_filled_data['appt_date'] }}" @endif>
                                 </div>
+
+                                <!-- Expected Retirement Date Display -->
+                                @if(isset($pre_filled_data) && isset($pre_filled_data['dod_r']))
+                                <div class="alert alert-info mb-3" role="alert">
+                                    <strong><i class="fas fa-calendar-check"></i> Expected Retirement Date:</strong>
+                                    <span class="fs-5 ms-2">{{\Carbon\Carbon::parse($pre_filled_data['dod_r'])->format('F d, Y') }}</span>
+                                </div>
+                                @endif
 
                                 <div class="form-group mb-3">
                                     <label for="dod_r" class="form-label">Date of Retirement <span class="text-danger">*</span></label>

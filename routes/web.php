@@ -26,6 +26,7 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ProbationController;
 use App\Http\Controllers\PensionComputationController;
 use App\Http\Controllers\PensionerController;
+use App\Http\Controllers\PendingPensionerChangeController;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
@@ -245,6 +246,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pensioners/type/{type}', [PensionerController::class, 'getPensionersByType'])->name('pensioners.by-type');
         Route::post('/pensioners/{pensioner}/mark-gratuity-paid', [PensionerController::class, 'markGratuityPaid'])->name('pensioners.mark-gratuity-paid');
         Route::post('/pensioners/{pensioner}/mark-deceased', [PensionerController::class, 'markDeceased'])->name('pensioners.mark-deceased');
+
+        // Pending Pensioner Changes - Approval System
+        Route::middleware('permission:view_pensioner_changes|approve_pensioner_changes')->group(function () {
+            Route::get('/pending-pensioner-changes', [PendingPensionerChangeController::class, 'index'])->name('pending-pensioner-changes.index');
+            Route::get('/pending-pensioner-changes/{pendingChange}', [PendingPensionerChangeController::class, 'show'])->name('pending-pensioner-changes.show');
+        });
+
+        Route::middleware('permission:approve_pensioner_changes')->group(function () {
+            Route::post('/pending-pensioner-changes/{pendingChange}/approve', [PendingPensionerChangeController::class, 'approve'])->name('pending-pensioner-changes.approve');
+            Route::post('/pending-pensioner-changes/{pendingChange}/reject', [PendingPensionerChangeController::class, 'reject'])->name('pending-pensioner-changes.reject');
+        });
 
         // Pension Computation
         Route::get('/pension/computation/create', [PensionComputationController::class, 'create'])->name('pension.create');

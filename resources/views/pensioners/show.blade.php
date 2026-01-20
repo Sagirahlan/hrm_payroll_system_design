@@ -91,14 +91,34 @@
                                     <th>Salary Scale:</th>
                                     <td>{{ $pensioner->salaryScale ? $pensioner->salaryScale->full_name : 'N/A' }}</td>
                                 </tr>
+                                @if($expectedRetirementDate)
                                 <tr>
-                                    <th>Overstayed:</th>
-                                    <td class="text-danger fw-bold">{{ $overstayRemark ?: 'N/A' }}</td>
+                                    <th>Expected Retirement Date:</th>
+                                    <td>{{ \Carbon\Carbon::parse($expectedRetirementDate)->format('d M, Y') }}</td>
                                 </tr>
-                                @if(isset($overstayAmount) && $overstayAmount > 0)
+                                @endif
+                                @if($overstayedDays > 0)
                                 <tr>
-                                    <th>Overstay Amount:</th>
+                                    <th>Overstayed Days:</th>
+                                    <td class="text-{{ $graceWaived ? 'warning' : 'danger' }} fw-bold">{{ $overstayedDays }} days</td>
+                                </tr>
+                                <tr>
+                                    <th>Grace Period Status:</th>
+                                    <td class="text-{{ $graceWaived ? 'success' : 'danger' }} fw-bold">
+                                        {{ $gracePeriodStatus }}
+                                    </td>
+                                </tr>
+                                @if(!$graceWaived && $overstayAmount > 0)
+                                <tr>
+                                    <th>Overstay Deduction:</th>
                                     <td class="text-danger fw-bold">₦{{ number_format($overstayAmount, 2) }}</td>
+                                </tr>
+                                @endif
+                                @endif
+                                @if($overstayRemark)
+                                <tr>
+                                    <th>Overstay Remark:</th>
+                                    <td class="text-danger fw-bold">{{ $overstayRemark }}</td>
                                 </tr>
                                 @endif
                             </table>

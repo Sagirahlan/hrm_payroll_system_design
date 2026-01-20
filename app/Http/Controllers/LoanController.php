@@ -97,15 +97,38 @@ class LoanController extends Controller
             // Find matching deduction type for each addition type
             $deductionType = DeductionType::where('name', $addition->additionType->name)->first();
 
+            // Safely get addition date and month
+            $additionDate = null;
+            $additionMonth = null;
+
+            if ($addition->start_date) {
+                try {
+                    $additionDate = $addition->start_date->format('Y-m-d');
+                    $additionMonth = $addition->start_date->format('Y-m');
+                } catch (\Exception $e) {
+                    \Log::warning('Error formatting addition start_date', ['addition_id' => $addition->addition_id, 'error' => $e->getMessage()]);
+                }
+            }
+
+            // Fallback to created_at if start_date is not available
+            if (!$additionDate && $addition->created_at) {
+                try {
+                    $additionDate = $addition->created_at->format('Y-m-d');
+                    $additionMonth = $addition->created_at->format('Y-m');
+                } catch (\Exception $e) {
+                    \Log::warning('Error formatting addition created_at', ['addition_id' => $addition->addition_id, 'error' => $e->getMessage()]);
+                }
+            }
+
             $item = [
                 'addition_id' => $addition->addition_id,
                 'amount' => $addition->amount,
                 'addition_type' => $addition->additionType,
                 'has_matching_deduction' => $deductionType !== null,
                 'deduction_type_id' => $deductionType ? $deductionType->id : null,
-                'addition_date' => $addition->start_date ? $addition->start_date->format('Y-m-d') : ($addition->created_at ? $addition->created_at->format('Y-m-d') : null)
+                'addition_date' => $additionDate,
+                'addition_month' => $additionMonth
             ];
-
             $response[] = $item;
         }
 
@@ -156,7 +179,7 @@ class LoanController extends Controller
         'monthly_percentage' => 'nullable|numeric|min:0|max:100',
         'monthly_deduction' => 'nullable|numeric|min:0',
         'loan_duration_months' => 'nullable|integer|min:1',
-        'start_date' => 'required|date',
+        'deduction_start_month' => 'required|date_format:Y-m',
         'description' => 'nullable|string',
         'deduction_type_id' => 'required|exists:deduction_types,id'
     ], [
@@ -253,12 +276,13 @@ class LoanController extends Controller
                 ->withErrors(['error' => 'Please provide either monthly percentage, monthly deduction amount, or loan duration in months.']);
         }
 
-       // Calculate end date from start date + total months
+       // Calculate end date from deduction start month + total months
         // End date should be the last day of the final month
-        // For example, if start date is Nov 1, 2025 and total months is 3:
+        // For example, if deduction start month is 2025-11 and total months is 3:
         // Month 1: November 2025, Month 2: December 2025, Month 3: January 2026
         // End date should be January 31, 2026 (last day of the 3rd month)
-        $startDate = \Carbon\Carbon::parse($request->start_date);
+        $deductionStartMonth = $request->deduction_start_month; // Format: Y-m
+        $startDate = \Carbon\Carbon::parse($deductionStartMonth . '-01');
         $endDate = $startDate->copy()->addMonths(max(0, $totalMonths - 1))->endOfMonth();
 
         // Create the loan record
@@ -274,7 +298,7 @@ class LoanController extends Controller
             'total_months' => $totalMonths,
             'remaining_months' => $totalMonths,
             'monthly_percentage' => $monthlyPercentage,
-            'start_date' => $request->start_date,
+            'deduction_start_month' => $deductionStartMonth,
             'end_date' => $endDate->format('Y-m-d'),
             'remaining_balance' => $totalRepayment, // Remaining balance should be total repayment, not just principal
             'status' => 'active',
@@ -288,7 +312,7 @@ class LoanController extends Controller
             'deduction_type' => $loan->loan_type,
             'amount' => $monthlyDeduction,
             'deduction_period' => 'monthly',
-            'start_date' => $loan->start_date,
+            'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $loan->end_date,
             'loan_id' => $loan->loan_id,
         ]);

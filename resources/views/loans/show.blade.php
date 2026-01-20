@@ -97,8 +97,8 @@
                             <h5>Dates</h5>
                             <table class="table table-borderless">
                                 <tr>
-                                    <td><strong>Start Date:</strong></td>
-                                    <td>{{ $loan->start_date->format('Y-m-d') }}</td>
+                                    <td><strong>Deduction Start Month:</strong></td>
+                                    <td>{{ $loan->deduction_start_month ? \Carbon\Carbon::parse($loan->deduction_start_month . '-01')->format('F Y') : 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>End Date:</strong></td>

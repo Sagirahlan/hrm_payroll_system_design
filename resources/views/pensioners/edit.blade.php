@@ -92,7 +92,13 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Update Pensioner</button>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Update <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="reason" name="reason" required>{{ old('reason') }}</textarea>
+                            <small class="form-text text-muted">Please provide a reason for this update. This will be reviewed before approval.</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit Update Request</button>
                         <a href="{{ route('pensioners.show', $pensioner->id) }}" class="btn btn-secondary">Cancel</a>
                     </form>
                 </div>

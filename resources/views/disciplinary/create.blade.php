@@ -3,6 +3,12 @@
 @section('content')
 <div class="container-fluid py-4">
     @can('create_disciplinary')
+    <div class="mb-3">
+        <a href="{{ route('disciplinary.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Disciplinary Actions
+        </a>
+    </div>
+    
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="card mb-4">

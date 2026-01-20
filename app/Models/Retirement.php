@@ -17,11 +17,14 @@ class Retirement extends Model
         'status',
         'retire_reason',
         'years_of_service',
+        'expected_retirement_date',
+        'overstayed_days',
     ];
 
     protected $casts = [
         'retirement_date' => 'date',
         'notification_date' => 'date',
+        'expected_retirement_date' => 'date',
         'gratuity_amount' => 'decimal:2',
         'years_of_service' => 'decimal:2',
     ];

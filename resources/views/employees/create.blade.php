@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container py-4">
+    <div class="mb-3">
+        <a href="{{ route('employees.index') }}" class="btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left mr-1"></i> Back to List
+        </a>
+    </div>
+
     @can('create_employees')
     <div class="row justify-content-center">
         <div class="col-12">

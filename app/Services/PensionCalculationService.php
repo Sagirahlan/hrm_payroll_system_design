@@ -221,13 +221,55 @@ class PensionCalculationService
     }
 
     /**
-     * Calculate Overstay Amount based on dates
+     * Calculate Expected Retirement Date based on age and service
+     * Returns the earlier of: 60 years from DOB or 35 years from DOFA
      */
-    public function calculateOverstayAmount(\Carbon\Carbon $dob, \Carbon\Carbon $dofa, \Carbon\Carbon $retirementDate, float $monthlySalary): array
+    public function calculateExpectedRetirementDate(\Carbon\Carbon $dob, \Carbon\Carbon $dofa, $salaryScale = null): \Carbon\Carbon
     {
-         // 60 years age
+        // Default retirement age and years of service
+        $retirementAge = 60;
+        $maxYearsOfService = 35;
+        
+        // If salary scale is provided, use its values
+        if ($salaryScale) {
+            $retirementAge = (int) ($salaryScale->max_retirement_age ?? 60);
+            $maxYearsOfService = (int) ($salaryScale->max_years_of_service ?? 35);
+        }
+        
+        // Calculate retirement date by age
+        $expectedByAge = $dob->copy()->addYears($retirementAge);
+        
+        // Calculate retirement date by service
+        $expectedByService = $dofa->copy()->addYears($maxYearsOfService);
+        
+        // Return the earlier of the two
+        return $expectedByAge->min($expectedByService);
+    }
+
+    /**
+     * Calculate Overstay Amount based on dates with 25-day grace period
+     * 
+     * Grace Period Rules:
+     * - If overstayed days <= 25: No deduction
+     * - If overstayed days > 25: Deduction applies to ALL days from expected retirement date
+     * 
+     * @param \Carbon\Carbon $dob Date of Birth
+     * @param \Carbon\Carbon $dofa Date of First Appointment
+     * @param \Carbon\Carbon $retirementDate Actual Retirement Date
+     * @param float $monthlySalary Monthly Salary
+     * @param int $gracePeriodDays Grace period in days (default: 25)
+     * @return array ['amount' => float, 'days' => int, 'expected_date' => Carbon, 'grace_applied' => bool]
+     */
+    public function calculateOverstayAmount(
+        \Carbon\Carbon $dob, 
+        \Carbon\Carbon $dofa, 
+        \Carbon\Carbon $retirementDate, 
+        float $monthlySalary,
+        int $gracePeriodDays = 25
+    ): array
+    {
+         // Calculate expected retirement date (60 years age or 35 years service, whichever comes first)
          $expectedByAge = $dob->copy()->addYears(60);
-         // 35 years service
          $expectedByService = $dofa->copy()->addYears(35);
          
          $expectedRetirement = $expectedByAge->min($expectedByService);
@@ -236,22 +278,49 @@ class PensionCalculationService
          \Illuminate\Support\Facades\Log::info("Expected Retirement: {$expectedRetirement}");
 
          if ($retirementDate->gt($expectedRetirement)) {
-             // Ensure absolute positive difference
+             // Calculate days overstayed
              $daysOverstayed = $retirementDate->diffInDays($expectedRetirement, false);
              $daysOverstayed = abs($daysOverstayed);
              
-             $monthsOverstayed = $daysOverstayed / 30.44; // Approx
+             \Illuminate\Support\Facades\Log::info("Days Overstayed: {$daysOverstayed}, Grace Period: {$gracePeriodDays}");
              
-             \Illuminate\Support\Facades\Log::info("Overstayed (Fixed): Days={$daysOverstayed}, Months={$monthsOverstayed}");
+             // Apply grace period logic
+             if ($daysOverstayed <= $gracePeriodDays) {
+                 // Within grace period - no deduction
+                 \Illuminate\Support\Facades\Log::info("Within grace period - no deduction applied");
+                 return [
+                     'amount' => 0,
+                     'days' => $daysOverstayed,
+                     'expected_date' => $expectedRetirement,
+                     'grace_applied' => true,
+                     'grace_waived' => true
+                 ];
+             }
+             
+             // Beyond grace period - deduction applies to ALL days from expected retirement date
+             $monthsOverstayed = $daysOverstayed / 30.44; // Average days per month
+             $deductionAmount = round($monthlySalary * $monthsOverstayed, 2);
+             
+             \Illuminate\Support\Facades\Log::info("Beyond grace period - Deduction for all {$daysOverstayed} days: {$deductionAmount}");
 
              if ($monthlySalary > 0 && $monthsOverstayed > 0) {
                  return [
-                    'amount' => round($monthlySalary * $monthsOverstayed, 2),
-                    'days' => $daysOverstayed
+                    'amount' => $deductionAmount,
+                    'days' => $daysOverstayed,
+                    'expected_date' => $expectedRetirement,
+                    'grace_applied' => true,
+                    'grace_waived' => false
                  ];
              }
          }
          
-         return ['amount' => 0, 'days' => 0];
+         // No overstay
+         return [
+             'amount' => 0, 
+             'days' => 0,
+             'expected_date' => $expectedRetirement,
+             'grace_applied' => false,
+             'grace_waived' => false
+         ];
     }
 }

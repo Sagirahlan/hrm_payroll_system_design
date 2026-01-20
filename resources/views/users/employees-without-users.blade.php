@@ -27,11 +27,11 @@
             <form method="GET" action="{{ route('users.employees-without-users') }}" class="row g-3">
                 <div class="col-md-4">
                     <label for="search" class="form-label">Search</label>
-                    <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Search by name, email, or ID..." 
+                    <input type="text" name="search" id="search" class="form-control"
+                           placeholder="Search by name, email, or ID..."
                            value="{{ request('search') }}">
                 </div>
-                
+
                @if($departments->count() > 0)
     <div class="col-md-3">
         <label for="department_id" class="form-label">Department</label>
@@ -40,14 +40,14 @@
             @foreach($departments as $department)
                 <option value="{{ $department->department_id }}" {{ request('department_id') == $department->department_id ? 'selected' : '' }}>
                     {{ $department->department_name }}
-                    
+
                 </option>
             @endforeach
         </select>
     </div>
 @endif
 
-                
+
                 <div class="col-md-2">
                     <label for="email_filter" class="form-label">Email Status</label>
                     <select name="email_filter" id="email_filter" class="form-select">
@@ -56,7 +56,7 @@
                         <option value="without_email" {{ request('email_filter') == 'without_email' ? 'selected' : '' }}>No Email</option>
                     </select>
                 </div>
-                
+
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i> Search
@@ -197,8 +197,8 @@
                                 </td>
                                 <td>
                                     @if($employee->email)
-                                        <button type="button" class="btn btn-sm btn-primary" 
-                                                data-bs-toggle="modal" 
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                                data-bs-toggle="modal"
                                                 data-bs-target="#createUserModal{{ $employee->employee_id }}"
                                                 title="Create User Account">
                                             <i class="fas fa-user-plus"></i>
@@ -226,31 +226,31 @@
                                             @csrf
                                             <div class="modal-body">
                                                 <input type="hidden" name="employee_id" value="{{ $employee->employee_id }}">
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="username{{ $employee->employee_id }}" class="form-label">Username</label>
-                                                    <input type="text" name="username" id="username{{ $employee->employee_id }}" 
+                                                    <input type="text" name="username" id="username{{ $employee->employee_id }}"
                                                            class="form-control" value="{{ strtolower(explode('@', $employee->email)[0]) }}" required>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="email{{ $employee->employee_id }}" class="form-label">Email</label>
-                                                    <input type="email" name="email" id="email{{ $employee->employee_id }}" 
+                                                    <input type="email" name="email" id="email{{ $employee->employee_id }}"
                                                            class="form-control" value="{{ $employee->email }}" readonly>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="password{{ $employee->employee_id }}" class="form-label">Password</label>
-                                                    <input type="password" name="password" id="password{{ $employee->employee_id }}" 
-                                                           class="form-control" value="12345678" required>
+                                                    <input type="password" name="password" id="password{{ $employee->employee_id }}"
+                                                           class="form-control" value="{{ $employee->date_of_birth }}" required>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="password_confirmation{{ $employee->employee_id }}" class="form-label">Confirm Password</label>
-                                                    <input type="password" name="password_confirmation" id="password_confirmation{{ $employee->employee_id }}" 
-                                                           class="form-control" value="12345678" required>
+                                                    <input type="password" name="password_confirmation" id="password_confirmation{{ $employee->employee_id }}"
+                                                           class="form-control" value="{{ $employee->date_of_birth }}" required>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="role{{ $employee->employee_id }}" class="form-label">Role</label>
                                                     <select name="role" id="role{{ $employee->employee_id }}" class="form-select" required>
@@ -288,7 +288,7 @@
                 </div>
             @endif
         </div>
-        
+
         @if($employees->hasPages())
         <div class="card-footer">
             {{ $employees->links('pagination::bootstrap-5') }}
@@ -315,7 +315,7 @@
                 </div>
                 <ul class="list-unstyled">
                     <li><i class="fas fa-check text-success"></i> Username will be generated from employee email</li>
-                    <li><i class="fas fa-check text-success"></i> Default password: <code>12345678</code></li>
+                    <li><i class="fas fa-check text-success"></i> Default password: <code>Employee's Date of Birth</code></li>
                     <li><i class="fas fa-check text-success"></i> Default role: <strong>Employee</strong></li>
                     <li><i class="fas fa-exclamation-triangle text-warning"></i> Employees without email addresses will be skipped</li>
                 </ul>
@@ -344,11 +344,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('department').addEventListener('change', function() {
         this.form.submit();
     });
-    
+
     document.getElementById('email_filter').addEventListener('change', function() {
         this.form.submit();
     });
-    
+
     // Clear search on escape key
     document.getElementById('search').addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {

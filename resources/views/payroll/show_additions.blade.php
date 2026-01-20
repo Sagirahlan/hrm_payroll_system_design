@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    <div class="mb-3">
+        <a href="{{ route('payroll.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Payroll
+        </a>
+    </div>
+    
     <div class="row">
         <div class="col-12">
             <div class="card border-primary shadow">

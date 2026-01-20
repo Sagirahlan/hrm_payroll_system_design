@@ -32,7 +32,7 @@
                                     <th>Total Repayment</th>
                                     <th>Monthly Deduction</th>
                                     <th>Monthly Percentage</th>
-                                    <th>Start Date</th>
+                                    <th>Deduction Start Month</th>
                                     <th>End Date</th>
                                     <th>Remaining Balance</th>
                                     <th>Remaining Months</th>
@@ -50,7 +50,7 @@
                                         <td>{{ number_format($loan->total_repayment, 2) }}</td>
                                         <td>{{ number_format($loan->monthly_deduction, 2) }}</td>
                                         <td>{{ $loan->monthly_percentage ? $loan->monthly_percentage . '%' : 'N/A' }}</td>
-                                        <td>{{ $loan->start_date->format('Y-m-d') }}</td>
+                                        <td>{{ $loan->deduction_start_month ? \Carbon\Carbon::parse($loan->deduction_start_month . '-01')->format('F Y') : 'N/A' }}</td>
                                         <td>{{ $loan->end_date ? $loan->end_date->format('Y-m-d') : 'N/A' }}</td>
                                         <td>{{ number_format($loan->remaining_balance, 2) }}</td>
                                         <td>{{ $loan->remaining_months }}</td>

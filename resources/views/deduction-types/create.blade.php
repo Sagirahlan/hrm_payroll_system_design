@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container">
+    <div class="mb-3">
+        <a href="{{ route('deduction-types.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Deduction Types
+        </a>
+    </div>
+    
     <h1>Create Deduction Type</h1>
     <form action="{{ route('deduction-types.store') }}" method="POST">
         @csrf

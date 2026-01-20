@@ -9,8 +9,8 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title d-inline">Pensioners</h4>
-                    <a href="{{ route('pensioners.create') }}" class="btn btn-primary float-end">Add Pensioner</a>
-                    <a href="{{ route('pensioners.move-retired') }}" class="btn btn-success float-end me-2" id="move-retired-btn">Move Retired to Pensioners</a>
+                   
+                    
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -22,6 +22,7 @@
                                     <th>Rank</th>
                                     <th>Department</th>
                                     <th>Retirement Date</th>
+                                    <th>Expected Retirement Date</th>
                                     <th>Yrs of Svc</th>
                                     <th>Gratuity</th>
                                     <th>Pension</th>
@@ -40,6 +41,15 @@
                                     <td>{{ $pensioner->rank ? $pensioner->rank->name : 'N/A' }}</td>
                                     <td>{{ $pensioner->department ? $pensioner->department->department_name : 'N/A' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($pensioner->date_of_retirement)->format('d M, Y') }}</td>
+                                    <td>
+                                        @if($pensioner->employee && $pensioner->employee->expected_retirement_date)
+                                            {{ \Carbon\Carbon::parse($pensioner->employee->expected_retirement_date)->format('d M, Y') }}
+                                        @elseif($pensioner->expected_retirement_date)
+                                            {{ \Carbon\Carbon::parse($pensioner->expected_retirement_date)->format('d M, Y') }}
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
                                     <td>{{ number_format($pensioner->years_of_service, 1) }}</td>
                                     <td>
                                         <div class="d-flex flex-column">
@@ -93,7 +103,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center">No pensioners found.</td>
+                                    <td colspan="11" class="text-center">No pensioners found.</td>
                                 </tr>
                                 @endforelse
                             </tbody>

@@ -4,6 +4,14 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ route('bank-details.index') }}" class="btn btn-outline-primary">
+                <i class="fa fa-chevron-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+    
     <div class="row">
         <div class="col-12">
             <div class="card">

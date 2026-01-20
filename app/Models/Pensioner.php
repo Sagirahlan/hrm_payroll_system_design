@@ -53,15 +53,20 @@ class Pensioner extends Model
         'updated_by',
         'is_gratuity_paid',
         'gratuity_paid_date',
+        'expected_retirement_date',
+        'overstayed_days',
+        'overstayed_deduction_amount',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
         'date_of_first_appointment' => 'date',
         'date_of_retirement' => 'date',
+        'expected_retirement_date' => 'date',
         'pension_amount' => 'decimal:2',
         'gratuity_amount' => 'decimal:2',
         'total_death_gratuity' => 'decimal:2',
+        'overstayed_deduction_amount' => 'decimal:2',
         'years_of_service' => 'decimal:2',
         'pension_percentage' => 'decimal:2',
         'gratuity_percentage' => 'decimal:2',
@@ -117,5 +122,10 @@ class Pensioner extends Model
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(\App\Models\Employee::class, 'employee_id', 'employee_id');
     }
 }

@@ -401,7 +401,8 @@
                                                         $payrollMonth = $payroll->payroll_month;
                                                         $additions = collect();
                                                         
-                                                        if ($payroll->employee_id) {
+                                                        // Only show additions for Active/Standard payroll, not Pension/Gratuity (unless logic changes)
+                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Pension' && $payroll->payment_type !== 'Gratuity') {
                                                             $additions = \App\Models\Addition::where('employee_id', $payroll->employee_id)
                                                                 ->where(function($query) use ($payrollMonth) {
                                                                     $query->where('start_date', '<=', $payrollMonth)
@@ -442,7 +443,8 @@
                                                     @php
                                                         $deductions = collect();
                                                         
-                                                        if ($payroll->employee_id) {
+                                                        // Only show deductions for Active/Standard payroll, not Pension/Gratuity
+                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Pension' && $payroll->payment_type !== 'Gratuity') {
                                                             $deductions = \App\Models\Deduction::where('employee_id', $payroll->employee_id)
                                                                 ->where(function($query) use ($payrollMonth) {
                                                                     $query->where('start_date', '<=', $payrollMonth)
@@ -657,9 +659,7 @@
                                         <option value="final-approve">Final Approve All</option>
                                         @endcan
                                         <option value="request-delete">Request Delete All</option>
-                                        @if(request('status') === 'Pending Deletion')
-                                        <option value="approve-delete">Approve Delete All</option>
-                                        @endif
+                                        <option value="approve-delete">Approve Pending Deletions</option>
                                         @can('bulk_update_payroll_status')
                                         <option value="bulk-update-status">Update All Status</option>
                                         @endcan

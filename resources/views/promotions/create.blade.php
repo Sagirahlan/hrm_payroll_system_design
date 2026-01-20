@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    <div class="mb-4">
+        <a href="{{ route('promotions.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Promotions List
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="card shadow-sm border-0">

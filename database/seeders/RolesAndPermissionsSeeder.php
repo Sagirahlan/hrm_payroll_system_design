@@ -130,6 +130,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_pensioners',
             'delete_pensioners',
             'manage_pensioners',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
 
             // Role Management
             'view_roles',
@@ -399,6 +401,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'reject_probation',
             'start_probation',
             'extend_probation',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
         ]);
 
         // Admin II role
@@ -456,6 +460,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'create_pensioners',
             'edit_pensioners',
             'manage_pensioners',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
             'view_roles',
             'create_roles',
             'edit_roles',
@@ -528,6 +534,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage_additions',
             'view_pensioners',
             'manage_pensioners',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
             'view_grade_levels',
             'create_grade_levels',
             'edit_grade_levels',
@@ -593,6 +601,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage_additions',
             'view_pensioners',
             'manage_pensioners',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
             'view_grade_levels',
             'manage_grade_levels',
             'view_salary_scales',
@@ -651,6 +661,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit_pensioners',
             'delete_pensioners',
             'manage_pensioners',
+            'view_pensioner_changes',
+            'approve_pensioner_changes',
             'view_roles',
             'manage_roles',
             'view_promotions',

@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container mt-4">
+    <div class="mb-3">
+        <a href="{{ route('salary-scales.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Salary Scales
+        </a>
+    </div>
+    
     <div class="card shadow">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0">Add New Salary Scale</h5>

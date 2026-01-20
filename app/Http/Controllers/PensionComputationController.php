@@ -86,7 +86,8 @@ class PensionComputationController extends Controller
                     'acc_no' => $employee->bank ? $employee->bank->account_no : null, // Correct field from bank model
                     'nxtkin_fulname' => $employee->nextOfKin ? $employee->nextOfKin->name : null, // From nextOfKin relationship
                     'nxtkin_mobile' => $employee->nextOfKin ? $employee->nextOfKin->mobile_no : null, // From nextOfKin relationship
-                    'dod_r' => $request->query('retire_date', now()->toDateString()), // Use provided retire_date or default to today
+                    // Use employee's expected_retirement_date from database (validated data) instead of URL parameter
+                    'dod_r' => $employee->expected_retirement_date ? \Carbon\Carbon::parse($employee->expected_retirement_date)->format('Y-m-d') : $request->query('retire_date', now()->toDateString()),
                 ];
             }
         }
@@ -467,6 +468,7 @@ class PensionComputationController extends Controller
                         'place_of_birth' => null, // Employee model doesn't have this, setting to null
                         'date_of_first_appointment' => $data['appt_date'],
                         'date_of_retirement' => $data['dod_r'],
+                        'expected_retirement_date' => $employee->expected_retirement_date, // From employee's validated retirement date
                         'retirement_reason' => $retirement->retire_reason,
                         'retirement_type' => $data['gtype'], // RB or DG
                         'department_id' => $data['deptid'],

@@ -71,6 +71,40 @@ class PayrollController extends Controller
                 if (!$pensioner->employee_id) continue;
 
                 $monthlyPension = $pensioner->pension_amount;
+                $remarks = 'Pension for ' . $month;
+
+                // --- Pro-rata Logic for Transition Month ---
+                $startOfMonth = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
+                $endOfMonth = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
+                
+                if ($pensioner->date_of_retirement) {
+                    $retirementDate = \Carbon\Carbon::parse($pensioner->date_of_retirement);
+                    
+                    if ($retirementDate->between($startOfMonth, $endOfMonth)) {
+                        // This implies the pensioner retired THIS month.
+                        // They were active staff part of the month, and pensioner the rest.
+                        // Active Payroll pays 1st -> Retirement Date (Salary).
+                        // Pension Payroll pays (Retirement Date + 1) -> End of Month (Pension).
+                        
+                        $daysInMonth = $startOfMonth->daysInMonth;
+                        
+                        // Active Days (Paid as Salary) = Retirement Date Day (e.g., 18th = 18 days)
+                        $activeDays = $retirementDate->day;
+                        
+                        // Pension Days = Remaining Days
+                        $pensionDays = $daysInMonth - $activeDays;
+                        
+                        // If pension days > 0, calculate pro-rata
+                        if ($pensionDays > 0) {
+                            $dailyPensionRate = $monthlyPension / $daysInMonth;
+                            $proratedPension = round($dailyPensionRate * $pensionDays, 2);
+                            
+                            $monthlyPension = $proratedPension;
+                            $remarks = 'Pro-rata Pension (Retired ' . $retirementDate->format('d M') . ')';
+                        }
+                    }
+                }
+                // -------------------------------------------
 
                 // Create or update payroll record
                 PayrollRecord::updateOrCreate(
@@ -88,7 +122,7 @@ class PayrollController extends Controller
                         'net_salary' => $monthlyPension,
                         'status' => 'Pending Review',
                         'payment_date' => null,
-                        'remarks' => 'Pension for ' . $month,
+                        'remarks' => $remarks,
                     ]
                 );
 
@@ -227,8 +261,18 @@ class PayrollController extends Controller
         $endOfMonth = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
 
         $employeesQuery = Employee::where(function($query) use ($startOfMonth, $endOfMonth, $appointmentTypeId) {
-                // Strictly Active and Suspended staff only
-                $query->whereIn('status', ['Active', 'Suspended']);
+                // Include Active, Suspended, and employees who Retired THIS month
+                $query->whereIn('status', ['Active', 'Suspended'])
+                      ->orWhere(function($q) use ($startOfMonth, $endOfMonth) {
+                          $q->where('status', 'Retired')
+                            ->where(function($sq) use ($startOfMonth, $endOfMonth) {
+                                // Check both Employee table AND Pensioner table for the date
+                                $sq->whereBetween('date_of_retirement', [$startOfMonth, $endOfMonth])
+                                   ->orWhereHas('pensioner', function($pq) use ($startOfMonth, $endOfMonth) {
+                                       $pq->whereBetween('date_of_retirement', [$startOfMonth, $endOfMonth]);
+                                   });
+                            });
+                      });
             })
             ->where(function($query) {
                 // Exclude employees who are on probation
@@ -378,7 +422,11 @@ class PayrollController extends Controller
                   ->orWhereHas('employee', function($employeeQuery) use ($searchTerm) {
                       $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
                                    ->orWhere('surname', 'like', "%{$searchTerm}%")
-                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                                   ->orWhere('staff_no', 'like', "%{$searchTerm}%")
+                                   ->orWhereRaw("CONCAT_WS(' ', first_name, surname) LIKE ?", ["%{$searchTerm}%"])
+                                   ->orWhereRaw("CONCAT_WS(' ', surname, first_name) LIKE ?", ["%{$searchTerm}%"])
+                                   ->orWhereRaw("CONCAT_WS(' ', first_name, middle_name, surname) LIKE ?", ["%{$searchTerm}%"]);
                   });
             });
         }
@@ -529,7 +577,11 @@ class PayrollController extends Controller
                   ->orWhereHas('employee', function($employeeQuery) use ($searchTerm) {
                       $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
                                    ->orWhere('surname', 'like', "%{$searchTerm}%")
-                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                                   ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                                   ->orWhere('staff_no', 'like', "%{$searchTerm}%")
+                                   ->orWhereRaw("CONCAT_WS(' ', first_name, surname) LIKE ?", ["%{$searchTerm}%"])
+                                   ->orWhereRaw("CONCAT_WS(' ', surname, first_name) LIKE ?", ["%{$searchTerm}%"])
+                                   ->orWhereRaw("CONCAT_WS(' ', first_name, middle_name, surname) LIKE ?", ["%{$searchTerm}%"]);
                   });
             });
         }
@@ -1348,7 +1400,18 @@ class PayrollController extends Controller
         $gradeLevels = GradeLevel::orderBy('name')->get();
         $appointmentTypes = \App\Models\AppointmentType::all();
 
-        $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with(['department', 'gradeLevel']);
+        $employeesQuery = Employee::where(function($query) {
+            $query->whereIn('status', ['Active', 'Suspended'])
+                  ->orWhere(function($q) {
+                      $q->where('status', 'Retired')
+                        ->where(function($d) {
+                             $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                               ->orWhereHas('pensioner', function($p) {
+                                   $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                               });
+                        });
+                  });
+        })->with(['department', 'gradeLevel']);
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -1407,7 +1470,18 @@ class PayrollController extends Controller
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
+            $employeesQuery = Employee::where(function($query) {
+                    $query->whereIn('status', ['Active', 'Suspended'])
+                          ->orWhere(function($q) {
+                              $q->where('status', 'Retired')
+                                ->where(function($d) {
+                                     $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                                       ->orWhereHas('pensioner', function($p) {
+                                           $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                                       });
+                                });
+                          });
+                })
                 ->where('status', '!=', 'Hold')  // Exclude employees with hold status
                 ->with('gradeLevel');
 
@@ -1528,7 +1602,18 @@ class PayrollController extends Controller
         $gradeLevels = GradeLevel::orderBy('name')->get();
         $appointmentTypes = \App\Models\AppointmentType::all();
 
-        $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])->with(['department', 'gradeLevel']);
+        $employeesQuery = Employee::where(function($query) {
+            $query->whereIn('status', ['Active', 'Suspended'])
+                  ->orWhere(function($q) {
+                      $q->where('status', 'Retired')
+                        ->where(function($d) {
+                             $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                               ->orWhereHas('pensioner', function($p) {
+                                   $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                               });
+                        });
+                  });
+        })->with(['department', 'gradeLevel']);
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -1588,7 +1673,18 @@ class PayrollController extends Controller
         $employees = collect();
 
         if ($request->input('select_all_pages') == '1') {
-            $employeesQuery = Employee::whereIn('status', ['Active', 'Suspended'])
+            $employeesQuery = Employee::where(function($query) {
+                    $query->whereIn('status', ['Active', 'Suspended'])
+                          ->orWhere(function($q) {
+                              $q->where('status', 'Retired')
+                                ->where(function($d) {
+                                     $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                                       ->orWhereHas('pensioner', function($p) {
+                                           $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                                       });
+                                });
+                          });
+                })
                 ->where('status', '!=', 'Hold')  // Exclude employees with hold status
                 ->with('gradeLevel');
 
@@ -1674,6 +1770,34 @@ class PayrollController extends Controller
                         $amount = $data['amount'];
                     }
                 }
+
+                // --- Apply Proration for Retiring Staff (User Request: "Check right from bulk deduction") ---
+                // Determine the target month for this deduction
+                $targetDate = null;
+                if ($deductionType->is_statutory && isset($data['statutory_deduction_month'])) {
+                    $targetDate = \Carbon\Carbon::parse($data['statutory_deduction_month'] . '-01');
+                } elseif (isset($data['start_date'])) {
+                    $targetDate = \Carbon\Carbon::parse($data['start_date']);
+                }
+
+                if ($targetDate) {
+                     $retirementDate = null;
+                     if ($employee->date_of_retirement) {
+                         $retirementDate = \Carbon\Carbon::parse($employee->date_of_retirement);
+                     } elseif ($employee->pensioner && $employee->pensioner->date_of_retirement) {
+                         $retirementDate = \Carbon\Carbon::parse($employee->pensioner->date_of_retirement);
+                     }
+
+                     // If retiring within this target month, scale down the deduction amount
+                     if ($retirementDate && $retirementDate->isSameMonth($targetDate)) {
+                         $daysInMonth = $targetDate->daysInMonth;
+                         $activeDays = $retirementDate->day; // e.g. 15th = 15 days
+                         $prorationFactor = $activeDays / $daysInMonth;
+                         
+                         $amount = $amount * $prorationFactor;
+                     }
+                }
+                // -----------------------------------------------------------------------------------------
 
                 Deduction::create([
                     'employee_id' => $employee->employee_id,
