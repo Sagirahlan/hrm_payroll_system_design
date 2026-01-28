@@ -25,13 +25,13 @@
                                     <th>Employee:</th>
                                     <td>
                                         {{ trim($promotion->employee->first_name . ' ' . $promotion->employee->middle_name . ' ' . $promotion->employee->surname) ?? 'N/A' }}<br>
-                                        <small class="text-muted">ID: {{ $promotion->employee->employee_id ?? 'N/A' }}</small>
+                                        <small class="text-muted">Staff No: {{ $promotion->employee->staff_no ?? 'N/A' }}</small>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Type:</th>
                                     <td>
-                                        <span class="badge badge-{{ $promotion->promotion_type === 'promotion' ? 'success' : 'warning' }}">
+                                        <span class="badge badge-{{ $promotion->promotion_type === 'promotion' ? 'success' : 'warning' }} text-black">
                                             {{ ucfirst($promotion->promotion_type) }}
                                         </span>
                                     </td>
@@ -71,7 +71,7 @@
                                 <tr>
                                     <th>Status:</th>
                                     <td>
-                                        <span class="badge badge-{{ $promotion->status === 'approved' ? 'success' : ($promotion->status === 'rejected' ? 'danger' : 'warning') }}">
+                                        <span class="badge badge-{{ $promotion->status === 'approved' ? 'success' : ($promotion->status === 'rejected' ? 'danger' : 'warning') }} text-black">
                                             {{ ucfirst($promotion->status) }}
                                         </span>
                                     </td>

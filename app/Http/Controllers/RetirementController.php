@@ -26,6 +26,7 @@ class RetirementController extends Controller
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
                 $q->where('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('staff_no', 'like', "%{$searchTerm}%")
                   ->orWhere('first_name', 'like', "%{$searchTerm}%")
                   ->orWhere('surname', 'like', "%{$searchTerm}%");
             });
@@ -139,6 +140,7 @@ class RetirementController extends Controller
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
                 $q->where('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('staff_no', 'like', "%{$searchTerm}%")
                   ->orWhere('first_name', 'like', "%{$searchTerm}%")
                   ->orWhere('surname', 'like', "%{$searchTerm}%");
             });
@@ -194,11 +196,28 @@ class RetirementController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $employees = Employee::with(['gradeLevel.salaryScale', 'department', 'rank', 'step'])
-            ->whereIn('status', ['Active', 'Deceased'])
-            ->get();
+        $query = Employee::with(['gradeLevel.salaryScale', 'department', 'rank', 'step'])
+            ->whereIn('status', ['Active', 'Deceased']);
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('staff_no', 'like', "%{$searchTerm}%")
+                  ->orWhere('first_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('surname', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply department filter
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        $employees = $query->get();
 
         $eligibleEmployees = $employees->filter(function ($employee) {
             // Automatically include Deceased employees
@@ -224,7 +243,48 @@ class RetirementController extends Controller
             return $age >= $retirementAge || $serviceDuration >= $yearsOfService;
         });
 
-        return view('retirements.create', compact('eligibleEmployees'));
+        // Apply eligibility reason filter after filtering
+        if ($request->filled('eligibility_reason')) {
+            $eligibilityReason = $request->eligibility_reason;
+            $eligibleEmployees = $eligibleEmployees->filter(function ($employee) use ($eligibilityReason) {
+                if ($eligibilityReason === 'Deceased' && $employee->status === 'Deceased') {
+                    return true;
+                }
+                if ($employee->gradeLevel && $employee->gradeLevel->salaryScale) {
+                    $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                    $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+                    $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                    $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+                    
+                    if ($eligibilityReason === 'By Old Age' && $age >= $retirementAge) {
+                        return true;
+                    }
+                    if ($eligibilityReason === 'By Years of Service' && $serviceDuration >= $yearsOfService) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        // Paginate the collection
+        $page = $request->get('page', 1);
+        $perPage = 15;
+        $paginatedEmployees = new \Illuminate\Pagination\LengthAwarePaginator(
+            $eligibleEmployees->forPage($page, $perPage),
+            $eligibleEmployees->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Get departments for filter dropdown
+        $departments = \App\Models\Department::orderBy('department_name')->get();
+
+        return view('retirements.create', [
+            'eligibleEmployees' => $paginatedEmployees,
+            'departments' => $departments
+        ]);
     }
 
     public function store(Request $request)
@@ -503,7 +563,7 @@ class RetirementController extends Controller
 
         // Get the beneficiary computation record if it exists
         $beneficiaryComputation = \App\Models\ComputeBeneficiary::where('id_no', $employee->employee_id)
-            ->orWhere('id_no', $employee->staff_id ?? $employee->employee_id)
+            ->orWhere('id_no', $employee->staff_no ?? $employee->employee_id)
             ->first();
 
         // Calculate years of service

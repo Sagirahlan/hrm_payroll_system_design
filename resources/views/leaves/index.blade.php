@@ -19,6 +19,43 @@
                         </div>
                     @endif
 
+                    <!-- Search and Filter Form -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <form method="GET" action="{{ route('leaves.index') }}" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="search" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Name or staff no...">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="leave_type" class="form-label">Leave Type</label>
+                                <input type="text" class="form-control" id="leave_type" name="leave_type" value="{{ request('leave_type') }}" placeholder="e.g., Annual">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="date_from" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request('date_from') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="date_to" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request('date_to') }}">
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <div>
+                                    <button type="submit" class="btn btn-primary w-100 mb-1">Filter</button>
+                                    <a href="{{ route('leaves.index') }}" class="btn btn-secondary w-100">Clear</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -42,7 +79,7 @@
                                     <td>
                                         @if($leave->employee)
                                             <div>{{ $leave->employee->first_name }} {{ $leave->employee->surname }}</div>
-                                            <small class="text-muted">{{ $leave->employee->department->department_name ?? 'N/A' }}</small>
+                                            <small class="text-muted">{{ $leave->employee->staff_no ?? 'N/A' }}</small>
                                         @else
                                             <div class="text-danger">Employee Record Not Found</div>
                                             <small class="text-muted">ID: {{ $leave->employee_id }} (Deleted)</small>
@@ -104,6 +141,11 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-center mt-3">
+                        {{ $leaves->links() }}
                     </div>
                 </div>
             </div>

@@ -31,7 +31,7 @@
             <form method="GET" class="mb-3">
                 <div class="row g-2">
                     <div class="col-md-5">
-                        <input type="text" name="search" class="form-control" placeholder="Search employee ID or name" value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Search Staff No or name" value="{{ request('search') }}">
                     </div>
                     <div class="col-md-3">
                         <select name="status" class="form-select">
@@ -54,7 +54,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
-                            <th>Employee ID</th>
+                            <th>Staff No</th>
                             <th>Name</th>
                             <th>{{ isset($retiredEmployees) ? 'Retirement Date' : 'Calculated Retirement Date' }}</th>
                             <th>Expected Date of Retirement</th>
@@ -78,7 +78,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>{{ $employee->employee_id }}</td>
+                                <td>{{ $employee->staff_no }}</td>
                                 <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                                 <td>
                                     @if(isset($retiredEmployees))

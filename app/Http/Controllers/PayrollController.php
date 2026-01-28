@@ -1418,7 +1418,8 @@ class PayrollController extends Controller
             $employeesQuery->where(function ($q) use ($searchTerm) {
                 $q->where('first_name', 'like', "%{$searchTerm}%")
                     ->orWhere('surname', 'like', "%{$searchTerm}%")
-                    ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                    ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                    ->orWhere('staff_no', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -1430,8 +1431,9 @@ class PayrollController extends Controller
             $employeesQuery->where('grade_level_id', $request->grade_level_id);
         }
 
-        $appointmentTypeId = $request->input('appointment_type_id', 1); // Default to Permanent
-        $employeesQuery->where('appointment_type_id', $appointmentTypeId);
+        if ($request->filled('appointment_type_id')) {
+            $employeesQuery->where('appointment_type_id', $request->appointment_type_id);
+        }
 
         $employees = $employeesQuery->paginate(20)->withQueryString();
 
@@ -1490,7 +1492,8 @@ class PayrollController extends Controller
                 $employeesQuery->where(function ($q) use ($searchTerm) {
                     $q->where('first_name', 'like', "%{$searchTerm}%")
                         ->orWhere('surname', 'like', "%{$searchTerm}%")
-                        ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                        ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                        ->orWhere('staff_no', 'like', "%{$searchTerm}%");
                 });
             }
 
@@ -1620,7 +1623,8 @@ class PayrollController extends Controller
             $employeesQuery->where(function ($q) use ($searchTerm) {
                 $q->where('first_name', 'like', "%{$searchTerm}%")
                     ->orWhere('surname', 'like', "%{$searchTerm}%")
-                    ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                    ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                    ->orWhere('staff_no', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -1693,7 +1697,8 @@ class PayrollController extends Controller
                 $employeesQuery->where(function ($q) use ($searchTerm) {
                     $q->where('first_name', 'like', "%{$searchTerm}%")
                         ->orWhere('surname', 'like', "%{$searchTerm}%")
-                        ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                        ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                        ->orWhere('staff_no', 'like', "%{$searchTerm}%");
                 });
             }
 

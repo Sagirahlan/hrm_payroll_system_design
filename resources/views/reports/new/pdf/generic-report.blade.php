@@ -182,7 +182,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Full Name</th>
                 <th>Department</th>
                 <th>Grade Level</th>
@@ -211,7 +211,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Full Name</th>
                 <th>Department</th>
                 <th>Basic Salary</th>
@@ -238,7 +238,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Employee Name</th>
                 <th>Department</th>
                 <th>Action Type</th>

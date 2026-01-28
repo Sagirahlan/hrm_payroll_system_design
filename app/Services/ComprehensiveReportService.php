@@ -49,7 +49,7 @@ class ComprehensiveReportService
     private function formatEmployeeMasterData($employee)
     {
         return [
-            'employee_id' => $employee->employee_id,
+            'employee_id' => $employee->staff_no ?? $employee->employee_id,
             'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
             'department' => $employee->department->department_name ?? 'N/A',
             'cadre' => $employee->cadre->name ?? 'N/A',
@@ -97,7 +97,7 @@ class ComprehensiveReportService
 
         foreach ($employees as $employee) {
             $reportData['employees'][] = [
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->staff_no ?? $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                 'department' => $employee->department->department_name ?? 'N/A',
                 'grade_level' => $employee->gradeLevel->name ?? 'N/A',
@@ -132,7 +132,7 @@ class ComprehensiveReportService
 
             $reportData['employees_by_status'][$status->status] = $employees->map(function($employee) {
                 return [
-                    'employee_id' => $employee->employee_id,
+                    'employee_id' => $employee->staff_no ?? $employee->employee_id,
                     'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                     'department' => $employee->department->department_name ?? 'N/A',
                     'grade_level' => $employee->gradeLevel->name ?? 'N/A',
@@ -191,7 +191,7 @@ class ComprehensiveReportService
 
         foreach ($payrollRecords as $record) {
             $reportData['payroll_records'][] = [
-                'employee_id' => $record->employee->employee_id,
+                'employee_id' => $record->employee->staff_no ?? $record->employee->employee_id,
                 'full_name' => trim($record->employee->first_name . ' ' . $record->employee->middle_name . ' ' . $record->employee->surname),
                 'department' => $record->employee->department->department_name ?? 'N/A',
                 'grade_level' => $record->employee->gradeLevel->name ?? 'N/A',
@@ -274,7 +274,7 @@ class ComprehensiveReportService
 
         foreach ($deductions as $deduction) {
             $reportData['deductions'][] = [
-                'employee_id' => $deduction->employee->employee_id,
+                'employee_id' => $deduction->employee->staff_no ?? $deduction->employee->employee_id,
                 'employee_name' => trim($deduction->employee->first_name . ' ' . $deduction->employee->middle_name . ' ' . $deduction->employee->surname),
                 'department' => $deduction->employee->department->department_name ?? 'N/A',
                 'deduction_type' => $deduction->deductionType->name ?? 'N/A',
@@ -323,7 +323,7 @@ class ComprehensiveReportService
 
         foreach ($additions as $addition) {
             $reportData['additions'][] = [
-                'employee_id' => $addition->employee->employee_id,
+                'employee_id' => $addition->employee->staff_no ?? $addition->employee->employee_id,
                 'employee_name' => trim($addition->employee->first_name . ' ' . $addition->employee->middle_name . ' ' . $addition->employee->surname),
                 'department' => $addition->employee->department->department_name ?? 'N/A',
                 'addition_type' => $addition->additionType->name ?? 'N/A',
@@ -356,7 +356,7 @@ class ComprehensiveReportService
 
         foreach ($promotions as $promotion) {
             $reportData['promotions'][] = [
-                'employee_id' => $promotion->employee->employee_id,
+                'employee_id' => $promotion->employee->staff_no ?? $promotion->employee->employee_id,
                 'employee_name' => trim($promotion->employee->first_name . ' ' . $promotion->employee->middle_name . ' ' . $promotion->employee->surname),
                 'department' => $promotion->employee->department->department_name ?? 'N/A',
                 'previous_grade' => $promotion->previous_grade_level ?? 'N/A',
@@ -394,7 +394,7 @@ class ComprehensiveReportService
 
         foreach ($actions as $action) {
             $reportData['actions'][] = [
-                'employee_id' => $action->employee->employee_id,
+                'employee_id' => $action->employee->staff_no ?? $action->employee->employee_id,
                 'employee_name' => trim($action->employee->first_name . ' ' . $action->employee->middle_name . ' ' . $action->employee->surname),
                 'department' => $action->employee->department->department_name ?? 'N/A',
                 'action_type' => $action->action_type ?? 'N/A',
@@ -481,7 +481,7 @@ class ComprehensiveReportService
             }
 
             $reportData['employees_approaching_retirement'][] = [
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->staff_no ?? $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                 'department' => $employee->department->department_name ?? 'N/A',
                 'grade_level' => $employee->gradeLevel->name ?? 'N/A',
@@ -571,7 +571,7 @@ class ComprehensiveReportService
 
         foreach ($loans as $loan) {
             $reportData['loans'][] = [
-                'employee_id' => $loan->employee->employee_id,
+                'employee_id' => $loan->employee->staff_no ?? $loan->employee->employee_id,
                 'employee_name' => trim($loan->employee->first_name . ' ' . $loan->employee->middle_name . ' ' . $loan->employee->surname),
                 'department' => $loan->employee->department->department_name ?? 'N/A',
                 'loan_type' => ($loan->loan_type ?? 'N/A') . ($loan->deductionType ? ' (' . $loan->deductionType->name . ')' : ''),
@@ -729,7 +729,7 @@ class ComprehensiveReportService
 
         foreach ($payrollRecords as $record) {
             $reportData['payroll_records'][] = [
-                'employee_id' => $record->employee->employee_id,
+                'employee_id' => $record->employee->staff_no ?? $record->employee->employee_id,
                 'full_name' => trim($record->employee->first_name . ' ' . $record->employee->middle_name . ' ' . $record->employee->surname),
                 'department' => $record->employee->department->department_name ?? 'N/A',
                 'grade_level' => $record->employee->gradeLevel->name ?? 'N/A',
@@ -772,7 +772,7 @@ class ComprehensiveReportService
             // The actual retirement date is the earlier of the two
             $actualRetirementDate = $retirementDateByAge->min($retirementDateByService);
 
-            return $actualRetirementDate->isBetween(now(), $sixMonthsFromNow);
+            return $actualRetirementDate->lessThanOrEqualTo($sixMonthsFromNow);
         });
 
         $reportData = [
@@ -812,7 +812,7 @@ class ComprehensiveReportService
             }
 
             $reportData['employees_approaching_retirement'][] = [
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->staff_no ?? $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                 'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
                 'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
@@ -910,7 +910,7 @@ class ComprehensiveReportService
             }
 
             $reportData['employees_approaching_retirement'][] = [
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->staff_no ?? $employee->employee_id,
                 'full_name' => trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname),
                 'calculated_retirement_date' => $actualRetirementDate->format('Y-m-d'),
                 'expected_retirement_date' => $actualRetirementDate->format('Y-m-d'),
@@ -962,7 +962,7 @@ class ComprehensiveReportService
 
         foreach ($retirements as $retirement) {
             $reportData['retirements'][] = [
-                'employee_id' => $retirement->employee->employee_id,
+                'employee_id' => $retirement->employee->staff_no ?? $retirement->employee->employee_id,
                 'full_name' => trim($retirement->employee->first_name . ' ' . $retirement->employee->middle_name . ' ' . $retirement->employee->surname),
                 'department' => $retirement->employee->department->department_name ?? 'N/A',
                 'grade_level' => $retirement->employee->gradeLevel->name ?? 'N/A',

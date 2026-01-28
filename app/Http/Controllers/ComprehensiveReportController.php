@@ -38,7 +38,7 @@ class ComprehensiveReportController extends Controller
                 'created_at',
                 'updated_at'
             ])
-            ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname'])
+            ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname,staff_no'])
             ->orderBy('generated_date', 'desc')
             ->paginate(20);
 
@@ -138,11 +138,11 @@ class ComprehensiveReportController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Report generated successfully.',
-                    'redirect' => route('reports.comprehensive.index')
+                    'redirect' => route('reports.index')
                 ]);
             }
 
-            return redirect()->route('reports.comprehensive.index')->with('success', 'Report generated successfully.');
+            return redirect()->route('reports.index')->with('success', 'Report generated successfully.');
         } catch (ValidationException $e) {
             // Always return JSON for AJAX requests
             if ($request->ajax() || $request->wantsJson()) {
@@ -350,7 +350,7 @@ class ComprehensiveReportController extends Controller
     private function writeEmployeeMasterExcel($file, $reportData)
     {
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Cadre', 'Grade Level', 'Step',
+            'Staff No', 'Full Name', 'Department', 'Cadre', 'Grade Level', 'Step',
             'Status', 'Appointment Type', 'Date of Appointment', 'Years of Service', 'Basic Salary',
             'Email', 'Mobile', 'Address', 'Disciplinary Count', 'Total Deductions',
             'Total Additions', 'Loan Count', 'Promotion Count', 'Last Payroll Date'
@@ -385,7 +385,7 @@ class ComprehensiveReportController extends Controller
     private function writeEmployeeDirectoryExcel($file, $reportData)
     {
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step',
+            'Staff No', 'Full Name', 'Department', 'Grade Level', 'Step',
             'Status', 'Email', 'Mobile No', 'Extension'
         ]);
 
@@ -413,7 +413,7 @@ class ComprehensiveReportController extends Controller
 
         fputcsv($file, []);
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level', 'Step',
+            'Staff No', 'Full Name', 'Department', 'Grade Level', 'Step',
             'Status', 'Date of Appointment', 'Years of Service'
         ]);
 
@@ -444,7 +444,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Full Name', 'Department', 'Grade Level',
+            'Staff No', 'Full Name', 'Department', 'Grade Level',
             'Basic Salary', 'Total Deductions', 'Total Additions',
             'Net Salary', 'Payment Date', 'Status'
         ]);
@@ -472,7 +472,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Deduction Type',
+            'Staff No', 'Employee Name', 'Department', 'Deduction Type',
             'Amount', 'Start Date', 'End Date', 'Frequency'
         ]);
 
@@ -497,7 +497,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Addition Type',
+            'Staff No', 'Employee Name', 'Department', 'Addition Type',
             'Amount', 'Start Date', 'End Date', 'Frequency'
         ]);
 
@@ -521,7 +521,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Previous Grade',
+            'Staff No', 'Employee Name', 'Department', 'Previous Grade',
             'New Grade', 'Promotion Date', 'Promotion Type', 'Reason', 'Status'
         ]);
 
@@ -546,7 +546,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Action Type',
+            'Staff No', 'Employee Name', 'Department', 'Action Type',
             'Action Date', 'Description', 'Status', 'Resolution'
         ]);
 
@@ -570,7 +570,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Name', 'Calculated Retirement Date', 'Expected Date of Retirement', 'Years of Service', 'Age', 'Retirement Reason', 'Status'
+            'Staff No', 'Name', 'Calculated Retirement Date', 'Expected Date of Retirement', 'Years of Service', 'Age', 'Retirement Reason', 'Status'
         ]);
 
         foreach ($reportData['employees_approaching_retirement'] as $employee) {
@@ -596,7 +596,7 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Employee ID', 'Employee Name', 'Department', 'Loan Type',
+            'Staff No', 'Employee Name', 'Department', 'Loan Type',
             'Principal Amount', 'Monthly Deduction', 'Total Months',
             'Total Repaid', 'Remaining Balance', 'Status', 'Application Date'
         ]);
@@ -688,7 +688,7 @@ class ComprehensiveReportController extends Controller
 
     public function show($id)
     {
-        $report = Report::with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname'])->findOrFail($id);
+        $report = Report::with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname,staff_no'])->findOrFail($id);
 
         // Decode report_data JSON to array if it's a string
         if (is_string($report->report_data)) {

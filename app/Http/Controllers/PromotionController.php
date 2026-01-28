@@ -57,7 +57,8 @@ class PromotionController extends Controller
                 $q->whereHas('employee', function($employeeQuery) use ($searchTerm) {
                     $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
                                 ->orWhere('surname', 'like', "%{$searchTerm}%")
-                                ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                                ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                                ->orWhere('staff_no', 'like', "%{$searchTerm}%");
                 })
                 ->orWhere('approving_authority', 'like', "%{$searchTerm}%")
                 ->orWhere('reason', 'like', "%{$searchTerm}%");
@@ -93,7 +94,8 @@ class PromotionController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
-                  ->orWhere('employee_id', 'like', "%{$search}%");
+                  ->orWhere('employee_id', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
             });
         }
 
@@ -130,7 +132,8 @@ class PromotionController extends Controller
                 $q->where('first_name', 'like', "%{$searchTerm}%")
                   ->orWhere('middle_name', 'like', "%{$searchTerm}%")
                   ->orWhere('surname', 'like', "%{$searchTerm}%")
-                  ->orWhere('employee_id', 'like', "%{$searchTerm}%");
+                  ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('staff_no', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -417,5 +420,222 @@ class PromotionController extends Controller
 
         $step = $query->first();
         return $step ? $step->id : null;
+    }
+    /**
+     * Display the increment creation page (Selection)
+     */
+    public function createIncrement(Request $request)
+    {
+        $query = Employee::where('appointment_type_id', 1) // Permanent employees only
+            ->whereNotIn('status', ['Retired', 'Deceased']) // Exclude Retired and Deceased
+            ->with(['gradeLevel', 'step', 'department']);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
+                  ->orWhere('employee_id', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
+        // Filter by Grade Level
+        if ($request->filled('grade_level')) {
+            $query->where('grade_level_id', $request->grade_level);
+        }
+
+        $employees = $query->orderBy('surname', 'asc')->paginate(50);
+        $departments = \App\Models\Department::all();
+        $gradeLevels = \App\Models\GradeLevel::all();
+
+        return view('promotions.increments.create', compact('employees', 'departments', 'gradeLevels'));
+    }
+
+    /**
+     * Display the increment history index
+     */
+    public function incrementHistory(Request $request)
+    {
+        $query = PromotionHistory::where('promotion_type', 'increment')
+            ->with('employee', 'creator')
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('employee_id', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by Department (via Employee relationship)
+        if ($request->filled('department')) {
+            $query->whereHas('employee', function($q) use ($request) {
+                $q->where('department_id', $request->department);
+            });
+        }
+
+        $increments = $query->paginate(20);
+        $departments = \App\Models\Department::all();
+        
+        return view('promotions.increments.index', compact('increments', 'departments'));
+    }
+
+    /**
+     * Process the bulk increment
+     */
+    public function processIncrement(Request $request)
+    {
+        $request->validate([
+            'employee_ids' => 'required_if:select_all_pages,0|array',
+            'employee_ids.*' => 'exists:employees,employee_id',
+            'select_all_pages' => 'sometimes|in:0,1'
+        ]);
+
+        $employees = collect();
+
+        if ($request->input('select_all_pages') == '1') {
+             // Rebuild the query from createIncrement filters
+             $query = Employee::where('appointment_type_id', 1) // Permanent
+                ->whereNotIn('status', ['Retired', 'Deceased'])
+                ->with(['gradeLevel', 'step', 'department']); // Eager load for performance in loop
+
+            // Filter by search
+            if ($request->filled('filter_search')) {
+                $search = $request->input('filter_search');
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("LOWER(CONCAT_WS(' ', first_name, middle_name, surname)) LIKE ?", ["%" . strtolower($search) . "%"])
+                      ->orWhere('employee_id', 'like', "%{$search}%")
+                      ->orWhere('staff_no', 'like', "%{$search}%");
+                });
+            }
+
+            // Filter by department
+            if ($request->filled('filter_department')) {
+                $query->where('department_id', $request->input('filter_department'));
+            }
+
+            // Filter by Grade Level
+            if ($request->filled('filter_grade_level')) {
+                $query->where('grade_level_id', $request->input('filter_grade_level'));
+            }
+
+            // Fetch ALL matching employees
+            $employees = $query->get();
+
+        } else {
+             // Use selected IDs
+             $employees = Employee::whereIn('employee_id', $request->employee_ids)
+                ->with(['gradeLevel', 'step'])
+                ->get();
+        }
+
+        if ($employees->isEmpty()) {
+             return redirect()->back()->with('error', 'No valid employees selected or found.');
+        }
+
+        $count = 0;
+        $skipped = 0;
+        $currentYear = now()->year;
+
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $employee) {
+                // Ensure ID is available (it is, from model)
+                $id = $employee->employee_id;
+
+                if (!$employee || !$employee->grade_level_id || !$employee->step_id) {
+                    continue; // Skip if invalid data
+                }
+
+                // VALIDATION: Check if already incremented this year (approved or pending)
+                $alreadyIncremented = PromotionHistory::where('employee_id', $employee->employee_id)
+                    ->where('promotion_type', 'increment')
+                    ->whereYear('created_at', $currentYear)
+                    ->whereIn('status', ['approved', 'pending'])
+                    ->exists();
+
+                if ($alreadyIncremented) {
+                    $skipped++;
+                    continue;
+                }
+
+                // Get all steps for this grade level, ordered by name (assuming name is numeric like 1, 2, 3...)
+                // We need to fetch steps and sort them to find the "next" logical step
+                // Assuming step names are numeric
+                $steps = \App\Models\Step::where('grade_level_id', $employee->grade_level_id)
+                    ->get()
+                    ->sortBy(function($step) {
+                        return (int)$step->name;
+                    });
+
+                $currentStep = $employee->step;
+                $nextStep = null;
+                $foundCurrent = false;
+
+                foreach ($steps as $step) {
+                    if ($foundCurrent) {
+                        $nextStep = $step;
+                        break;
+                    }
+                    if ($step->id == $currentStep->id) {
+                        $foundCurrent = true;
+                    }
+                }
+
+                if ($nextStep) {
+                     // Create a promotion history record for the increment
+                    PromotionHistory::create([
+                        'employee_id' => $employee->employee_id,
+                        'promotion_type' => 'increment', // Distinct type for increments
+                        'previous_grade_level' => $employee->gradeLevel->name,
+                        'new_grade_level' => $employee->gradeLevel->name, // Grade level stays the same
+                        'previous_step' => $currentStep->name,
+                        'new_step' => $nextStep->name,
+                        'promotion_date' => now(),
+                        'effective_date' => now(),
+                        'approving_authority' => null, // Not yet approved
+                        'reason' => 'Annual Step Increment',
+                        'status' => 'pending', // Pending approval
+                        'created_by' => Auth::user()->user_id,
+                    ]);
+
+                    // Note: Employee is NOT updated here. Update happens on approval.
+
+                    $count++;
+                }
+            }
+            DB::commit();
+            
+            $message = "Successfully submitted increment requests for $count employees for approval.";
+            if ($skipped > 0) {
+                $message .= " $skipped employees were skipped because they already have an approved or pending increment this year.";
+            }
+
+             return redirect()->route('promotions.increments.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+             return redirect()->back()
+                ->with('error', 'An error occurred during increment: ' . $e->getMessage());
+        }
     }
 }

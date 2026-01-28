@@ -43,7 +43,7 @@
                 <table class="table table-striped table-bordered align-items-center mb-0">
                     <thead class="table-primary">
                         <tr>
-                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Employee ID</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Staff No</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Employee Name</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Department</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Biometric Status</th>
@@ -55,7 +55,7 @@
                     <tbody>
                         @forelse ($employees as $employee)
                             <tr>
-                                <td>{{ $employee->employee_id }}</td>
+                                <td>{{ $employee->staff_no }}</td>
                                 <td class="fw-bold">{{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->surname }}</td>
                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                 <td>

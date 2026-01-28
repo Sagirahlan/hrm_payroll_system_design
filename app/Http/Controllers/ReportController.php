@@ -45,7 +45,7 @@ class ReportController extends Controller
                 'created_at',
                 'updated_at'
             ])
-            ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname']) // Only load necessary columns from relationships
+            ->with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname,staff_no']) // Only load necessary columns from relationships
             ->orderBy('generated_date', 'desc')
             ->paginate(20);
 
@@ -596,7 +596,7 @@ class ReportController extends Controller
         if ($isLoanRelated) {
             // Include loan details in column headers
             fputcsv($file, [
-                'Employee ID',
+                'Staff No',
                 'Employee Name',
                 'Amount',
                 'Start Date',
@@ -615,7 +615,7 @@ class ReportController extends Controller
                 $loanDetails = $deduction['loan_details'] ?? [];
 
                 fputcsv($file, [
-                    $deduction['employee']['employee_id'] ?? '',
+                    $deduction['employee']['staff_no'] ?? $deduction['employee']['employee_id'] ?? '',
                     ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? ''),
                     '₦' . number_format($deduction['amount'], 2),
                     $deduction['start_date'],
@@ -632,11 +632,11 @@ class ReportController extends Controller
             }
         } else {
             // Standard deduction report without loan details
-            fputcsv($file, ['Employee ID', 'Employee Name', 'Amount', 'Start Date', 'End Date']);
+            fputcsv($file, ['Staff No', 'Employee Name', 'Amount', 'Start Date', 'End Date']);
 
             foreach ($processedReportData['deductions'] ?? [] as $deduction) {
                 fputcsv($file, [
-                    $deduction['employee']['employee_id'] ?? '',
+                    $deduction['employee']['staff_no'] ?? $deduction['employee']['employee_id'] ?? '',
                     ($deduction['employee']['first_name'] ?? '') . ' ' . ($deduction['employee']['surname'] ?? ''),
                     '₦' . number_format($deduction['amount'], 2),
                     $deduction['start_date'],
@@ -672,11 +672,11 @@ class ReportController extends Controller
         fputcsv($file, []);
 
         // Column headers
-        fputcsv($file, ['Employee ID', 'Employee Name', 'Amount', 'Start Date', 'End Date']);
+        fputcsv($file, ['Staff No', 'Employee Name', 'Amount', 'Start Date', 'End Date']);
 
         foreach ($processedReportData['additions'] ?? [] as $addition) {
             fputcsv($file, [
-                $addition['employee']['employee_id'] ?? '',
+                $addition['employee']['staff_no'] ?? $addition['employee']['employee_id'] ?? '',
                 ($addition['employee']['first_name'] ?? '') . ' ' . ($addition['employee']['surname'] ?? ''),
                 '₦' . number_format($addition['amount'], 2),
                 $addition['start_date'],
@@ -954,7 +954,7 @@ class ReportController extends Controller
             }
 
             $employeeData = [
-                'employee_id' => $employee->employee_id,
+                'employee_id' => $employee->staff_no ?? $employee->employee_id, // Use Staff No for backend report data
                 'full_name' => $employee->first_name . ' ' . ($employee->middle_name ?? '') . ' ' . $employee->surname,
                 'department' => $employee->department->department_name ?? 'N/A',
                 'cadre' => $employee->cadre->cadre_name ?? 'N/A',
@@ -1455,7 +1455,7 @@ class ReportController extends Controller
 
     public function show($id)
     {
-        $report = Report::with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname'])->findOrFail($id);
+        $report = Report::with(['generatedBy:user_id,username', 'employee:employee_id,first_name,surname,staff_no'])->findOrFail($id);
 
         // Decode report_data JSON to array if it's a string
         if (is_string($report->report_data)) {

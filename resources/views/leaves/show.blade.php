@@ -36,7 +36,7 @@
                                         <span class="text-danger">Employee Record Not Found</span>
                                         <br>
                                         <small class="text-muted">
-                                            Employee ID: {{ $leave->employee_id }} (Record Deleted)
+                                            Staff No: {{ $leave->employee->staff_no }} (Record Deleted)
                                         </small>
                                     @endif
                                 </p>

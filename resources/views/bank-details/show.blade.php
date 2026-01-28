@@ -17,7 +17,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">Update Bank Details for {{ $employee->first_name }} {{ $employee->surname }}</h4>
-                    <p class="card-category">Employee ID: {{ $employee->employee_id }}</p>
+                    <p class="card-category">Staff No: {{ $employee->staff_no }}</p>
                 </div>
                 <div class="card-body">
                     <div class="row">

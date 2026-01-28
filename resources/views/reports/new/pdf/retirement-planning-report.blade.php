@@ -57,7 +57,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Full Name</th>
                 <th>Calculated Retirement Date</th>
                 <th>Expected Date of Retirement</th>

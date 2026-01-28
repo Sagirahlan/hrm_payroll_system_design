@@ -14,6 +14,7 @@
 11. [Configuration and Setup](#configuration-and-setup)
 12. [Business Logic Details](#business-logic-details)
 13. [Performance Considerations](#performance-considerations)
+14. [Part 2: User Manual](#part-2-user-manual)
 
 ## Introduction
 
@@ -1827,3 +1828,313 @@ Key strengths include:
 - Comprehensive data validation and business rule enforcement
 - Performance-optimized design for handling large datasets
 - Compliant with regulatory requirements and organizational policies
+
+# PART 2: USER MANUAL
+====================
+
+
+# Kundi HR Management System - User Manual
+
+## Introduction
+Welcome to the comprehensive user manual for the Kundi Human Resources Management and Payroll System. This guide covers every feature, button, and field within the application, providing a step-by-step walkthrough of the entire system.
+
+## 1. Login Page
+Access the application through your web browser. You will be greeted by the Login screen.
+
+### Top Navigation Bar
+- **Brand Name**: "Kundi Human Resources Management and Payroll" is displayed on the top left.
+- **Login / Register**: Links on the top right to switch between Login and Register pages.
+
+### Main Login Form
+The central card contains the login credentials form:
+1.  **Email Address**: Enter your registered email address here.
+2.  **Password**: Enter your secure password.
+3.  **Remember Me**: A checkbox to keep you logged in on this device.
+4.  **Login Button**: Click this blue button to authenticate and access the dashboard.
+5.  **Forgot Password**: (If enabled) A link to reset your password.
+
+---
+
+## 2. Dashboard
+Upon successful login, you are directed to the main Dashboard. The view differs depending on your role (Employee vs Admin/Manager).
+
+### A. Employee Dashboard
+Designed for personal overview and self-service.
+- **Header**: Displays a welcome message.
+- **Employment Information**: A card showing your Department, Employment Status, Position/Cadre, and Date of Appointment.
+- **Leave Management**:
+    - **Request Leave Button**: Quick access to the leave request form.
+    - **My Recent Leave Requests**: A list of your last 5 leave applications with status (Pending, Approved, Rejected).
+    - **View All Button**: Link to your full leave history.
+- **Recent Activities**: A log of your recent actions within the system (e.g., login, profile update).
+
+### B. Admin/Manager Dashboard
+Designed for workforce overview and analytics.
+- **Statistics Summary**: A grid of boxes showing key metrics:
+    - Total Employees, Active Employees, Suspended, Hold Status.
+    - Permanent Staff, Contract Staff, Retired, Deceased.
+    - Male/Female breakdown.
+    - Department count.
+    - Open/Resolved Disciplinary Actions.
+    - Current Month Payrolls.
+    - Retiring in 6 Months / Pending Retirement Confirmations.
+    - **Pending Tasks**: Counts for Pending Approvals, Leave Requests, Payroll Approvals, Probation Reviews, Promotions, Employee Changes, Disciplinary Actions.
+- **Employees Retiring Within 6 Months**: A detailed table listing employees nearing retirement, showing Name, Department, Grade Level, Estimated Date, and Reason (Old Age or Service Years).
+- **Pending Retirement Confirmations**: A List of employees awaiting retirement confirmation with eligibility checks.
+- **Department Distribution**: A list showing the number of employees in each department.
+- **Recent Audit Trail**: A log of recent system activities by users.
+
+---
+
+## 3. Employees Management
+Accessed via the "Employees" menu in the sidebar.
+
+### Employee List
+This is the main directory of all staff members.
+- **Top Buttons**:
+    - **Add Employee**: Navigate to the form to register a new employee.
+    - **Probation Employees**: Quick filter for staff currently on probation.
+- **Import Section**: Tool to bulk upload employees via Excel (.xlsx, .xls).
+- **Search & Filter Options**: Click to expand advanced filtering criteria:
+    - **Fields**: Department, Cadre, Status, Gender, Appointment Type, State of Origin, Grade Level.
+    - **Ranges**: Age Range (From/To), Appointment Date Range (From/To).
+    - **Probation Status**: Filter by Pending, Approved, or Rejected.
+    - **Buttons**: "Search", "Clear", "Apply Filters", "Reset All".
+- **Employee Table**: Displays a list of employees with columns for:
+    - **Identity**: Staff No, Photo, Name.
+    - **Position**: Department, Cadre, Pay Point, Appointment Type.
+    - **Status**: Current status (Active, Suspended, etc.) and Probation status.
+    - **Contact**: Phone and Email.
+    - **Actions**: A dropdown menu for each employee:
+        - **View**: See full employee profile.
+        - **Probation Details**: (If applicable) Manage probation.
+        - **Edit**: Modify employee details.
+        - **Delete**: Remove employee record (requires reason).
+
+### Add Employee (Registration)
+Accessed via the "Add Employee" button on the Employee List page. This is a multi-step form.
+- **Navigation**: Use "Next" and "Previous" buttons or click the tabs at the top (Personal, Contact, Work, Other, Next of Kin, Bank) to jump between sections.
+- **Sections**:
+    1.  **Personal**: First Name, Surname, Gender, Date of Birth, Nationality, State of Origin, LGA, Ward, Staff ID, NIN, Mobile No.
+    2.  **Contact**: Email, Pay Point, Residential Address.
+    3.  **Work**:
+        - **Appointment Type**: Select Regular or Contract.
+        - **Fields**: Date of First Appointment, Department, Salary Scale, Grade Level, Step, Rank, Expected Next Promotion.
+        - **Contract Specifics**: Start/End Date, Contract Amount.
+    4.  **Other**: Status (Active/Suspended/etc), Qualification (Highest Certificate), Photo Upload (Upload file or Use Camera).
+    5.  **Next of Kin**: Full Name, Relationship, Contact Info, Address.
+    6.  **Bank**: Bank Name, Account Name, Account Number (Verified against Bank Code).
+- **Save**: Click "Save Employee" on the final step to submit.
+
+### Pending Changes
+Tracks requests for employee data updates that require approval.
+- **Search & Filter**:
+    - **Search**: By name or ID.
+    - **Status**: Pending, Approved, Rejected.
+    - **Change Type**: Create, Update, Delete.
+- **Data Changes Table**: Lists modifications to employee records (e.g., name change, address update).
+    - **Columns**: Employee, Change Type, Description, Requested By, Request Date, Status.
+    - **Action**: "View" to see details.
+- **Promotions/Demotions Table**: Lists pending rank changes.
+    - **Columns**: Employee, Change Type (Promotion/Demotion), Grade Details (Old -> New), Reason, Status.
+    - **Actions**: Approve or Reject buttons (for authorized users).
+
+### Promotions & Demotions
+A history and management view of all employee grade changes.
+- **Top Button**: "New Promotion/Demotion" (to initiate a change).
+- **Filters**: Search, Type, Status, Employee, Promotion Date.
+- **Table**:
+    - **Employee**: Name and ID.
+    - **Type**: Badge indicating Promotion (Green) or Demotion (Orange).
+    - **Details**: Previous Grade, New Grade, Promotion Date, Effective Date.
+    - **Status**: Approved, Rejected, or Warning.
+    - **Status**: Approved, Rejected, or Warning.
+    - **Actions**: "View" button for details.
+
+### Leave Management
+Manage employee leave requests.
+- **Top Button**: "Request Leave" (to submit a new application).
+- **Table**:
+    - **Employee**: Requester's name and department.
+    - **Details**: Type of leave, Start/End Dates, Total Days, Reason.
+    - **Status**: Pending (Orange), Approved (Green), Rejected (Red).
+    - **Actions**:
+        - **View**: See full request.
+        - **Approve/Reject**: (For Approvers) Buttons to decide on the request.
+        - **Delete**: Remove the request.
+
+### Probation Management
+Track and manage employees currently on probation.
+- **Filters**: Search by Employee Name, Department, or Status (Pending/Approved/Rejected).
+- **Table**:
+    - **Staff Info**: Name and Staff Number.
+    - **Timeline**: Start/End Dates and Days Remaining.
+    - **Status**: Current probation status.
+    - **Actions**:
+        - **Approve**: Confirm employee after probation period (Active only if period ended).
+        - **Reject**: Terminate probation (opens a modal to provide a reason).
+
+### Bank Details Management
+Focused interface for managing employee banking information.
+- **Search**: Find employees by Name, ID, or Staff Number.
+- **Table**: Lists current bank details (Bank Name, Code, Account Number/Name).
+- **Actions**: "Update" button to modify banking information.
+
+---
+
+## 4. User Management
+Accessed via the "User Management" menu. This section controls system access.
+
+### Users
+Manage system accounts.
+- **Top Actions**:
+    - **Create User**: Manually add a user.
+    - **Auto Create Users**: (If employees exist without users) Bulk generate accounts based on email.
+    - **View Employees Without Users**: List staff who can't login yet.
+- **Stats**: Cards showing Total Users, Missing Accounts, and Role Counts.
+- **Filters**: Search by username/email/employee or Filter by Role.
+- **Table**:
+    - **User Info**: Linked Employee, Username, Email.
+    - **Role**: Current assigned role (Badge).
+    - **Actions**:
+        - **Update Role**: Change permissions.
+        - **Reset Password**: Reset to default (`12345678`).
+        - **Delete**: Remove user account (maintains employee record).
+
+### Roles
+Manage permission sets.
+- **Table**: Lists Role Name, Assigned Permissions, and Actions (Edit/Delete).
+- **Add Role**: Define a new role with specific system capabilities.
+
+---
+
+## 5. Departments
+Manage organizational structure.
+- **Add Department**: Create a new department unit.
+- **Table**:
+    - **Info**: Name and Description.
+    - **Employees**: Click the number to see a modal list of all staff in that department.
+    - **Actions**: Edit or Delete department.
+
+---
+
+## 6. Biometrics
+Manage fingerprint/biometric registration status.
+- **Filters**: Search by ID/Name, Status (Registered/Not Registered).
+- **Table**:
+    - **Staff Info**: ID, Name Department.
+    - **Status**: Registered (Green) / Not Registered (Red).
+    - **Verification**: Status and Date of last check.
+    - **Status**: Registered (Green) / Not Registered (Red).
+    - **Verification**: Status and Date of last check.
+    - **Action**: "Register" button (if not yet registered) to capture data.
+
+---
+
+## 7. Audit Trails
+Logs of all system activities for security and accountability.
+- **Filters**:
+    - **Search**: Text search logs.
+    - **Action**: Filter by specific activity (Login, Employee Creation, Payroll, etc.).
+    - **Date**: Start and End Date range.
+    - **User**: Filter by specific administrator/user.
+- **Table**:
+    - **User**: Who performed the action.
+    - **Action**: Type of action (Create/Update/Delete).
+    - **Description**: Details of what changed.
+    - **Timestamp**: Exact date and time.
+
+---
+
+## 8. Disciplinary Actions
+Manage staff disciplinary records and sanctions.
+- **Add Action**: Record a new disciplinary case.
+- **Filters**: Search, Employee, Action Type (Query, Suspension, etc.), Department, Status.
+- **Table**:
+    - **Case Info**: Employee, Action Type, Description.
+    - **Timing**: Action Date and Resolution Date.
+    - **Status**: Current status of the case.
+    - **Actions**: View, Edit, or Delete records.
+
+---
+
+## 9. Retirements
+Manage the retirement lifecycle.
+- **Views**: Toggle between "Approaching Retirement" (Active staff) and "Retired Employees".
+- **Approaching Retirement**:
+    - Lists staff near retirement age or max service years.
+    - Shows Calculated vs Expected Date, Age, Service Years, and Reason (Old Age / Service Years).
+    - **Confirm Retirement**: Button to process a retirement.
+- **Retired Employees**:
+    - Historical list of retired staff.
+    - Includes Gratuity Amount.
+
+---
+
+## 10. Pensioners
+Manage post-retirement benefits.
+- **Table**:
+    - **Retiree Info**: Name, Rank, Department.
+    - **Financials**: Gratuity Status (Paid/Unpaid) and Pension Amount.
+    - **Status**: Active (Winning Pension), Deceased, etc.
+    - **Actions**:
+        - **Pay Gratuity**: Mark the one-off gratuity payment as complete.
+        - **Mark Deceased**: Stop future payments.
+
+---
+
+## 11. Reports
+Generate system-wide documentation.
+- **Generate Report**: Create a new report for a specific employee. (Select Type: Comprehensive, Payroll, Disciplinary, etc. and Format: PDF/Excel).
+- **Comprehensive Reports**: Link to full system-wide analytics.
+- **Report History**:
+    - List of all previously generated reports.
+    - **Download**: Retrieve past reports in their original format.
+
+---
+
+## 12. SMS Notifications
+System communication log.
+- **Send SMS**: Manually trigger a message to staff.
+- **Table**:
+    - **Sender/Recipient**: Who sent it and to whom.
+    - **Message**: Content of the text.
+    - **Status**: Delivery confirmation.
+
+---
+
+## 13. Payroll Management
+Comprehensive tools for salary processing.
+
+### Generate Payroll
+Process payments for a specific period.
+- **Top Panel**: Select "Month", "Category" (Active Staff, Pensioners, or Gratuity), and "Appointment Type".
+- **Action**: Click "Generate" to calculate salaries based on current scales and data.
+
+### Manage Records
+- **Filters**: Extensive options to filter by Status (Pending, Paid, etc.), Month, Salary Range, and Department.
+- **Table**:
+    - **Employee Info**: Staff details including Grade Level and Step.
+    - **Financials**: Basic Salary, Total Additions, Total Deductions, and Net Salary.
+        - *Note*: Click/Hover on Additions or Deductions to see the breakdown of individual items.
+    - **Status**: Visual badge indicating workflow stage (e.g., Under Review, Approved).
+    - **Actions**:
+        - **View Details**: Full breakdown.
+        - **Download Payslip**: Generate individual PDF payslip.
+        - **Manage Additions/Deductions**: Add specific allowances or fines for this employee.
+
+### Bulk Operations
+Perform actions on multiple records at once.
+- **Selection**: Use checkboxes to select rows (or apply to all filtered results).
+- **Actions**: Bulk Send for Review, Final Approve, Update Status, or Delete.
+
+### Salary Scales
+Define the pay structure.
+- **Management**: Create and edit salary scales (e.g., CONPSS, CONMESS).
+- **Structures**: Define Grade Levels and Steps within each scale.
+- **Rules**: Set Max Retirement Age and Years of Service per scale.
+
+---
+
+## 14. Conclusion
+This system centralizes your HR and Payroll operations. For technical support or system configuration changes (such as defining new roles or core settings), please contact the system administrator.

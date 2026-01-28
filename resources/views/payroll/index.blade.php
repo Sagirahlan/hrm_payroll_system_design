@@ -658,8 +658,6 @@
                                         @can('bulk_final_approve_payroll')
                                         <option value="final-approve">Final Approve All</option>
                                         @endcan
-                                        <option value="request-delete">Request Delete All</option>
-                                        <option value="approve-delete">Approve Pending Deletions</option>
                                         @can('bulk_update_payroll_status')
                                         <option value="bulk-update-status">Update All Status</option>
                                         @endcan

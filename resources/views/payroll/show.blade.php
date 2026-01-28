@@ -20,7 +20,7 @@
                         </div>
                         <div class="card-body">
                             <p><strong>Name:</strong> {{ $payroll->employee->first_name }} {{ $payroll->employee->surname }}</p>
-                            <p><strong>Employee ID:</strong> {{ $payroll->employee->employee_id }}</p>
+                            <p><strong>Staff No:</strong> {{ $payroll->employee->staff_no }}</p>
                             <p><strong>Department:</strong> {{ $payroll->employee->department->department_name ?? 'N/A' }}</p>
                             <p><strong>Grade Level:</strong> {{ $payroll->gradeLevel->name ?? 'N/A' }}</p>
                         </div>

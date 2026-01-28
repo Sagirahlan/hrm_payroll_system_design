@@ -48,8 +48,8 @@
                                 <dt class="col-sm-4">Name:</dt>
                                 <dd class="col-sm-8">{{ $pendingChange->employee->first_name }} {{ $pendingChange->employee->surname }}</dd>
                                 
-                                <dt class="col-sm-4">Employee ID:</dt>
-                                <dd class="col-sm-8">{{ $pendingChange->employee->employee_id }}</dd>
+                                <dt class="col-sm-4">Staff No:</dt>
+                                <dd class="col-sm-8">{{ $pendingChange->employee->staff_no }}</dd>
                                 
                                 <dt class="col-sm-4">Department:</dt>
                                 <dd class="col-sm-8">{{ $pendingChange->employee->department->department_name ?? 'N/A' }}</dd>

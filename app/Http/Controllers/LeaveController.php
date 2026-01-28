@@ -10,25 +10,54 @@ use Illuminate\Support\Facades\Auth;
 
 class LeaveController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        if ($user->can('view_leaves')) {
-            // Admins/Managers can view all leaves
-            $leaves = Leave::with(['employee' => function($query) {
-                $query->with(['department', 'appointmentType']);
-            }])->orderBy('created_at', 'desc')->get();
-        } else {
-            // Regular employees can only view their own leaves
+        $query = Leave::with(['employee' => function($query) {
+            $query->with(['department', 'appointmentType']);
+        }]);
+
+        // Check permissions - admins can view all, regular users only their own
+        if ($user->cannot('view_leaves')) {
             $employeeId = $user->employee->employee_id ?? null;
             if (!$employeeId) {
                 abort(403, 'You do not have an associated employee record.');
             }
-            $leaves = Leave::with(['employee' => function($query) {
-                $query->with(['department', 'appointmentType']);
-            }])->where('employee_id', $employeeId)->orderBy('created_at', 'desc')->get();
+            $query->where('employee_id', $employeeId);
         }
+
+        // Search by employee name or staff number
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('employee', function($employeeQuery) use ($searchTerm) {
+                $employeeQuery->where('first_name', 'like', "%{$searchTerm}%")
+                    ->orWhere('surname', 'like', "%{$searchTerm}%")
+                    ->orWhere('staff_no', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by leave type
+        if ($request->filled('leave_type')) {
+            $query->where('leave_type', 'like', "%{$request->leave_type}%");
+        }
+
+        // Filter by date range - start date
+        if ($request->filled('date_from')) {
+            $query->where('start_date', '>=', $request->date_from);
+        }
+
+        // Filter by date range - end date
+        if ($request->filled('date_to')) {
+            $query->where('end_date', '<=', $request->date_to);
+        }
+
+        $leaves = $query->orderBy('created_at', 'desc')->paginate(15)->appends($request->except('page'));
 
         return view('leaves.index', compact('leaves'));
     }

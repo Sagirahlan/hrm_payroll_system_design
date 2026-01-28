@@ -83,7 +83,7 @@
                                     <img src="{{ asset('storage/' . $employee->photo_path) }}" alt="" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
                                     <div>
                                         <h5 class="mb-1">{{ $employee->first_name }} {{ $employee->surname }}</h5>
-                                        <p class="mb-0 text-muted">{{ $employee->department->department_name ?? 'N/A' }}</p>
+                                        <p class="mb-0 text-muted"><strong>{{ $employee->staff_no }}</strong> | {{ $employee->department->department_name ?? 'N/A' }}</p>
                                     </div>
                                 </div>
                                 <form action="{{ route('reports.generate') }}" method="POST" class="report-form">

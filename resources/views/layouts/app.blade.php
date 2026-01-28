@@ -8,6 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         /* ================================
@@ -314,7 +315,7 @@
     <nav id="sidebar" class="sidebar offcanvas-lg offcanvas-start d-flex flex-column flex-shrink-0 p-3">
         <div class="sidebar-header">
             <a href="{{ route('dashboard') }}">
-                <img src="{{ asset('images/logo-white.png') }}" alt="Logo">
+                <img src="{{ asset('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo">
             </a>
         </div>
 

@@ -142,7 +142,7 @@
         <select name="department_id" id="department_filter" class="form-select">
             <option value="">All Departments</option>
             @foreach($departments as $department)
-                <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>{{ $department->department_name }}</option>
+                <option value="{{ $department->department_id }}" {{ request('department_id') == $department->department_id ? 'selected' : '' }}>{{ $department->department_name }}</option>
             @endforeach
         </select>
     </div>
@@ -182,7 +182,7 @@
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th class="text-center"><input type="checkbox" id="select-all" form="bulk-assignment-form"></th>
-                                    <th>Employee ID</th>
+                                    <th>Staff No</th>
                                     <th>Name</th>
                                     <th>Department</th>
                                     <th>Grade Level</th>
@@ -280,7 +280,19 @@
             const isChecked = this.checked;
             tbody.querySelectorAll('.employee-checkbox').forEach(checkbox => {
                 checkbox.checked = isChecked;
+                // Update localStorage based on selection
+                if (isChecked) {
+                    saveSelection(checkbox.value);
+                } else {
+                    removeSelection(checkbox.value);
+                }
             });
+            
+            // If unchecking, clear all saved selections
+            if (!isChecked) {
+                clearAllSelections();
+            }
+            
             updateSelectAllMessage();
         });
 
@@ -298,11 +310,24 @@
             });
             selectAllPagesInput.value = '0';
             selectAllContainer.style.display = 'none';
+            clearAllSelections(); // Clear localStorage
         });
 
         function addCheckboxListeners() {
             tbody.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+                // Restore saved checkbox state
+                if (getSavedSelection(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+                
                 checkbox.addEventListener('change', function() {
+                    // Save checkbox state to localStorage
+                    if (this.checked) {
+                        saveSelection(this.value);
+                    } else {
+                        removeSelection(this.value);
+                    }
+                    
                     const allCheckboxes = tbody.querySelectorAll('.employee-checkbox');
                     const checkedCheckboxes = tbody.querySelectorAll('.employee-checkbox:checked');
                     selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
@@ -310,6 +335,31 @@
                 });
             });
         }
+        
+        // LocalStorage functions for persisting selections
+        function saveSelection(employeeId) {
+            let selections = JSON.parse(localStorage.getItem('payrollDeductionsSelections') || '[]');
+            if (!selections.includes(employeeId)) {
+                selections.push(employeeId);
+                localStorage.setItem('payrollDeductionsSelections', JSON.stringify(selections));
+            }
+        }
+        
+        function removeSelection(employeeId) {
+            let selections = JSON.parse(localStorage.getItem('payrollDeductionsSelections') || '[]');
+            selections = selections.filter(id => id !== employeeId);
+            localStorage.setItem('payrollDeductionsSelections', JSON.stringify(selections));
+        }
+        
+        function getSavedSelection(employeeId) {
+            let selections = JSON.parse(localStorage.getItem('payrollDeductionsSelections') || '[]');
+            return selections.includes(employeeId);
+        }
+        
+        function clearAllSelections() {
+            localStorage.removeItem('payrollDeductionsSelections');
+        }
+        
         addCheckboxListeners();
 
         // Add selected employee checkboxes to the assignment form before submission
@@ -318,6 +368,7 @@
             assignmentForm.querySelectorAll('input[name="employee_ids[]"]').forEach(input => input.remove());
 
             if (selectAllPagesInput.value !== '1') {
+                // Get selections from checkboxes (which are now persisted)
                 tbody.querySelectorAll('.employee-checkbox:checked').forEach(checkbox => {
                     const hiddenInput = document.createElement('input');
                     hiddenInput.type = 'hidden';
@@ -326,6 +377,9 @@
                     assignmentForm.appendChild(hiddenInput);
                 });
             }
+            
+            // Clear localStorage after successful form submission
+            clearAllSelections();
         });
 
         // Handle filter form submission

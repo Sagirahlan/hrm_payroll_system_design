@@ -16,7 +16,7 @@
             <form method="GET" class="mb-3">
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <input type="text" name="search" class="form-control" placeholder="Search employee ID or name" value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Search Staff No or name" value="{{ request('search') }}">
                     </div>
                     <div class="col-md-4">
                         <input type="date" name="retirement_date" class="form-control" value="{{ request('retirement_date') }}" placeholder="Retirement Date">
@@ -35,7 +35,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Staff ID</th>
+                            <th>Staff No</th>
                             <th>Name</th>
                             <th>Date of Birth</th>
                             <th>Age</th>

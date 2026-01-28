@@ -17,7 +17,7 @@
                         <form method="GET" action="{{ route('pending-changes.index') }}" class="row g-3">
                             <div class="col-md-4">
                                 <label for="search" class="form-label">Search</label>
-                                <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Search by employee name or ID">
+                                <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Search by employee name, ID, or staff no">
                             </div>
                             <div class="col-md-3">
                                 <label for="status" class="form-label">Status</label>
@@ -70,7 +70,7 @@
                                                 </h6>
                                                 @if($change->employee)
                                                     <p class="text-xs text-secondary mb-0 text-black">
-                                                        {{ $change->employee->employee_id }}
+                                                        {{ $change->employee->staff_no }}
                                                     </p>
                                                 @endif
                                             </div>
@@ -150,7 +150,7 @@
                                                     {{ $promotion->employee->first_name }} {{ $promotion->employee->surname }}
                                                 </h6>
                                                 <p class="text-xs text-secondary mb-0 text-black">
-                                                    {{ $promotion->employee->employee_id }}
+                                                    {{ $promotion->employee->staff_no }}
                                                 </p>
                                             </div>
                                         </div>

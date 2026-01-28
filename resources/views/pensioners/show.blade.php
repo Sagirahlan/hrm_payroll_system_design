@@ -16,8 +16,8 @@
                         <div class="col-md-6">
                             <table class="table table-borderless">
                                 <tr>
-                                    <th>Employee ID:</th>
-                                    <td>{{ $pensioner->employee_id }}</td>
+                                    <th>Staff No:</th>
+                                    <td>{{ $pensioner->employee->staff_no ?? $pensioner->employee_id }}</td>
                                 </tr>
                                 <tr>
                                     <th>Full Name:</th>

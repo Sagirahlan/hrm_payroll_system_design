@@ -13,7 +13,7 @@ class BankDetailsController extends Controller
 {
     public function index()
     {
-        $employees = Employee::with(['bank', 'department'])->get();
+        $employees = Employee::with(['bank', 'department'])->paginate(15);
         $banks = BankList::where('is_active', true)->orderBy('bank_name')->get();
 
         return view('bank-details.index', compact('employees', 'banks'));
@@ -89,10 +89,11 @@ class BankDetailsController extends Controller
                 $q->where('first_name', 'LIKE', "%{$query}%")
                   ->orWhere('surname', 'LIKE', "%{$query}%")
                   ->orWhere('middle_name', 'LIKE', "%{$query}%")
+                  ->orWhereRaw("CONCAT_WS(' ', first_name, middle_name, surname) LIKE ?", ["%{$query}%"])
                   ->orWhere('employee_id', 'LIKE', "%{$query}%")
                   ->orWhere('staff_no', 'LIKE', "%{$query}%");
             })
-            ->get();
+            ->paginate(15);
 
         $banks = BankList::where('is_active', true)->orderBy('bank_name')->get();
 

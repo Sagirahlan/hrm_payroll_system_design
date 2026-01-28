@@ -224,7 +224,7 @@
                 <div class="card">
                     <h2>Personal Information</h2>
                     <table class="info-table">
-                        <tr><th>Employee ID</th><td>{{ $data['employee_info']['employee_id'] ?? 'N/A' }}</td></tr>
+                        <tr><th>Staff No</th><td>{{ $data['employee_info']['employee_id'] ?? 'N/A' }}</td></tr>
                         <tr><th>Full Name</th><td>{{ $data['employee_info']['full_name'] ?? 'N/A' }}</td></tr>
                         <tr><th>First Name</th><td>{{ $data['employee_info']['first_name'] ?? 'N/A' }}</td></tr>
                         <tr><th>Middle Name</th><td>{{ $data['employee_info']['middle_name'] ?? 'N/A' }}</td></tr>

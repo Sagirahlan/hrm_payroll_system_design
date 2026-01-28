@@ -384,6 +384,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Promotion and Demotion Management
         Route::middleware('permission:view_promotions')->group(function () {
+            // Bulk Increment - Moved BEFORE resource route to prevent conflict
+            Route::get('/promotions/increments', [\App\Http\Controllers\PromotionController::class, 'incrementHistory'])->name('promotions.increments.index');
+            Route::get('/promotions/increments/create', [\App\Http\Controllers\PromotionController::class, 'createIncrement'])->name('promotions.increments.create');
+            Route::post('/promotions/increments/process', [\App\Http\Controllers\PromotionController::class, 'processIncrement'])->name('promotions.increments.process');
+
             Route::resource('promotions', \App\Http\Controllers\PromotionController::class)->except(['edit', 'update']);
             Route::get('/promotions/employees/search', [\App\Http\Controllers\PromotionController::class, 'searchEmployees'])->name('promotions.employees.search');
             Route::get('/employees/{employeeId}', [\App\Http\Controllers\PromotionController::class, 'getEmployeeDetails'])->name('employees.details');

@@ -153,7 +153,7 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Employee ID</th>
+                                <th>Staff No</th>
                                 <th>Name</th>
                                 <th>Email</th>
                                 @if($departments->count() > 0)
@@ -167,7 +167,7 @@
                             @foreach($employees as $employee)
                             <tr>
                                 <td>
-                                    <strong>{{ $employee->employee_id }}</strong>
+                                    <strong>{{ $employee->staff_no }}</strong>
                                 </td>
                                 <td>
                                     <strong>{{ $employee->first_name }} {{ $employee->surname }}</strong>

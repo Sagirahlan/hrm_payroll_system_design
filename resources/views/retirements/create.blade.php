@@ -22,6 +22,65 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
+            <!-- Search and Filter Form -->
+            <form method="GET" action="{{ route('retirements.create') }}" class="mb-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="Search Staff No or name..." 
+                                   value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="department_id" class="form-select">
+                            <option value="">All Departments</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->department_id }}" {{ request('department_id') == $dept->department_id ? 'selected' : '' }}>
+                                    {{ $dept->department_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="eligibility_reason" class="form-select">
+                            <option value="">All Eligibility Reasons</option>
+                            <option value="By Old Age" {{ request('eligibility_reason') == 'By Old Age' ? 'selected' : '' }}>By Old Age</option>
+                            <option value="By Years of Service" {{ request('eligibility_reason') == 'By Years of Service' ? 'selected' : '' }}>By Years of Service</option>
+                            <option value="Deceased" {{ request('eligibility_reason') == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                            <a href="{{ route('retirements.create') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                @if(request()->hasAny(['search', 'department_id', 'eligibility_reason']))
+                    <div class="mt-2">
+                        <small class="text-muted">Active filters:</small>
+                        @if(request('search'))
+                            <span class="badge bg-info ms-1">Search: "{{ request('search') }}"</span>
+                        @endif
+                        @if(request('department_id'))
+                            <span class="badge bg-primary ms-1">Department: {{ $departments->find(request('department_id'))->department_name ?? 'Unknown' }}</span>
+                        @endif
+                        @if(request('eligibility_reason'))
+                            <span class="badge bg-warning text-dark ms-1">Reason: {{ request('eligibility_reason') }}</span>
+                        @endif
+                        <span class="badge bg-secondary ms-2">{{ $eligibleEmployees->total() }} employee(s) found</span>
+                    </div>
+                @endif
+            </form>
+
+            <div class="table-responsive">
             <table class="table table-bordered">
                 <thead class="table-light">
                     <tr>
@@ -157,6 +216,12 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="d-flex justify-content-center mt-4">
+                {{ $eligibleEmployees->links('pagination::bootstrap-5') }}
+            </div>
         </div>
     </div>
 </div>

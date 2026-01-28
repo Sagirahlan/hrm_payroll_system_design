@@ -83,6 +83,7 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>Employee</th>
+                                    <th>Staff No</th>
                                     <th>Department</th>
                                     <th>Action Type</th>
                                     <th>Description</th>
@@ -99,6 +100,7 @@
                                 @forelse ($actions as $action)
                                     <tr>
                                         <td>{{ $action->employee ? $action->employee->first_name . ' ' . $action->employee->surname : 'N/A' }}</td>
+                                        <td>{{ $action->employee->staff_no ?? 'N/A' }}</td>
                                         <td>{{ $action->employee ? $action->employee->department->department_name : 'N/A' }}</td>
                                         <td>{{ $action->action_type }}</td>
                                         <td>{{ $action->description ?? 'N/A' }}</td>

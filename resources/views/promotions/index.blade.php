@@ -9,18 +9,23 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Promotions & Demotions</h3>
-                    @can('create_promotions')
-                    <a href="{{ route('promotions.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> New Promotion/Demotion
-                    </a>
-                    @endcan
+                    <div>
+                        @can('create_promotions')
+                        <a href="{{ route('promotions.increments.index') }}" class="btn btn-info btn-sm me-2">
+                            <i class="fas fa-level-up-alt"></i> Step Increment
+                        </a>
+                        <a href="{{ route('promotions.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> New Promotion/Demotion
+                        </a>
+                        @endcan
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Search and Filter Form -->
                     <form method="GET" action="{{ route('promotions.index') }}" class="mb-4">
                         <div class="row">
                             <div class="col-md-2">
-                                <input type="text" name="search" class="form-control" placeholder="Search employees..." value="{{ request('search') }}">
+                                <input type="text" name="search" class="form-control" placeholder="Search by name, ID, or staff no..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-2">
                                 <select name="type" class="form-control">
@@ -42,7 +47,7 @@
                                     <option value="">All Employees</option>
                                     @foreach($employees as $employee)
                                         <option value="{{ $employee->employee_id }}" {{ request('employee_id') == $employee->employee_id ? 'selected' : '' }}>
-                                            {{ trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname) }} ({{ $employee->employee_id }})
+                                            {{ trim($employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->surname) }} ({{ $employee->staff_no }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -79,10 +84,10 @@
                                     <tr>
                                         <td>
                                             {{ trim($promotion->employee->first_name . ' ' . $promotion->employee->middle_name . ' ' . $promotion->employee->surname) ?? 'N/A' }}<br>
-                                            <small class="text-muted">{{ $promotion->employee->employee_id ?? 'N/A' }}</small>
+                                            <small class="text-muted">{{ $promotion->employee->staff_no ?? 'N/A' }}</small>
                                         </td>
                                         <td>
-                                            <span class="badge badge-{{ $promotion->promotion_type === 'promotion' ? 'success' : 'warning' }}">
+                                            <span class="badge badge-{{ $promotion->promotion_type === 'promotion' ? 'success' : 'warning' }} text-black">
                                                 {{ ucfirst($promotion->promotion_type) }}
                                             </span>
                                         </td>
@@ -91,7 +96,7 @@
                                         <td>{{ \Carbon\Carbon::parse($promotion->promotion_date)->format('Y-m-d') }}</td>
                                         <td>{{ \Carbon\Carbon::parse($promotion->effective_date)->format('Y-m-d') }}</td>
                                         <td>
-                                            <span class="badge badge-{{ $promotion->status === 'approved' ? 'success' : ($promotion->status === 'rejected' ? 'danger' : 'warning') }}">
+                                            <span class="badge badge-{{ $promotion->status === 'approved' ? 'success' : ($promotion->status === 'rejected' ? 'danger' : 'warning') }} text-black">
                                                 {{ ucfirst($promotion->status) }}
                                             </span>
                                         </td>

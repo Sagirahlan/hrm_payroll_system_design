@@ -87,7 +87,7 @@
                                     <thead>
                                         <tr>
                                             <th>Select</th>
-                                            <th>Employee ID</th>
+                                            <th>Staff No</th>
                                             <th>Name</th>
                                             <th>Department</th>
                                         </tr>
@@ -98,7 +98,7 @@
                                                 <td>
                                                     <input type="checkbox" name="employee_ids[]" value="{{ $employee->employee_id }}">
                                                 </td>
-                                                <td>{{ $employee->employee_id }}</td>
+                                                <td>{{ $employee->staff_no }}</td>
                                                 <td>{{ $employee->first_name }} {{ $employee->surname }}</td>
                                                 <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                             </tr>

@@ -17,6 +17,7 @@
                             @csrf
                             <input type="text" name="query" class="form-control me-2" placeholder="Search employees by name, ID, or staff number..." value="{{ request('query', '') }}">
                             <button class="btn btn-outline-primary" type="submit">Search</button>
+                            <a href="{{ route('bank-details.index') }}" class="btn btn-outline-secondary ms-2">Reset</a>
                         </form>
                     </div>
 
@@ -24,7 +25,7 @@
                         <table class="table table-hover table-striped">
                             <thead>
                                 <tr>
-                                    <th>Employee ID</th>
+                                    <th>Staff No</th>
                                     <th>Full Name</th>
                                     <th>Department</th>
                                     <th>Bank Name</th>
@@ -37,7 +38,7 @@
                             <tbody>
                                 @forelse($employees as $employee)
                                     <tr>
-                                        <td>{{ $employee->employee_id }}</td>
+                                        <td>{{ $employee->staff_no }}</td>
                                         <td>{{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->surname }}</td>
                                         <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
                                         <td>{{ $employee->bank->bank_name ?? 'Not Set' }}</td>
@@ -57,6 +58,9 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        {{ $employees->withQueryString()->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
             </div>

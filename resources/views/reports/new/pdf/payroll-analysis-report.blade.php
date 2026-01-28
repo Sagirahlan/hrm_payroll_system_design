@@ -186,7 +186,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Full Name</th>
                 <th>Department</th>
                 <th>Grade Level</th>

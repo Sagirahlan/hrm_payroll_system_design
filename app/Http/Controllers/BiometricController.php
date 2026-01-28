@@ -29,6 +29,7 @@ class BiometricController extends Controller
                   ->orWhere('surname', 'like', "%{$searchTerm}%")
                   ->orWhere('middle_name', 'like', "%{$searchTerm}%")
                   ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('staff_no', 'like', "%{$searchTerm}%")
                   ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"])
                   ->orWhereRaw("CONCAT(first_name, ' ', middle_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"]);
             });

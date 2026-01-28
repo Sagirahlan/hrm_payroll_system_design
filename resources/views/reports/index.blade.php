@@ -47,7 +47,7 @@
                                             @if($report->employee)
                                                 {{ $report->employee->first_name }} {{ $report->employee->surname }}
                                                 <br>
-                                                <small class="text-muted">ID: {{ $report->employee->employee_id }}</small>
+                                                <small class="text-muted">Staff No: {{ $report->employee->staff_no ?? $report->employee->employee_id }}</small>
                                             @else
                                                 <span class="text-muted">N/A</span>
                                             @endif

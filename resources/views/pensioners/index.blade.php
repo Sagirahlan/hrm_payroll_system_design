@@ -13,11 +13,66 @@
                     
                 </div>
                 <div class="card-body">
+                    <!-- Search and Filter Form -->
+                    <form method="GET" action="{{ route('pensioners.index') }}" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" name="search" class="form-control" 
+                                           placeholder="Search Staff No or name..." 
+                                           value="{{ request('search') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="Active" {{ request('status') == 'Active' ? 'selected' : '' }}>Active</option>
+                                    <option value="Deceased" {{ request('status') == 'Deceased' ? 'selected' : '' }}>Deceased</option>
+                                    <option value="Suspended" {{ request('status') == 'Suspended' ? 'selected' : '' }}>Suspended</option>
+                                    <option value="Not Eligible" {{ request('status') == 'Not Eligible' ? 'selected' : '' }}>Not Eligible</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="retirement_type" class="form-select">
+                                    <option value="">All Retirement Types</option>
+                                    <option value="Voluntary" {{ request('retirement_type') == 'Voluntary' ? 'selected' : '' }}>Voluntary</option>
+                                    
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="btn-group w-100" role="group">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-filter me-1"></i> Filter
+                                    </button>
+                                    <a href="{{ route('pensioners.index') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if(request()->hasAny(['search', 'status', 'retirement_type']))
+                            <div class="mt-2">
+                                <small class="text-muted">Active filters:</small>
+                                @if(request('search'))
+                                    <span class="badge bg-info ms-1">Search: "{{ request('search') }}"</span>
+                                @endif
+                                @if(request('status'))
+                                    <span class="badge bg-warning text-dark ms-1">Status: {{ request('status') }}</span>
+                                @endif
+                                @if(request('retirement_type'))
+                                    <span class="badge bg-success ms-1">Type: {{ request('retirement_type') }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered">
                             <thead>
                                 <tr>
-                                    <th>Employee ID</th>
+                                    <th>Staff No</th>
                                     <th>Full Name</th>
                                     <th>Rank</th>
                                     <th>Department</th>
@@ -33,7 +88,7 @@
                             <tbody>
                                 @forelse($pensioners as $pensioner)
                                 <tr>
-                                    <td>{{ $pensioner->employee_id }}</td>
+                                    <td>{{ $pensioner->employee->staff_no ?? $pensioner->employee_id }}</td>
                                     <td>
                                         <div class="fw-bold">{{ $pensioner->full_name }}</div>
                                         <small class="text-muted">{{ $pensioner->retirement_reason }}</small>
@@ -112,7 +167,7 @@
 
                     <!-- Pagination -->
                     <div class="d-flex justify-content-center">
-                        {{ $pensioners->links() }}
+                        {{ $pensioners->appends(request()->query())->links() }}
                     </div>
                 </div>
             </div>

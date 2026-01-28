@@ -20,6 +20,10 @@
                                     <td>{{ $loan->loan_id }}</td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Staff No:</strong></td>
+                                    <td>{{ $loan->employee->staff_no }}</td>
+                                </tr>
+                                <tr>
                                     <td><strong>Employee:</strong></td>
                                     <td>{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}</td>
                                 </tr>

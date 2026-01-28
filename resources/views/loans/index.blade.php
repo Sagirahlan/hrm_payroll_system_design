@@ -26,7 +26,8 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Employee</th>
+                                    <th>Staff No</th>
+                                    <th>Full Name</th>
                                     <th>Loan Type</th>
                                     <th>Principal Amount</th>
                                     <th>Total Repayment</th>
@@ -44,7 +45,8 @@
                                 @forelse($loans as $loan)
                                     <tr>
                                         <td>{{ $loan->loan_id }}</td>
-                                        <td>{{ $loan->employee->first_name }} {{ $loan->employee->last_name }}</td>
+                                        <td>{{ $loan->employee->staff_no }}</td>
+                                        <td>{{ $loan->employee->first_name }} {{ $loan->employee->surname }}</td>
                                         <td>{{ $loan->deductionType->name ?? $loan->loan_type }}</td>
                                         <td>{{ number_format($loan->principal_amount, 2) }}</td>
                                         <td>{{ number_format($loan->total_repayment, 2) }}</td>

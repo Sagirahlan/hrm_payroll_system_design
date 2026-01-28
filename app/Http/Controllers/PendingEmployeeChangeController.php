@@ -56,6 +56,7 @@ class PendingEmployeeChangeController extends Controller
                     $subQuery->where('first_name', 'like', "%{$searchTerm}%")
                              ->orWhere('surname', 'like', "%{$searchTerm}%")
                              ->orWhere('employee_id', 'like', "%{$searchTerm}%")
+                             ->orWhere('staff_no', 'like', "%{$searchTerm}%")
                              ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$searchTerm}%"]);
 
                     // If we have multiple words, search each word separately
@@ -74,6 +75,7 @@ class PendingEmployeeChangeController extends Controller
                              ->whereRaw("JSON_EXTRACT(data, '$.first_name') LIKE ?", ["%{$searchTerm}%"])
                              ->orWhereRaw("JSON_EXTRACT(data, '$.surname') LIKE ?", ["%{$searchTerm}%"])
                              ->orWhereRaw("JSON_EXTRACT(data, '$.employee_id') LIKE ?", ["%{$searchTerm}%"])
+                             ->orWhereRaw("JSON_EXTRACT(data, '$.staff_no') LIKE ?", ["%{$searchTerm}%"])
                              ->orWhereRaw("CONCAT(JSON_EXTRACT(data, '$.first_name'), ' ', JSON_EXTRACT(data, '$.surname')) LIKE ?", ["%{$searchTerm}%"]);
 
                     // If we have multiple words, search each word separately

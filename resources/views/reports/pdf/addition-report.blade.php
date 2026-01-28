@@ -191,7 +191,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Employee ID</th>
+                    <th>Staff No</th>
                     <th>Employee Name</th>
                     <th>Amount</th>
                     <th>Start Date</th>

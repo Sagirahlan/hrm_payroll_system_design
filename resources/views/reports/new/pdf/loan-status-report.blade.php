@@ -182,7 +182,7 @@
     <table>
         <thead>
             <tr>
-                <th>Employee ID</th>
+                <th>Staff No</th>
                 <th>Employee Name</th>
                 <th>Department</th>
                 <th>Loan Type</th>

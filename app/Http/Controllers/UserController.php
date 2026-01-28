@@ -250,6 +250,7 @@ class UserController extends Controller
                   ->orWhere('surname', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('employee_id', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%")
                   ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$search}%"]);
             });
         }

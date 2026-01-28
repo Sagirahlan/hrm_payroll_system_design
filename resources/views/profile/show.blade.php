@@ -86,8 +86,8 @@
                                     <td>{{ $user->email }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>{{ __('Employee ID') }}</strong></td>
-                                    <td>{{ $user->employee ? $user->employee->employee_id : 'N/A' }}</td>
+                                    <td><strong>{{ __('Staff No') }}</strong></td>
+                                    <td>{{ $user->employee ? $user->employee->staff_no : 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ __('Registration No') }}</strong></td>
