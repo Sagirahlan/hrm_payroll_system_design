@@ -17,7 +17,7 @@ class PromotionController extends Controller
         $this->middleware(['permission:view_promotions'], ['only' => ['index', 'show']]);
         $this->middleware(['permission:create_promotions'], ['only' => ['create', 'store', 'searchEmployees', 'getEmployeeDetails']]);
         $this->middleware(['permission:delete_promotions'], ['only' => ['destroy']]);
-        $this->middleware(['permission:approve_promotions'], ['only' => ['approve', 'reject']]);
+        $this->middleware(['permission:approve_promotions'], ['only' => ['approve', 'reject', 'bulkApprove', 'bulkReject']]);
     }
 
     /**
@@ -394,6 +394,170 @@ class PromotionController extends Controller
         return redirect()->route('promotions.index')
             ->with('success', ucfirst($promotion->promotion_type) . ' rejected.');
     }
+
+    /**
+     * Bulk approve the pending increments
+     */
+    public function bulkApprove(Request $request)
+    {
+        $request->validate([
+            'increment_ids' => 'required_if:select_all_pages,0|array',
+            'increment_ids.*' => 'exists:promotion_histories,id',
+            'select_all_pages' => 'sometimes|in:0,1'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $increments = collect();
+
+            if ($request->input('select_all_pages') == '1') {
+                // Rebuild query from filters to get all matching pending increments
+                $query = PromotionHistory::where('promotion_type', 'increment')
+                    ->where('status', 'pending')
+                    ->with('employee');
+
+                // Apply filters
+                if ($request->filled('filter_search')) {
+                    $search = $request->input('filter_search');
+                    $query->whereHas('employee', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('surname', 'like', "%{$search}%")
+                          ->orWhere('employee_id', 'like', "%{$search}%")
+                          ->orWhere('staff_no', 'like', "%{$search}%");
+                    });
+                }
+
+                if ($request->filled('filter_year')) {
+                    $query->whereYear('created_at', $request->input('filter_year'));
+                }
+
+                if ($request->filled('filter_department')) {
+                    $query->whereHas('employee', function($q) use ($request) {
+                        $q->where('department_id', $request->input('filter_department'));
+                    });
+                }
+
+                $increments = $query->get();
+            } else {
+                // Use selected IDs
+                $increments = PromotionHistory::whereIn('id', $request->increment_ids)
+                    ->where('status', 'pending')
+                    ->with('employee')
+                    ->get();
+            }
+
+            $count = 0;
+            foreach ($increments as $promotion) {
+                if ($promotion->status == 'pending') {
+                    $promotion->update([
+                        'status' => 'approved',
+                        'approval_notes' => 'Bulk approved'
+                    ]);
+
+                    // Update employee's grade level and step
+                    $employee = $promotion->employee;
+                    if ($employee) {
+                        $employee->update([
+                            'grade_level_id' => $this->getGradeLevelIdByName($promotion->new_grade_level),
+                            'step_id' => $this->getStepIdByName($promotion->new_step, $promotion->new_grade_level)
+                        ]);
+                    }
+
+                    $count++;
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('promotions.increments.index')
+                ->with('success', "Successfully approved {$count} increment(s).");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()->back()
+                ->with('error', 'An error occurred during bulk approval: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk reject the pending increments
+     */
+    public function bulkReject(Request $request)
+    {
+        $request->validate([
+            'increment_ids' => 'required_if:select_all_pages,0|array',
+            'increment_ids.*' => 'exists:promotion_histories,id',
+            'approval_notes' => 'required|string|max:1000',
+            'select_all_pages' => 'sometimes|in:0,1'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $increments = collect();
+
+            if ($request->input('select_all_pages') == '1') {
+                // Rebuild query from filters to get all matching pending increments
+                $query = PromotionHistory::where('promotion_type', 'increment')
+                    ->where('status', 'pending')
+                    ->with('employee');
+
+                // Apply filters
+                if ($request->filled('filter_search')) {
+                    $search = $request->input('filter_search');
+                    $query->whereHas('employee', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                          ->orWhere('surname', 'like', "%{$search}%")
+                          ->orWhere('employee_id', 'like', "%{$search}%")
+                          ->orWhere('staff_no', 'like', "%{$search}%");
+                    });
+                }
+
+                if ($request->filled('filter_year')) {
+                    $query->whereYear('created_at', $request->input('filter_year'));
+                }
+
+                if ($request->filled('filter_department')) {
+                    $query->whereHas('employee', function($q) use ($request) {
+                        $q->where('department_id', $request->input('filter_department'));
+                    });
+                }
+
+                $increments = $query->get();
+            } else {
+                // Use selected IDs
+                $increments = PromotionHistory::whereIn('id', $request->increment_ids)
+                    ->where('status', 'pending')
+                    ->get();
+            }
+
+            $count = 0;
+            foreach ($increments as $promotion) {
+                if ($promotion->status == 'pending') {
+                    $promotion->update([
+                        'status' => 'rejected',
+                        'approval_notes' => $request->approval_notes
+                    ]);
+
+                    $count++;
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('promotions.increments.index')
+                ->with('success', "Successfully rejected {$count} increment(s).");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()->back()
+                ->with('error', 'An error occurred during bulk rejection: ' . $e->getMessage());
+        }
+    }
+
 
     /**
      * Get the GradeLevel ID by name

@@ -36,13 +36,13 @@ class DebugProbationLogic extends Command
             $appointmentType = AppointmentType::find($data['appointment_type_id']);
             if ($appointmentType) {
                 $this->info("- Appointment Type Name: {$appointmentType->name}");
-                $this->info("- Is not Contract: " . ($appointmentType->name !== 'Contract' ? 'Yes' : 'No'));
+                $this->info("- Is not Casual: " . ($appointmentType->name !== 'Casual' ? 'Yes' : 'No'));
                 
                 // This should have triggered probation placement
-                if ($appointmentType->name !== 'Contract') {
+                if ($appointmentType->name !== 'Casual') {
                     $this->info("✓ Condition should have been met to place employee on probation");
                 } else {
-                    $this->info("✗ Employee is a contract employee, so probation was not applied");
+                    $this->info("✗ Employee is a Casual employee, so probation was not applied");
                 }
             } else {
                 $this->error("✗ Appointment type with ID {$data['appointment_type_id']} not found in database");
@@ -74,7 +74,7 @@ class DebugProbationLogic extends Command
             }
             
             // This is the issue: the update might not have happened, so let's manually fix it
-            if ($empAppointmentType && $empAppointmentType->name !== 'Contract' && !$employee->on_probation) {
+            if ($empAppointmentType && $empAppointmentType->name !== 'Casual' && !$employee->on_probation) {
                 $this->info("\nFixing probation status for employee...");
                 
                 $probationStartDate = now();
@@ -98,3 +98,4 @@ class DebugProbationLogic extends Command
         return 0;
     }
 }
+

@@ -140,11 +140,11 @@ class LoanController extends Controller
      */
     public function getEmployeeSalary(Employee $employee)
     {
-        // Check if employee is a contract employee using the new method
-        $isContractEmployee = $employee->isContractEmployee();
+        // Check if employee is a Casual employee using the new method
+        $isCasualEmployee = $employee->isCasualEmployee();
 
-        if ($isContractEmployee) {
-            // For contract employees, use the amount field
+        if ($isCasualEmployee) {
+            // For Casual employees, use the amount field
             if ($employee->amount) {
                 return response()->json([
                     'basic_salary' => $employee->amount
@@ -195,11 +195,11 @@ class LoanController extends Controller
         $employee = Employee::find($request->employee_id);
 
         // Determine if employee is contract or regular using the new method
-        $isContractEmployee = $employee->isContractEmployee();
+        $isCasualEmployee = $employee->isCasualEmployee();
         $salary = 0;
 
-        if ($isContractEmployee) {
-            // For contract employees, use the amount field
+        if ($isCasualEmployee) {
+            // For Casual employees, use the amount field
             $salary = $employee->amount;
         } else {
             // For regular employees, use step basic salary
@@ -404,3 +404,4 @@ class LoanController extends Controller
         }
     }
 }
+

@@ -10,7 +10,14 @@
                 <div class="card-header">
                     <h4 class="card-title d-inline">Pensioners</h4>
                    
-                    
+                     <div class="float-end">
+                        <a href="{{ route('pensioners.legacy.import') }}" class="btn btn-info btn-sm me-2">
+                            <i class="fas fa-file-upload me-1"></i> Import Legacy
+                        </a>
+                        <a href="{{ route('pensioners.create') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> Add Pensioner
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Search and Filter Form -->

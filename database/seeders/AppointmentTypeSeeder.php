@@ -14,7 +14,7 @@ class AppointmentTypeSeeder extends Seeder
     public function run(): void
     {
         AppointmentType::create(['name' => 'Permanent']);
-        AppointmentType::create(['name' => 'Contract']);
+        AppointmentType::create(['name' => 'Casual']);
     
     }
 }

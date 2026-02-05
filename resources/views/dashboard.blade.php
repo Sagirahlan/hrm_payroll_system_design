@@ -798,7 +798,7 @@
                 <div class="stat-header">
                     <div>
                         <div class="stat-number">{{ $contractEmployees ?? 0 }}</div>
-                        <div class="stat-title">Contract Staff</div>
+                        <div class="stat-title">Casual Staff</div>
                     </div>
                     <div class="stat-icon secondary">
                         <i class="fas fa-file-signature"></i>

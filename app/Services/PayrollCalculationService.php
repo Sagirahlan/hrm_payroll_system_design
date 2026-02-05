@@ -38,13 +38,13 @@ class PayrollCalculationService
             ];
         }
 
-        // Check if employee is a contract employee using the new method
-        $isContractEmployee = $employee->isContractEmployee();
+        // Check if employee is a casual employee using the new method
+        $isCasualEmployee = $employee->isCasualEmployee();
 
         $basicSalary = 0;
 
-        if ($isContractEmployee) {
-            // For contract employees, use the amount field instead of grade level step
+        if ($isCasualEmployee) {
+            // For casual employees, use the amount field instead of grade level step
             $basicSalary = $employee->amount ?: 0;
         } else {
             // For permanent/temporary employees, use grade level step
@@ -134,8 +134,8 @@ class PayrollCalculationService
         }
         // --------------------------------------------------------
 
-        // Statutory deductions from grade level (only for non-contract employees)
-        if (!$isContractEmployee && $gradeLevel) {
+        // Statutory deductions from grade level (only for non-casual employees)
+        if (!$isCasualEmployee && $gradeLevel) {
             foreach ($gradeLevel->deductionTypes as $deductionType) {
                 if ($deductionType->is_statutory) {
                     // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
@@ -152,8 +152,8 @@ class PayrollCalculationService
             }
         }
 
-        // Statutory additions from grade level (only for non-contract employees)
-        if (!$isContractEmployee && $gradeLevel) {
+        // Statutory additions from grade level (only for non-casual employees)
+        if (!$isCasualEmployee && $gradeLevel) {
             foreach ($gradeLevel->additionTypes as $additionType) {
                 if ($additionType->is_statutory) {
                     $amount = ($additionType->pivot->percentage / 100) * $basicSalary;
@@ -171,8 +171,8 @@ class PayrollCalculationService
         // We will accumulate all pension-related amounts to add to RSA balance once at the end
         $totalPensionAmount = 0;
 
-        // Process pension amounts from statutory deductions (only for non-contract employees)
-        if (!$isContractEmployee) {
+        // Process pension amounts from statutory deductions (only for non-casual employees)
+        if (!$isCasualEmployee) {
             foreach ($deductionRecords as $record) {
                 if (stripos($record['name_type'], 'Pension') !== false) {
                     $totalPensionAmount += $record['amount'];
@@ -494,8 +494,8 @@ class PayrollCalculationService
                 // Calculate addition amount based on the specific step's basic salary
                 if ($addition->amount_type === 'percentage') {
                     // For percentage-based additions, calculate amount based on employee type
-                    if ($isContractEmployee) {
-                        // For contract employees, use their contract amount for percentage calculations
+                    if ($isCasualEmployee) {
+                        // For casual employees, use their casual amount for percentage calculations
                         $additionAmount = ($addition->amount / 100) * $employee->amount;
 
                         // Additions continue at full amount even during suspension

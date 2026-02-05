@@ -26,7 +26,7 @@
                                 @foreach($filteredEmployees as $employee)
                                     <option value="{{ $employee->employee_id }}" data-appointment-type="{{ $employee->appointmentType->name ?? 'Permanent' }}">
                                         {{ $employee->first_name }} {{ $employee->middle_name ?? '' }} {{ $employee->surname }} ({{ $employee->employee_id ?? $employee->employee_number }})
-                                        @if($employee->isContractEmployee())
+                                        @if($employee->isCasualEmployee())
                                             [Contract: {{ number_format($employee->amount ?? 0) }}]
                                         @endif
                                     </option>
@@ -427,3 +427,4 @@
 </script>
 @endpush
 @endsection
+

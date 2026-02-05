@@ -264,7 +264,7 @@
                 <div class="card">
                     <h2>Payroll Information</h2>
                     <table class="info-table">
-                        @if(isset($data['employee_info']['appointment_type']) && $data['employee_info']['appointment_type'] === 'Contract')
+                        @if(isset($data['employee_info']['appointment_type']) && $data['employee_info']['appointment_type'] === 'Casual')
                             <tr><th>Amount</th><td class="amount">₦{{ number_format($data['payroll_info']['basic_salary'] ?? 0, 2) }}</td></tr>
                         @else
                             <tr><th>Basic Salary</th><td class="amount">₦{{ number_format($data['payroll_info']['basic_salary'] ?? 0, 2) }}</td></tr>

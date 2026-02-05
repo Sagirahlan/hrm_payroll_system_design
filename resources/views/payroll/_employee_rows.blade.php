@@ -10,5 +10,6 @@
         </td>
         <td>{{ $employee->department->department_name ?? 'N/A' }}</td>
         <td>{{ $employee->gradeLevel->name ?? 'N/A' }}</td>
+        <td>{{ $employee->appointmentType->name ?? 'N/A' }}</td>
     </tr>
 @endforeach

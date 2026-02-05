@@ -111,7 +111,7 @@ class DisciplinaryController extends Controller
         $query = Employee::with('department')
             ->where('status', 'Active')
             ->whereHas('appointmentType', function ($q) {
-                $q->where('name', 'Permanent');
+                $q->whereIn('name', ['Permanent', 'Casual']);
             });
 
         // Search functionality
@@ -242,6 +242,18 @@ class DisciplinaryController extends Controller
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);
             }
+            elseif ($actionType === 'terminated') {
+                $employee->status = 'Terminated';
+                $employee->save();
+
+                AuditTrail::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'updated',
+                    'description' => "Employee ID {$employee->employee_id} status set to Terminated due to disciplinary action ID: {$action->action_id}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
+                ]);
+            }
             if ($actionType === 'active' && (strtolower($employee->status) === 'suspended' || strtolower($employee->status) === 'hold')) {
                 $employee->status = 'Active';
                 $employee->save();
@@ -316,6 +328,18 @@ class DisciplinaryController extends Controller
                     'user_id' => auth()->id(),
                     'action' => 'updated',
                     'description' => "Employee ID {$employee->employee_id} status set to Hold due to disciplinary action ID: {$disciplinary->action_id}",
+                    'action_timestamp' => now(),
+                    'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
+                ]);
+            }
+            elseif ($disciplinary->action_type === 'terminated') {
+                $employee->status = 'Terminated';
+                $employee->save();
+
+                AuditTrail::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'updated',
+                    'description' => "Employee ID {$employee->employee_id} status set to Terminated due to disciplinary action ID: {$disciplinary->action_id}",
                     'action_timestamp' => now(),
                     'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => $employee->employee_id]),
                 ]);

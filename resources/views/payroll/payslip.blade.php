@@ -101,8 +101,14 @@
             <tr>
                 <td><strong>Department:</strong></td>
                 <td>{{ $payroll->employee->department->department_name ?? 'N/A' }}</td>
+                <td><strong>Appointment Type:</strong></td>
+                <td>{{ $payroll->employee->appointmentType->name ?? 'N/A' }}</td>
+            </tr>
+            <tr>
                 <td><strong>Grade Level/Step:</strong></td>
                 <td>{{ $payroll->employee->gradeLevel->name ?? 'N/A' }} / {{ $payroll->employee->step->name ?? 'N/A' }}</td>
+                <td></td>
+                <td></td>
             </tr>
             <tr>
                 <td><strong>Bank:</strong></td>

@@ -286,23 +286,23 @@ class PayrollController extends Controller
         if ($appointmentTypeId) {
             $employeesQuery->where('appointment_type_id', $appointmentTypeId);
 
-            // For contract employees (appointment_type_id = 2), don't require grade_level_id
-            // since contract employees may not have grade levels assigned
-            if ($appointmentTypeId == 2) { // Contract employees
-                // No need to filter by grade_level_id for contract employees
+            // For Casual employees (appointment_type_id = 2), don't require grade_level_id
+            // since Casual employees may not have grade levels assigned
+            if ($appointmentTypeId == 2) { // Casual employees
+                // No need to filter by grade_level_id for Casual employees
             } else {
                 // For permanent/temporary employees, require grade level
                 $employeesQuery->whereNotNull('grade_level_id');
             }
         } else {
-            // If no specific appointment type selected, only include non-contract employees with grade levels
-            // and contract employees with amounts
+            // If no specific appointment type selected, only include non-Casual employees with grade levels
+            // and Casual employees with amounts
             $employeesQuery->where(function($query) {
                 $query->where(function($q) {
-                    $q->whereNotNull('grade_level_id') // Non-contract employees with grade levels
-                      ->where('appointment_type_id', '!=', 2); // Not contract employees
+                    $q->whereNotNull('grade_level_id') // Non-Casual employees with grade levels
+                      ->where('appointment_type_id', '!=', 2); // Not Casual employees
                 })->orWhere(function($q) {
-                    $q->where('appointment_type_id', 2) // Contract employees
+                    $q->where('appointment_type_id', 2) // Casual employees
                       ->whereNotNull('amount'); // With contract amount
                 });
             });
@@ -311,12 +311,12 @@ class PayrollController extends Controller
         $employees = $employeesQuery->get();
 
         foreach ($employees as $employee) {
-            // Check if the employee is a contract employee
-            $isContractEmployee = $employee->isContractEmployee();
+            // Check if the employee is a Casual employee
+            $isCasualEmployee = $employee->isCasualEmployee();
 
-            // For contract employees, we don't require a grade level
-            // For non-contract employees, check if they have a grade level
-            if (!$isContractEmployee && (!$employee->gradeLevel || !$employee->gradeLevel->id)) {
+            // For Casual employees, we don't require a grade level
+            // For non-Casual employees, check if they have a grade level
+            if (!$isCasualEmployee && (!$employee->gradeLevel || !$employee->gradeLevel->id)) {
                 continue;
             }
 
@@ -330,12 +330,12 @@ class PayrollController extends Controller
                     [
                         'employee_id' => $employee->employee_id,
                         'payroll_month' => $month . '-01',
-                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                     ],
                     [
-                        'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                        'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
                         'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
-                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                         'total_additions' => $calculation['total_additions'], // Additions still apply
                         'total_deductions' => $calculation['total_deductions'], // Deductions still apply
                         'net_salary' => $calculation['net_salary'], // Net salary with special calculation for suspended
@@ -366,12 +366,12 @@ class PayrollController extends Controller
                     [
                         'employee_id' => $employee->employee_id,
                         'payroll_month' => $month . '-01',
-                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                     ],
                     [
-                        'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                        'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
                         'basic_salary' => $calculation['basic_salary'],
-                        'payment_type' => $isContractEmployee ? 'Contract' : 'Permanent',
+                        'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                         'total_additions' => $calculation['total_additions'],
                         'total_deductions' => $calculation['total_deductions'],
                         'net_salary' => $calculation['net_salary'],
@@ -747,11 +747,11 @@ class PayrollController extends Controller
             // Calculate the deduction amount for non-statutory deductions
             if (!$deductionType->is_statutory) {
                 if ($request->amount_type === 'percentage') {
-                    // Check if employee is a contract employee using the new method
-                    $isContractEmployee = $employee->isContractEmployee();
+                    // Check if employee is a Casual employee using the new method
+                    $isCasualEmployee = $employee->isCasualEmployee();
 
-                    if ($isContractEmployee) {
-                        // For contract employees, use the amount field instead of step basic salary
+                    if ($isCasualEmployee) {
+                        // For Casual employees, use the amount field instead of step basic salary
                         if ($employee->amount && $employee->amount > 0) {
                             $contractAmount = $employee->amount;
                             if ($contractAmount > 0 && $request->amount > 0) {
@@ -759,7 +759,7 @@ class PayrollController extends Controller
                             }
                         } else {
                             return redirect()->back()
-                                ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                                ->withErrors(['error' => 'Casual employee does not have a valid amount for percentage calculation.'])
                                 ->withInput();
                         }
                     } else {
@@ -844,11 +844,11 @@ class PayrollController extends Controller
             $amount = 0;
 
             if ($request->amount_type === 'percentage') {
-                // Check if employee is a contract employee
-                $isContractEmployee = $employee->isContractEmployee();
+                // Check if employee is a Casual employee
+                $isCasualEmployee = $employee->isCasualEmployee();
 
-                if ($isContractEmployee) {
-                    // For contract employees, use the amount field instead of step basic salary
+                if ($isCasualEmployee) {
+                    // For Casual employees, use the amount field instead of step basic salary
                     if ($employee->amount && $employee->amount > 0) {
                         $contractAmount = $employee->amount;
                         $amount = ($request->amount / 100) * $contractAmount;
@@ -860,7 +860,7 @@ class PayrollController extends Controller
                         }
                     } else {
                         return redirect()->back()
-                            ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                            ->withErrors(['error' => 'Casual employee does not have a valid amount for percentage calculation.'])
                             ->withInput();
                     }
                 } else {
@@ -1690,7 +1690,7 @@ class PayrollController extends Controller
                           });
                 })
                 ->where('status', '!=', 'Hold')  // Exclude employees with hold status
-                ->with('gradeLevel');
+                ->with('gradeLevel', 'appointmentType');
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
@@ -1717,7 +1717,7 @@ class PayrollController extends Controller
         } else {
             $employees = Employee::whereIn('employee_id', $request->employee_ids)
                 ->where('status', '!=', 'Hold')  // Exclude employees with hold status
-                ->with('gradeLevel')->get();
+                ->with('gradeLevel', 'appointmentType')->get();
         }
 
         $deductionTypeIds = $request->input('deduction_types', []);
@@ -1729,9 +1729,19 @@ class PayrollController extends Controller
 
         $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type', 'statutory_deduction_month']);
 
+        $deductionsCreated = 0;
+        $casualSkipped = 0;
+
         foreach ($employees as $employee) {
             foreach ($deductionTypes as $deductionType) {
                 $amount = 0;
+                
+                // Skip statutory deductions for casual employees
+                if ($deductionType->is_statutory && $employee->appointmentType && $employee->appointmentType->name === 'Casual') {
+                    $casualSkipped++;
+                    continue;
+                }
+                
                 if ($deductionType->is_statutory) {
                     if ($deductionType->calculation_type === 'percentage') {
                         // Check if employee has a grade level with steps for statutory deductions
@@ -1823,19 +1833,26 @@ class PayrollController extends Controller
                         $data['end_date'],
                     'deduction_type_id' => $deductionType->id,
                 ]);
+                
+                $deductionsCreated++;
             }
         }
 
         AuditTrail::create([
             'user_id' => Auth::id(),
             'action' => 'bulk_created_deductions',
-            'description' => "Bulk created deductions for " . $employees->count() . " employees.",
+            'description' => "Bulk created {$deductionsCreated} deductions for " . $employees->count() . " employees. Skipped {$casualSkipped} statutory deductions for casual employees.",
             'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => null, 'employee_count' => $employees->count(), 'deduction_types' => $deductionTypeIds]),
+            'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => null, 'employee_count' => $employees->count(), 'deduction_types' => $deductionTypeIds, 'deductions_created' => $deductionsCreated, 'casual_skipped' => $casualSkipped]),
         ]);
 
+        $successMessage = "Bulk deduction assignment completed: {$deductionsCreated} deductions created.";
+        if ($casualSkipped > 0) {
+            $successMessage .= " ({$casualSkipped} statutory deductions skipped for casual employees)";
+        }
+
         return redirect()->route('payroll.deductions')
-            ->with('success', 'Bulk deduction assignment completed successfully for ' . $employees->count() . ' employees.');
+            ->with('success', $successMessage);
     }
 
     public function bulkDeductions()
@@ -2221,6 +2238,86 @@ class PayrollController extends Controller
 
 
 
+    // Delete entire payroll for a specific month
+    public function destroyMonth(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+
+        $monthStart = \Carbon\Carbon::parse($request->month . '-01')->startOfMonth();
+        $monthEnd = \Carbon\Carbon::parse($request->month . '-01')->endOfMonth();
+
+        // 1. Safety Check: Are there any Approved or Paid records?
+        $lockedRecords = PayrollRecord::whereBetween('payroll_month', [$monthStart, $monthEnd])
+            ->whereIn('status', ['Approved', 'Paid'])
+            ->exists();
+
+        if ($lockedRecords) {
+            return redirect()->back()->with('error', 'Cannot delete payroll for this month. Some records have already been Final Approved or Paid.');
+        }
+
+        // 2. Cascade Delete: Delete OneTime AND Monthly Additions/Deductions starting in this month
+        // We delete 'Monthly' items starting this month because users often use Bulk Tools to create them for the current payroll.
+        // If we don't delete them, re-running the Bulk Tool would create duplicates.
+        // Items starting in previous months (historical) will NOT be touched because of the start_date check.
+        
+        $deletedAdditions = \App\Models\Addition::whereBetween('start_date', [$monthStart, $monthEnd])
+            ->whereIn('addition_period', ['OneTime', 'Monthly'])
+            ->delete();
+
+        $deletedDeductions = \App\Models\Deduction::whereBetween('start_date', [$monthStart, $monthEnd])
+            ->whereIn('deduction_period', ['OneTime', 'Monthly'])
+            ->whereNull('loan_id') // Protect loan deductions!
+            ->delete();
+            
+        // 3. Revert Loan Balances and Delete Loan History
+        // We must revert the balance for ALL loans that had a deduction in this month.
+        // Whether the loan started this month or years ago, we just undo the transaction.
+        $loanDeductions = \App\Models\LoanDeduction::where('payroll_month', $request->month)->get();
+        
+        foreach ($loanDeductions as $loanDeduction) {
+            $loan = \App\Models\Loan::find($loanDeduction->loan_id);
+            if ($loan) {
+                // Revert balance and repaid amount
+                $loan->remaining_balance += $loanDeduction->amount_deducted;
+                $loan->total_repaid -= $loanDeduction->amount_deducted;
+                
+                // Reset status to active if it was completed
+                if ($loan->status === 'completed') {
+                    $loan->status = 'active';
+                    $loan->end_date = null;
+                }
+                
+                // Increment remaining months since we are effectively canceling a month's payment
+                $loan->remaining_months += 1; 
+
+                $loan->save();
+            }
+            // Delete the history record so it can be re-processed
+            $loanDeduction->delete();
+        }
+
+        // 4. Delete Payroll Records
+        $recordsToDelete = PayrollRecord::whereBetween('payroll_month', [$monthStart, $monthEnd]);
+        $count = $recordsToDelete->count();
+        
+        $payrollIds = $recordsToDelete->pluck('payroll_id');
+        \App\Models\PaymentTransaction::whereIn('payroll_id', $payrollIds)->delete();
+        
+        $recordsToDelete->delete();
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted_monthly_payroll',
+            'description' => "Deleted entire payroll batch for {$request->month}. Removed {$count} records, {$deletedAdditions} additions, {$deletedDeductions} deductions, and loans starting in this month.",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $request->month, 'records_count' => $count]),
+        ]);
+
+        return redirect()->route('payroll.index')->with('success', "Payroll for {$request->month} deleted successfully. ({$count} records removed)");
+    }
+
     // Bulk request deletion of payroll records
     public function bulkRequestDelete(Request $request)
     {
@@ -2346,3 +2443,5 @@ class PayrollController extends Controller
     }
 
 }
+
+

@@ -267,7 +267,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($employee->isContractEmployee()) {
+            if ($employee->isCasualEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -441,7 +441,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            if ($employee->isContractEmployee()) {
+            if ($employee->isCasualEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -903,3 +903,4 @@ class EmployeeController extends Controller
         return response()->json($gradeLevels);
     }
 }
+

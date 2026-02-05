@@ -195,7 +195,8 @@
                                                 <button type="button" class="dropdown-item reset-password-btn"
                                                     title="Reset Password"
                                                     data-user-id="{{ $user->user_id }}"
-                                                    data-username="{{ $user->username }}">
+                                                    data-username="{{ $user->username }}"
+                                                    data-employee-dob="{{ $user->employee && $user->employee->date_of_birth ? \Carbon\Carbon::parse($user->employee->date_of_birth)->format('Y-m-d') : '' }}">
                                                     <i class="fas fa-key"></i> Reset Password
                                                 </button>
                                             </li>
@@ -324,7 +325,7 @@
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> This will reset the user's password to the default: <code>12345678</code>. The user should change their password after logging in.
+                    <strong>Warning:</strong> This will reset the user's password to <span id="resetPasswordInfo">the default: <code>12345678</code></span>. The user should change their password after logging in.
                 </div>
             </div>
             <div class="modal-footer">
@@ -357,7 +358,7 @@
                 </div>
                 <ul class="list-unstyled">
                     <li><i class="fas fa-check text-success"></i> Username will be generated from employee email</li>
-                    <li><i class="fas fa-check text-success"></i> Default password: <code>12345678</code></li>
+                    <li><i class="fas fa-check text-success"></i> Default password: Employee's date of birth (YYYY-MM-DD format)</li>
                     <li><i class="fas fa-check text-success"></i> Default role: <strong>Employee</strong></li>
                     <li><i class="fas fa-check text-success"></i> Only employees with email addresses will be processed</li>
                 </ul>
@@ -424,8 +425,9 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const userId = this.getAttribute('data-user-id');
             const username = this.getAttribute('data-username');
+            const employeeDob = this.getAttribute('data-employee-dob');
             
-            openResetPasswordModal(userId, username);
+            openResetPasswordModal(userId, username, employeeDob);
         });
     });
 });
@@ -478,13 +480,21 @@ function openUpdateRoleModal(userId, username, currentRole) {
 }
 
 // Function to open and populate the reset password modal
-function openResetPasswordModal(userId, username) {
+function openResetPasswordModal(userId, username, employeeDob) {
     // Set the modal title with the username
     document.getElementById('resetModalUsername').textContent = username;
     
     // Set the form action URL - FIXED: Using correct route for password reset
     const form = document.getElementById('resetPasswordForm');
     form.action = '/users/' + userId + '/reset-password';
+    
+    // Update the password info based on whether the user has an employee linked
+    const passwordInfo = document.getElementById('resetPasswordInfo');
+    if (employeeDob && employeeDob !== '') {
+        passwordInfo.innerHTML = 'the employee\'s date of birth: <code>' + employeeDob + '</code>';
+    } else {
+        passwordInfo.innerHTML = 'the default: <code>12345678</code>';
+    }
     
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));

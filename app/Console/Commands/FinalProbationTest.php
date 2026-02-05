@@ -88,13 +88,13 @@ class FinalProbationTest extends Command
 
         $this->line('');
 
-        // Test 3: Check that contract employees are not placed on probation
-        $contractType = AppointmentType::where('name', 'Contract')->first();
+        // Test 3: Check that Casual employees are not placed on probation
+        $contractType = AppointmentType::where('name', 'Casual')->first();
         if ($contractType) {
             $contractEmployees = Employee::where('appointment_type_id', $contractType->id)->get();
             
             if ($contractEmployees->isEmpty()) {
-                $this->info('ℹ️ No contract employees in database to test');
+                $this->info('ℹ️ No Casual employees in database to test');
             } else {
                 $allNotOnProbation = true;
                 foreach ($contractEmployees as $contractEmployee) {
@@ -105,9 +105,9 @@ class FinalProbationTest extends Command
                 }
                 
                 if ($allNotOnProbation) {
-                    $this->info('✅ Contract employees are NOT on probation (as expected)');
+                    $this->info('✅ Casual employees are NOT on probation (as expected)');
                 } else {
-                    $this->error('❌ Some contract employees are on probation (should not happen)');
+                    $this->error('❌ Some Casual employees are on probation (should not happen)');
                 }
             }
         }
@@ -146,3 +146,4 @@ class FinalProbationTest extends Command
         return 0;
     }
 }
+

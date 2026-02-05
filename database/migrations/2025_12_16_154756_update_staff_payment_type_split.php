@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         // Update payment_type for 'Regular' records based on employee appointment type
-        // Assume 'Contract' appointment type has name 'Contract'.
-        // If not 'Contract', assume 'Permanent'.
+        // Assume 'Casual' appointment type has name 'Casual'.
+        // If not 'Casual', assume 'Permanent'.
         
         // We use a raw query update with join
         DB::statement("
@@ -22,7 +22,7 @@ return new class extends Migration
             INNER JOIN employees e ON p.employee_id = e.employee_id
             LEFT JOIN appointment_types at ON e.appointment_type_id = at.id
             SET p.payment_type = CASE 
-                WHEN at.name = 'Contract' THEN 'Contract'
+                WHEN at.name = 'Casual' THEN 'Casual'
                 ELSE 'Permanent'
             END
             WHERE p.payment_type = 'Regular'
@@ -36,7 +36,9 @@ return new class extends Migration
     {
         // Revert Permanent/Contract back to Regular
         DB::table('payroll_records')
-            ->whereIn('payment_type', ['Permanent', 'Contract'])
+            ->whereIn('payment_type', ['Permanent', 'Casual'])
             ->update(['payment_type' => 'Regular']);
     }
 };
+
+

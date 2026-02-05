@@ -157,7 +157,7 @@ class EmployeesSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
                 
-                // Contract fields - initially null
+                // Casual fields - initially null
                 'contract_start_date' => null,
                 'contract_end_date' => null,
                 'amount' => null,
@@ -173,7 +173,7 @@ class EmployeesSeeder extends Seeder
             ];
             
             // Apply validation rules based on appointment type (Permanent vs Contract)
-            if ($appointmentTypeId == 2) { // Contract employees have appointment_type_id = 2
+            if ($appointmentTypeId == 2) { // Casual employees have appointment_type_id = 2
                 // Add contract-specific fields
                 $contractStartDate = $dateOfFirstAppointment;
                 $contractEndDate = date('Y-m-d', strtotime($contractStartDate . ' + 2 years')); // 2-year contract
@@ -182,7 +182,7 @@ class EmployeesSeeder extends Seeder
                 $employee['contract_start_date'] = $contractStartDate;
                 $employee['contract_end_date'] = $contractEndDate;
                 $employee['amount'] = $amount;
-                // Contract employees should also have a department
+                // Casual employees should also have a department
                 $employee['department_id'] = $departments->random();
             } else {
                 // Add permanent employee fields

@@ -59,7 +59,7 @@ class ComprehensiveReportService
             'appointment_type' => $employee->appointmentType->name ?? 'N/A',
             'date_of_first_appointment' => $employee->date_of_first_appointment,
             'years_of_service' => $employee->getYearsOfServiceAttribute(),
-            'basic_salary' => $employee->isContractEmployee() ?
+            'basic_salary' => $employee->isCasualEmployee() ?
                 ($employee->amount ?? $employee->basic_salary ?? 0) :
                 ($employee->basic_salary ?? $employee->amount ?? $employee->step?->basic_salary ?? 0),
             'email' => $employee->email,
@@ -1112,3 +1112,4 @@ class ComprehensiveReportService
         ];
     }
 }
+

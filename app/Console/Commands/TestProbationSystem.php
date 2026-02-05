@@ -61,17 +61,17 @@ class TestProbationSystem extends Command
             $this->error("✗ New permanent employee NOT placed on probation as expected");
         }
 
-        // Test 2: Check that contract employees are NOT placed on probation
-        $this->info("\n--- Test 2: Contract Employees Should NOT Be On Probation ---");
+        // Test 2: Check that Casual employees are NOT placed on probation
+        $this->info("\n--- Test 2: Casual employees Should NOT Be On Probation ---");
 
         $contractType = AppointmentType::firstOrCreate(
-            ['name' => 'Contract'],
-            ['name' => 'Contract', 'description' => 'Contract employee appointment']
+            ['name' => 'Casual'],
+            ['name' => 'Casual', 'description' => 'Casual employee appointment']
         );
 
         $contractEmployee = Employee::create([
             'first_name' => 'Jane',
-            'surname' => 'ContractTest',
+            'surname' => 'CasualTest',
             'gender' => 'Female',
             'date_of_birth' => Carbon::now()->subYears(28),
             'state_id' => 1, // Add required field
@@ -93,9 +93,9 @@ class TestProbationSystem extends Command
         ]);
 
         if (!$contractEmployee->on_probation) {
-            $this->info("✓ Contract employee correctly NOT placed on probation");
+            $this->info("✓ Casual employee correctly NOT placed on probation");
         } else {
-            $this->error("✗ Contract employee incorrectly placed on probation");
+            $this->error("✗ Casual employee incorrectly placed on probation");
         }
 
         // Test 3: Check probation logic methods
@@ -139,7 +139,7 @@ class TestProbationSystem extends Command
         $this->info("\n--- Probation System Test Summary ---");
         $this->info("✓ Probation fields exist in Employee model");
         $this->info("✓ New permanent employees automatically placed on probation");
-        $this->info("✓ Contract employees NOT placed on probation");
+        $this->info("✓ Casual employees NOT placed on probation");
         $this->info("✓ Probation logic methods work correctly");
         $this->info("✓ Payroll correctly excludes employees on probation");
         $this->info("✓ Probation workflow functions properly");
@@ -148,3 +148,4 @@ class TestProbationSystem extends Command
         return 0;
     }
 }
+

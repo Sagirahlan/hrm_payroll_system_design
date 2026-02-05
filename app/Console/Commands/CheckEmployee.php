@@ -33,10 +33,10 @@ class CheckEmployee extends Command
                 $this->info("- Appointment Type: {$appointmentType->name}");
                 
                 // Check if it should have been placed on probation
-                if ($appointmentType->name !== 'Contract') {
+                if ($appointmentType->name !== 'Casual') {
                     $this->info("- This employee should have been placed on probation as their appointment type is: {$appointmentType->name}");
                 } else {
-                    $this->info("- This is a contract employee, which is why they're not on probation");
+                    $this->info("- This is a Casual employee, which is why they're not on probation");
                 }
             }
         } else {
@@ -46,3 +46,4 @@ class CheckEmployee extends Command
         return 0;
     }
 }
+

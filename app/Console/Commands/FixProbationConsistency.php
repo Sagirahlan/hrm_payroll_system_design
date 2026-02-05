@@ -73,7 +73,7 @@ class FixProbationConsistency extends Command
         // Now find employees that should be on probation (permanent employees with no salary) but aren't properly flagged
         $permanentProbationEmployees = Employee::where(function($query) {
             $query->whereHas('appointmentType', function($subQuery) {
-                $subQuery->where('name', '!=', 'Contract');
+                $subQuery->where('name', '!=', 'Casual');
             })
             ->orWhereDoesntHave('appointmentType');
         })
@@ -100,7 +100,7 @@ class FixProbationConsistency extends Command
                 // If hired less than 3 months ago and is a permanent employee, they should potentially be on probation
                 if ($dateOfHire->diffInDays($now) < 90 && 
                     $employee->appointmentType && 
-                    $employee->appointmentType->name !== 'Contract') {
+                    $employee->appointmentType->name !== 'Casual') {
                     
                     $this->info("Employee {$employee->first_name} {$employee->surname} is a new permanent hire (". $dateOfHire->diffInDays($now)." days) - may need probation setup.");
                 }

@@ -283,14 +283,14 @@ class PendingEmployeeChangeController extends Controller
 
         $pendingChange->update(['employee_id' => $employee->employee_id]);
 
-        // Check if this is a permanent employee (not contract) and put on probation
+        // Check if this is a permanent employee (not Casual) and put on probation
         $appointmentType = null;
         if (isset($data['appointment_type_id'])) {
             $appointmentType = AppointmentType::find($data['appointment_type_id']);
         }
 
         // If it's a permanent employee, place them on probation for 3 months starting from their date of first appointment
-        if ($appointmentType && $appointmentType->name !== 'Contract') {
+        if ($appointmentType && $appointmentType->name !== 'Casual') {
             $dateOfFirstAppointment = $data['date_of_first_appointment'] ?? now();
             $probationStartDate = \Carbon\Carbon::parse($dateOfFirstAppointment);
             $probationEndDate = $probationStartDate->copy()->addMonths(3);
@@ -426,3 +426,4 @@ class PendingEmployeeChangeController extends Controller
         $employee->delete();
     }
 }
+

@@ -58,6 +58,35 @@
             </div>
             @endcan
 
+            <!-- Delete Monthly Payroll (Admin Only) -->
+            @can('delete_payroll')
+            <div class="card border-danger mb-4 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <strong><i class="fas fa-trash-alt me-2"></i>Delete Monthly Payroll</strong>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('payroll.delete_month') }}" method="POST" class="row g-3 align-items-end" onsubmit="return confirm('Are you sure you want to DELETE the entire payroll batch for this month? This action cannot be undone.');">
+                        @csrf
+                        @method('DELETE')
+                        <div class="col-md-3">
+                            <label for="delete_month" class="form-label">Select Month to Delete</label>
+                            <input type="month" name="month" id="delete_month" value="{{ now()->format('Y-m') }}"
+                                   class="form-control">
+                        </div>
+                        <div class="col-md-9">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Delete Batch
+                            </button>
+                            <small class="text-muted ms-2">
+                                <i class="fas fa-info-circle"></i> Only unapproved/unpaid payrolls can be deleted. This will remove records and associated one-time additions/deductions.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endcan
+
+
             <!-- Search and Filter Section -->
             <div class="card border-info mb-4 shadow-sm">
                 <div class="card-header bg-info text-white">
@@ -512,8 +541,8 @@
                                                     <span class="badge bg-purple text-white" style="background-color: #6f42c1;">Gratuity</span>
                                                 @elseif($payroll->payment_type === 'Pension')
                                                     <span class="badge bg-info text-white">Pension</span>
-                                                @elseif($payroll->payment_type === 'Contract')
-                                                    <span class="badge bg-warning text-dark">Contract</span>
+                                                @elseif($payroll->payment_type === 'Casual' || $payroll->payment_type === 'Contract')
+                                                    <span class="badge bg-warning text-dark">Casual</span>
                                                 @elseif($payroll->payment_type === 'Permanent')
                                                     <span class="badge bg-success text-white">Permanent</span>
                                                 @else
@@ -1058,3 +1087,4 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 @endsection
+

@@ -641,7 +641,7 @@ class EmployeeController extends Controller
             $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
             $tempEmployee->load('appointmentType');
 
-            if ($tempEmployee->isContractEmployee()) {
+            if ($tempEmployee->isCasualEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -837,7 +837,7 @@ class EmployeeController extends Controller
             $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
             $tempEmployee->load('appointmentType');
 
-            if ($tempEmployee->isContractEmployee()) {
+            if ($tempEmployee->isCasualEmployee()) {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -882,6 +882,9 @@ class EmployeeController extends Controller
             $currentData['bank_code'] = $employee->bank->bank_code ?? null;
             $currentData['account_name'] = $employee->bank->account_name ?? null;
             $currentData['account_no'] = $employee->bank->account_no ?? null;
+            
+            // Populate salary_scale_id from relationship to prevent false positives in change tracking
+            $currentData['salary_scale_id'] = $employee->gradeLevel->salary_scale_id ?? null;
 
             $changedData = [];
             $previousData = [];
@@ -1089,3 +1092,4 @@ class EmployeeController extends Controller
         return response()->json($ranks);
     }
 }
+

@@ -60,23 +60,23 @@ class PayrollController extends Controller
         if ($appointmentTypeId) {
             $employeesQuery->where('appointment_type_id', $appointmentTypeId);
             
-            // For contract employees (appointment_type_id = 2), don't require grade_level_id
-            // since contract employees may not have grade levels assigned
-            if ($appointmentTypeId == 2) { // Contract employees
-                // No need to filter by grade_level_id for contract employees
+            // For Casual employees (appointment_type_id = 2), don't require grade_level_id
+            // since Casual employees may not have grade levels assigned
+            if ($appointmentTypeId == 2) { // Casual employees
+                // No need to filter by grade_level_id for Casual employees
             } else {
                 // For permanent/temporary employees, require grade level
                 $employeesQuery->whereNotNull('grade_level_id');
             }
         } else {
-            // If no specific appointment type selected, only include non-contract employees with grade levels
-            // and contract employees with amounts
+            // If no specific appointment type selected, only include non-Casual employees with grade levels
+            // and Casual employees with amounts
             $employeesQuery->where(function($query) {
                 $query->where(function($q) {
-                    $q->whereNotNull('grade_level_id') // Non-contract employees with grade levels
-                      ->where('appointment_type_id', '!=', 2); // Not contract employees
+                    $q->whereNotNull('grade_level_id') // Non-Casual employees with grade levels
+                      ->where('appointment_type_id', '!=', 2); // Not Casual employees
                 })->orWhere(function($q) {
-                    $q->where('appointment_type_id', 2) // Contract employees
+                    $q->where('appointment_type_id', 2) // Casual employees
                       ->whereNotNull('amount'); // With contract amount
                 });
             });
@@ -85,12 +85,12 @@ class PayrollController extends Controller
         $employees = $employeesQuery->get();
 
         foreach ($employees as $employee) {
-            // Check if the employee is a contract employee
-            $isContractEmployee = $employee->isContractEmployee();
+            // Check if the employee is a Casual employee
+            $isCasualEmployee = $employee->isCasualEmployee();
             
-            // For contract employees, we don't require a grade level
-            // For non-contract employees, check if they have a grade level
-            if (!$isContractEmployee && (!$employee->gradeLevel || !$employee->gradeLevel->id)) {
+            // For Casual employees, we don't require a grade level
+            // For non-Casual employees, check if they have a grade level
+            if (!$isCasualEmployee && (!$employee->gradeLevel || !$employee->gradeLevel->id)) {
                 continue;
             }
 
@@ -102,7 +102,7 @@ class PayrollController extends Controller
                 // Create the payroll record for suspended employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                    'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
                     'payroll_month' => $month . '-01',
                     'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
                     'total_additions' => $calculation['total_additions'], // Additions still apply
@@ -130,7 +130,7 @@ class PayrollController extends Controller
                 // Create the payroll record for active employee with 'Pending Review' status
                 $payroll = PayrollRecord::create([
                     'employee_id' => $employee->employee_id,
-                    'grade_level_id' => $isContractEmployee ? null : $employee->gradeLevel->id,
+                    'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
                     'payroll_month' => $month . '-01',
                     'basic_salary' => $calculation['basic_salary'],
                     'total_additions' => $calculation['total_additions'],
@@ -469,11 +469,11 @@ class PayrollController extends Controller
             // Calculate the deduction amount for non-statutory deductions
             if (!$deductionType->is_statutory) {
                 if ($request->amount_type === 'percentage') {
-                    // Check if employee is a contract employee using the new method
-                    $isContractEmployee = $employee->isContractEmployee();
+                    // Check if employee is a Casual employee using the new method
+                    $isCasualEmployee = $employee->isCasualEmployee();
                     
-                    if ($isContractEmployee) {
-                        // For contract employees, use the amount field instead of step basic salary
+                    if ($isCasualEmployee) {
+                        // For Casual employees, use the amount field instead of step basic salary
                         if ($employee->amount && $employee->amount > 0) {
                             $contractAmount = $employee->amount;
                             if ($contractAmount > 0 && $request->amount > 0) {
@@ -481,7 +481,7 @@ class PayrollController extends Controller
                             }
                         } else {
                             return redirect()->back()
-                                ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                                ->withErrors(['error' => 'Casual employee does not have a valid amount for percentage calculation.'])
                                 ->withInput();
                         }
                     } else {
@@ -561,11 +561,11 @@ class PayrollController extends Controller
             $amount = 0;
             
             if ($request->amount_type === 'percentage') {
-                // Check if employee is a contract employee
-                $isContractEmployee = $employee->isContractEmployee();
+                // Check if employee is a Casual employee
+                $isCasualEmployee = $employee->isCasualEmployee();
                 
-                if ($isContractEmployee) {
-                    // For contract employees, use the amount field instead of step basic salary
+                if ($isCasualEmployee) {
+                    // For Casual employees, use the amount field instead of step basic salary
                     if ($employee->amount && $employee->amount > 0) {
                         $contractAmount = $employee->amount;
                         $amount = ($request->amount / 100) * $contractAmount;
@@ -577,7 +577,7 @@ class PayrollController extends Controller
                         }
                     } else {
                         return redirect()->back()
-                            ->withErrors(['error' => 'Contract employee does not have a valid amount for percentage calculation.'])
+                            ->withErrors(['error' => 'Casual employee does not have a valid amount for percentage calculation.'])
                             ->withInput();
                     }
                 } else {
@@ -1779,3 +1779,4 @@ class PayrollController extends Controller
 
     
 }
+

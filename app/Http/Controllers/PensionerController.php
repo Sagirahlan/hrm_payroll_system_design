@@ -10,6 +10,8 @@ use App\Models\ComputeBeneficiary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Imports\PensionersImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon; // Added Carbon import
 
 class PensionerController extends Controller
@@ -30,8 +32,7 @@ class PensionerController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pensioner::with(['department', 'rank', 'gradeLevel', 'bank', 'retirement', 'employee'])
-                          ->whereNotNull('beneficiary_computation_id');
+        $query = Pensioner::with(['department', 'rank', 'gradeLevel', 'bank', 'retirement', 'employee']);
 
         // Apply search filter
         if ($request->filled('search')) {
@@ -510,5 +511,131 @@ class PensionerController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Pensioner change rejected.');
+    }
+
+    /**
+     * Show the legacy pensioner import form
+     */
+    public function importLegacy()
+    {
+        return view('pensioners.import_legacy');
+    }
+
+    /**
+     * Process the legacy pensioner import
+     */
+    public function processImportLegacy(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls',
+        ]);
+
+        try {
+            $import = new PensionersImport;
+            Excel::import($import, $request->file('file'));
+
+            $rows = $import->getRowCount();
+            $skipped = $import->getSkippedCount();
+
+            $message = "Import processing complete. {$rows} pensioners processed successfully.";
+            if ($skipped > 0) {
+                $message .= " {$skipped} rows were skipped (employee not found).";
+            }
+
+            // Log to Audit Trail
+            \App\Models\AuditTrail::create([
+                'user_id' => auth()->id(),
+                'action' => 'imported_legacy_pensioners',
+                'description' => "Imported legacy pensioners. Processed: {$rows}, Skipped: {$skipped}",
+                'action_timestamp' => now(),
+                'log_data' => [
+                    'rows_processed' => $rows,
+                    'rows_skipped' => $skipped,
+                    'file_name' => $request->file('file')->getClientOriginalName(),
+                    'status_set_to' => 'Retired'
+                ]
+            ]);
+
+            return redirect()->route('pensioners.index')->with('success', $message);
+        } catch (\Exception $e) {
+            \Log::error('Error importing legacy pensioners: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error during import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download the pre-filled legacy pensioner import template
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="legacy_pensioner_template_prefilled.csv"',
+        ];
+
+        $columns = [
+            'staff_no', 
+            'first_name', 
+            'surname', 
+            'middle_name', 
+            'Full_name', 
+            'pension_amount', 
+            'gratuity_amount'
+        ];
+
+        $callback = function() use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            
+            // Fetch Active employees who are eligible for retirement (matches Retirements > Create list)
+            $employees = \App\Models\Employee::with(['gradeLevel.salaryScale'])
+                ->whereIn('status', ['Active', 'Deceased'])
+                ->get();
+
+            $eligibleEmployees = $employees->filter(function ($employee) {
+                // Automatically include Deceased employees
+                if ($employee->status === 'Deceased') {
+                    return true;
+                }
+
+                if (!$employee->gradeLevel || !$employee->gradeLevel->salaryScale) {
+                    return false;
+                }
+
+                $retirementAge = (int) $employee->gradeLevel->salaryScale->max_retirement_age;
+                $yearsOfService = (int) $employee->gradeLevel->salaryScale->max_years_of_service;
+
+                // Check if required dates exist before parsing
+                if (!$employee->date_of_birth || !$employee->date_of_first_appointment) {
+                    return false;
+                }
+
+                $age = \Carbon\Carbon::parse($employee->date_of_birth)->age;
+                $serviceDuration = \Carbon\Carbon::parse($employee->date_of_first_appointment)->diffInYears(\Carbon\Carbon::now());
+
+                return $age >= $retirementAge || $serviceDuration >= $yearsOfService;
+            });
+            
+            foreach ($eligibleEmployees as $employee) {
+                fputcsv($file, [
+                    $employee->staff_no,
+                    $employee->first_name,
+                    $employee->surname,
+                    $employee->middle_name,
+                    $employee->full_name,
+                    '0', // Blank/Zero pension amount
+                    '0' // Blank/Zero gratuity
+                ]);
+            }
+            
+            if ($eligibleEmployees->isEmpty()) {
+                // Determine why it's empty - maybe just give a generic sample if logic fails
+                 fputcsv($file, ['RG20002', 'Maryam', 'Sample', 'Only', 'If No Eligible Found', '0', '0']);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

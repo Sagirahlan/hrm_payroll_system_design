@@ -963,7 +963,7 @@ class ReportController extends Controller
                 'date_of_retirement' => $dateOfRetirement ? $dateOfRetirement->format('Y-m-d') : 'N/A',
                 'years_of_service' => $yearsOfService,
                 'bank_details' => $employee->bank ? $employee->bank->bank_name . ' (' . $employee->account_number . ')' : 'N/A',
-                'basic_salary' => $employee->isContractEmployee() ?
+                'basic_salary' => $employee->isCasualEmployee() ?
                     ('₦' . number_format($employee->amount ?? 0, 2)) :
                     ('₦' . number_format($employee->basic_salary ?? 0, 2)),
                 'deductions' => [],

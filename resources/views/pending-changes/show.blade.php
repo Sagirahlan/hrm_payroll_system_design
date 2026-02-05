@@ -53,6 +53,9 @@
                                 
                                 <dt class="col-sm-4">Department:</dt>
                                 <dd class="col-sm-8">{{ $pendingChange->employee->department->department_name ?? 'N/A' }}</dd>
+                                
+                                <dt class="col-sm-4">Appointment Type:</dt>
+                                <dd class="col-sm-8">{{ $pendingChange->employee->appointmentType->name ?? 'N/A' }}</dd>
                             </dl>
                             @else
                             <p>New employee pending creation</p>

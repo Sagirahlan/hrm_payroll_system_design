@@ -186,6 +186,7 @@
                                     <th>Name</th>
                                     <th>Department</th>
                                     <th>Grade Level</th>
+                                    <th>Appointment Type</th>
                                 </tr>
                             </thead>
                             <tbody id="employee-list-tbody">

@@ -239,18 +239,18 @@
                                     </div>
                                 </div>
 
-                                <!-- Contract Appointment Fields -->
-                                <div class="row g-3 d-none" id="contract_appointment_fields">
+                                <!-- Casual Appointment Fields -->
+                                <div class="row g-3 d-none" id="casual_appointment_fields">
                                     <div class="col-12">
-                                        <h6 class="text-muted">Contract Appointment Details</h6>
+                                        <h6 class="text-muted">Casual Appointment Details</h6>
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Contract Start Date <span class="text-danger">*</span></label>
+                                        <label class="form-label font-weight-bold">Casual Start Date <span class="text-danger">*</span></label>
                                         <input type="date" name="contract_start_date" class="form-control" value="{{ old('contract_start_date') }}">
                                         @error('contract_start_date') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-6 col-12">
-                                        <label class="form-label font-weight-bold">Contract End Date <span class="text-danger">*</span></label>
+                                        <label class="form-label font-weight-bold">Casual End Date <span class="text-danger">*</span></label>
                                         <input type="date" name="contract_end_date" class="form-control" value="{{ old('contract_end_date') }}">
                                         @error('contract_end_date') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
@@ -412,7 +412,7 @@
         const employeeForm = document.getElementById('employeeForm');
         const appointmentTypeSelect = document.getElementById('appointment_type_id');
         const regularAppointmentFields = document.getElementById('regular_appointment_fields');
-        const contractAppointmentFields = document.getElementById('contract_appointment_fields');
+        const casualAppointmentFields = document.getElementById('casual_appointment_fields');
 
         let currentStep = 1;
 
@@ -481,22 +481,22 @@
                 }
             });
 
-            // Validate contract dates
-            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Contract') {
-                const contractStartDate = document.querySelector('input[name="contract_start_date"]');
-                const contractEndDate = document.querySelector('input[name="contract_end_date"]');
-                if (contractStartDate.value && contractEndDate.value) {
-                    const startDate = new Date(contractStartDate.value);
-                    const endDate = new Date(contractEndDate.value);
+            // Validate Casual dates
+            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Casual') {
+                const casualStartDate = document.querySelector('input[name="contract_start_date"]');
+                const casualEndDate = document.querySelector('input[name="contract_end_date"]');
+                if (casualStartDate.value && casualEndDate.value) {
+                    const startDate = new Date(casualStartDate.value);
+                    const endDate = new Date(casualEndDate.value);
                     if (endDate <= startDate) {
                         const error = document.createElement('small');
                         error.className = 'text-danger';
-                        error.innerText = 'Contract end date must be after start date.';
-                        const existingError = contractEndDate.nextElementSibling;
+                        error.innerText = 'Casual end date must be after start date.';
+                        const existingError = casualEndDate.nextElementSibling;
                         if (existingError && existingError.classList.contains('text-danger')) {
                             existingError.remove();
                         }
-                        contractEndDate.parentNode.appendChild(error);
+                        casualEndDate.parentNode.appendChild(error);
                         isValid = false;
                     }
                 }
@@ -504,7 +504,7 @@
 
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
-                if (appointmentTypeName !== 'Contract') {
+                if (appointmentTypeName !== 'Casual') {
                     const gradeLevelIdInput = document.getElementById('grade_level_id');
                     const stepIdInput = document.getElementById('step_id');
                     if (!gradeLevelIdInput.value) {
@@ -558,16 +558,16 @@
             const appointmentTypeName = selectedOption.dataset.name;
 
             regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
-            contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
+            casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
 
-            if (appointmentTypeName === 'Contract') {
+            if (appointmentTypeName === 'Casual') {
                 regularAppointmentFields.classList.add('d-none');
-                contractAppointmentFields.classList.remove('d-none');
+                casualAppointmentFields.classList.remove('d-none');
                 regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
             } else {
                 regularAppointmentFields.classList.remove('d-none');
-                contractAppointmentFields.classList.add('d-none');
-                contractAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+                casualAppointmentFields.classList.add('d-none');
+                casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
             }
         }
 
@@ -890,3 +890,5 @@
 </script>
     @endcan
 @endsection
+
+

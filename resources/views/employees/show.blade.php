@@ -77,7 +77,7 @@
                 <div class="tab-pane fade" id="work" role="tabpanel">
                     <h5 class="text-primary mb-3">Work Information</h5>
                     <div class="row">
-                        @if ($employee->appointmentType->name !== 'Contract')
+                        @if ($employee->appointmentType->name !== 'Casual')
                             <div class="col-md-6"><p><strong>Date of First Appointment:</strong> {{ $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('j M Y') : '—' }}</p></div>
                             <div class="col-md-6"><p><strong>Years of Service:</strong> {{ $employee->years_of_service !== null ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service) : '—' }}</p></div>
                             <div class="col-md-6"><p><strong>Cadre:</strong> {{ $employee->cadre->name ?? 'N/A' }}</p></div>
@@ -89,8 +89,8 @@
                             <div class="col-md-6"><p><strong>Expected Next Promotion:</strong> {{ $employee->expected_next_promotion ? \Carbon\Carbon::parse($employee->expected_next_promotion)->format('j M Y') : 'N/A' }}</p></div>
                             <div class="col-md-6"><p><strong>Expected Retirement Date:</strong> {{ $employee->expected_retirement_date ? \Carbon\Carbon::parse($employee->expected_retirement_date)->format('j M Y') : '—' }}</p></div>
                         @else
-                            <div class="col-md-6"><p><strong>Contract Start Date:</strong> {{ $employee->contract_start_date ? \Carbon\Carbon::parse($employee->contract_start_date)->format('j M Y') : '—' }}</p></div>
-                            <div class="col-md-6"><p><strong>Contract End Date:</strong> {{ $employee->contract_end_date ? \Carbon\Carbon::parse($employee->contract_end_date)->format('j M Y') : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Casual Start Date:</strong> {{ $employee->Casual_start_date ? \Carbon\Carbon::parse($employee->Casual_start_date)->format('j M Y') : '—' }}</p></div>
+                            <div class="col-md-6"><p><strong>Casual End Date:</strong> {{ $employee->Casual_end_date ? \Carbon\Carbon::parse($employee->Casual_end_date)->format('j M Y') : '—' }}</p></div>
                             <div class="col-md-6"><p><strong>Amount:</strong> {{ $employee->amount ? number_format($employee->amount, 2) : 'N/A' }}</p></div>
                             <div class="col-md-6"><p><strong>Department:</strong> {{ $employee->department->department_name ?? 'N/A' }}</p></div>
                         @endif
@@ -215,3 +215,4 @@
     </div>
 </div>
 @endsection
+

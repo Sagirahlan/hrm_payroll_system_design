@@ -20,9 +20,9 @@ class CheckAppointmentType extends Command
             $this->info("- Name: {$appointmentType->name}");
             $this->info("- Description: {$appointmentType->description}");
             
-            // Check if it's different from 'Contract'
-            $isNotContract = $appointmentType->name !== 'Contract';
-            $this->info("- Is not Contract: " . ($isNotContract ? 'Yes' : 'No'));
+            // Check if it's different from 'Casual'
+            $isNotContract = $appointmentType->name !== 'Casual';
+            $this->info("- Is not Casual: " . ($isNotContract ? 'Yes' : 'No'));
         } else {
             $this->error("Appointment type with ID 1 not found.");
         }
@@ -37,3 +37,4 @@ class CheckAppointmentType extends Command
         return 0;
     }
 }
+

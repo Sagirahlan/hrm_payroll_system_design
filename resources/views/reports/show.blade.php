@@ -139,7 +139,7 @@
                                                         <div class="col-md-6 mb-2">
                                                             @if($key === 'basic_salary')
                                                                 @php
-                                                                    $label = isset($report->report_data['employee_info']['appointment_type']) && $report->report_data['employee_info']['appointment_type'] === 'Contract' ? 'Amount' : 'Basic Salary';
+                                                                    $label = isset($report->report_data['employee_info']['appointment_type']) && $report->report_data['employee_info']['appointment_type'] === 'Casual' ? 'Amount' : 'Basic Salary';
                                                                 @endphp
                                                                 <strong>{{ $label }}:</strong>
                                                                 ₦{{ number_format($value, 2) }}

@@ -186,7 +186,7 @@
                 <th>Retired</th>
                 <th>Deceased</th>
                 <th>Total Basic Salary</th>
-                <th>Total Contract Amount</th>
+                <th>Total Casual Amount</th>
                 <th>Avg Years of Service</th>
             </tr>
         </thead>

@@ -244,6 +244,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pensioners/{pensioner}/edit', [PensionerController::class, 'edit'])->name('pensioners.edit');
         Route::post('/pensioners/move-retired', [PensionerController::class, 'moveRetiredToPensioners'])->name('pensioners.move-retired');
         Route::get('/pensioners/type/{type}', [PensionerController::class, 'getPensionersByType'])->name('pensioners.by-type');
+        
+        // Legacy Import Routes
+        Route::get('/pensioners/legacy/import', [PensionerController::class, 'importLegacy'])->name('pensioners.legacy.import');
+        Route::post('/pensioners/legacy/process', [PensionerController::class, 'processImportLegacy'])->name('pensioners.legacy.process');
+        Route::get('/pensioners/legacy/template', [PensionerController::class, 'downloadTemplate'])->name('pensioners.legacy.template');
+
         Route::post('/pensioners/{pensioner}/mark-gratuity-paid', [PensionerController::class, 'markGratuityPaid'])->name('pensioners.mark-gratuity-paid');
         Route::post('/pensioners/{pensioner}/mark-deceased', [PensionerController::class, 'markDeceased'])->name('pensioners.mark-deceased');
 
@@ -294,6 +300,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/payroll/bulk/final-approve', [PayrollController::class, 'bulkFinalApprove'])->name('payroll.bulk_final_approve');
             Route::post('/payroll/bulk/request-delete', [PayrollController::class, 'bulkRequestDelete'])->name('payroll.bulk_request_delete');
             Route::post('/payroll/bulk/approve-delete', [PayrollController::class, 'bulkApproveDelete'])->name('payroll.bulk_approve_delete');
+            Route::delete('/payroll/delete-month', [PayrollController::class, 'destroyMonth'])->name('payroll.delete_month')->middleware('permission:delete_payroll');
 
             // Individual workflow operations
             Route::post('/payroll/{payrollId}/send-for-review', [PayrollController::class, 'sendForReview'])->name('payroll.send-for-review');
@@ -394,6 +401,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/employees/{employeeId}', [\App\Http\Controllers\PromotionController::class, 'getEmployeeDetails'])->name('employees.details');
             Route::post('/promotions/{promotion}/approve', [\App\Http\Controllers\PromotionController::class, 'approve'])->name('promotions.approve');
             Route::post('/promotions/{promotion}/reject', [\App\Http\Controllers\PromotionController::class, 'reject'])->name('promotions.reject');
+            
+            // Bulk approve/reject routes
+            Route::post('/promotions/bulk-approve', [\App\Http\Controllers\PromotionController::class, 'bulkApprove'])->name('promotions.bulk-approve')->middleware('permission:approve_promotions');
+            Route::post('/promotions/bulk-reject', [\App\Http\Controllers\PromotionController::class, 'bulkReject'])->name('promotions.bulk-reject')->middleware('permission:approve_promotions');
         });
 
     // Pending Employee Changes - Admin only
