@@ -191,13 +191,20 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
             'next_of_kin_address' => $employee->next_of_kin_address ?? 'Unknown',
             'status' => 'Active',
             'retirement_id' => $retirement->id,
-            'created_by' => auth()->id(),
+            'created_by' => auth()->id() ?? 1, // Fallback to system user during import
             'is_gratuity_paid' => $isGratuityPaid,
             'gratuity_paid_date' => $gratuityPaidDate,
         ]);
 
-        $newPensioner->save();
-        $this->rows++;
+        try {
+            $newPensioner->save();
+            $this->rows++;
+            Log::info("Legacy Pensioner Import: Created Pensioner for Employee {$employee->staff_no}");
+        } catch (\Exception $e) {
+            Log::error("Legacy Pensioner Import: Failed to create Pensioner for Employee {$employee->staff_no}: " . $e->getMessage());
+            $this->skipped++;
+            return null;
+        }
 
         return $newPensioner;
     }
