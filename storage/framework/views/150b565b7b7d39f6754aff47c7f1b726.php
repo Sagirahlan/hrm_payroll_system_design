@@ -635,13 +635,7 @@ unset($__errorArgs, $__bag); ?>
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
-                                    <select name="bank_name_display" id="bank_name" class="form-select" disabled>
-                                        <option value="">Select Bank</option>
-                                        <?php $__currentLoopData = $banks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bank): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <option value="<?php echo e($bank->bank_name); ?>" data-code="<?php echo e($bank->bank_code); ?>" <?php echo e(old('bank_name', $employee->bank->bank_name ?? '') == $bank->bank_name ? 'selected' : ''); ?>><?php echo e($bank->bank_name); ?></option>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                    </select>
-                                    <input type="hidden" name="bank_name" value="<?php echo e(old('bank_name', $employee->bank->bank_name ?? '')); ?>">
+                                    <input type="text" name="bank_name" class="form-control" required value="<?php echo e(old('bank_name', $employee->bank->bank_name ?? '')); ?>" readonly>
                                     <?php $__errorArgs = ['bank_name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :

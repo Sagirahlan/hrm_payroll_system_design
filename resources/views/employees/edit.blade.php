@@ -378,28 +378,22 @@
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
-                                    <select name="bank_name_display" id="bank_name" class="form-select" disabled>
-                                        <option value="">Select Bank</option>
-                                        @foreach($banks as $bank)
-                                            <option value="{{ $bank->bank_name }}" data-code="{{ $bank->bank_code }}" {{ old('bank_name', $employee->bank->bank_name ?? '') == $bank->bank_name ? 'selected' : '' }}>{{ $bank->bank_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="hidden" name="bank_name" value="{{ old('bank_name', $employee->bank->bank_name ?? '') }}">
+                                    <input type="text" name="bank_name" class="form-control" required value="{{ old('bank_name', $employee->bank->bank_name ?? '') }}">
                                     @error('bank_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Code <span class="text-danger">*</span></label>
-                                    <input type="text" name="bank_code" id="bank_code" class="form-control" required value="{{ old('bank_code', $employee->bank->bank_code ?? '') }}" readonly>
+                                    <input type="text" name="bank_code" id="bank_code" class="form-control" required value="{{ old('bank_code', $employee->bank->bank_code ?? '') }}">
                                     @error('bank_code') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_name" class="form-control" required value="{{ old('account_name', $employee->bank->account_name ?? '') }}" readonly>
+                                    <input type="text" name="account_name" class="form-control" required value="{{ old('account_name', $employee->bank->account_name ?? '') }}">
                                     @error('account_name') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Number <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_no" class="form-control" required value="{{ old('account_no', $employee->bank->account_no ?? '') }}" readonly>
+                                    <input type="text" name="account_no" class="form-control" required value="{{ old('account_no', $employee->bank->account_no ?? '') }}">
                                     @error('account_no') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                             </div>

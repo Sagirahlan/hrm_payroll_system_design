@@ -227,8 +227,11 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             $accountName = $row['account_name'] ?? $row['accountname'] ?? $row['acc_name'] ?? ($row['first_name'] . ' ' . $row['surname']);
             $accountNumber = $row['account_no'] ?? $row['account_number'] ?? $row['accountno'] ?? $row['acc_no'] ?? $row['account_num'] ?? null;
 
+            // Use the standardized bank name from BankList if found, otherwise use Excel value
+            $normalizedBankName = $bankList ? $bankList->bank_name : $bankName;
+
             $bankData = [
-                'bank_name' => $bankName,
+                'bank_name' => $normalizedBankName,
                 'bank_code' => $bankCode,
                 'account_name' => $accountName,
                 'account_no' => $accountNumber,
