@@ -562,6 +562,38 @@ class PayrollController extends Controller
         return $pdf->download('payslip_' . $payroll->employee->first_name . '_' . $payroll->employee->surname . '_' . $payroll->payroll_id . '.pdf');
     }
 
+    // Generate detailed payroll report PDF
+    public function generateDetailedReport(Request $request)
+    {
+        $month = $request->input('month', now()->format('Y-m'));
+        $category = $request->input('category', 'ALL STAFF');
+        
+        // Get payroll records for the specified month
+        $query = PayrollRecord::with(['employee.gradeLevel', 'employee.bank'])
+            ->whereYear('payroll_month', Carbon::parse($month . '-01')->year)
+            ->whereMonth('payroll_month', Carbon::parse($month . '-01')->month);
+        
+        // Apply category filter if specified
+        if ($request->filled('payment_type')) {
+            $query->where('payment_type', $request->payment_type);
+        }
+        
+        $payrolls = $query->orderBy('employee_id')->get();
+        
+        $pdf = PDF::loadView('reports.payroll-detailed', compact('payrolls', 'month', 'category'))
+            ->setPaper('a4', 'landscape');
+        
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'generated_detailed_payroll_report',
+            'description' => "Generated detailed payroll report for month: {$month}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $month, 'category' => $category]),
+        ]);
+        
+        return $pdf->download('payroll_report_' . $month . '.pdf');
+    }
+
     // Export payroll records to Excel with filters
     public function exportPayroll(Request $request)
     {

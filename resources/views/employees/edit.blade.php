@@ -227,7 +227,7 @@
                                         <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
                                         <select name="rank_id" class="form-select">
                                             @foreach ($ranks as $rank)
-                                                <option value="{{ $rank->id }}" {{ old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : '' }}>{{ $rank->title }}</option>
+                                                <option value="{{ $rank->id }}" {{ old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : '' }}>{{ $rank->name }}</option>
                                             @endforeach
                                         </select>
                                         @error('rank_id') <small class="text-danger">{{ $message }}</small> @enderror

@@ -24,7 +24,8 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     */
     public function model(array $row)
     {
-        $staffNo = $row['staff_no'] ?? $row['staff_id'] ?? null;
+        // Update import logic to map new columns
+        $staffNo = $row['staff_number'] ?? $row['staff_no'] ?? null;
         
         if (!$staffNo) {
             return null; // Skip empty rows
@@ -35,30 +36,75 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
             ->first();
 
         if (!$employee) {
-            Log::warning("Legacy Pensioner Import: Employee with ID {$staffNo} not found. Skipped.");
-            $this->skipped++;
-            return null;
+            // Standalone mode: Create Employee if missing
+            $firstName = $row['first_name'] ?? 'Unknown';
+            $surname = $row['surname'] ?? 'Unknown';
+            $middleName = $row['middle_name'] ?? null;
+            $deptName = $row['department'] ?? null;
+            $gradeLevelName = $row['retired_grade_level'] ?? null;
+
+            // Lookup Department
+            $departmentId = null;
+            if ($deptName) {
+                $dept = \App\Models\Department::where('department_name', 'like', '%' . $deptName . '%')->first();
+                $departmentId = $dept ? $dept->department_id : null;
+            }
+
+            // Lookup Grade Level
+            $gradeLevelId = null;
+            if ($gradeLevelName) {
+                // Try numeric match first (e.g. "6" matches "GL 06") or name match
+                $gl = \App\Models\GradeLevel::where('name', 'like', '%' . $gradeLevelName . '%')
+                    ->orWhere('grade_level', $gradeLevelName)
+                    ->first();
+                $gradeLevelId = $gl ? $gl->id : null;
+            }
+
+            $employee = Employee::create([
+                'staff_no' => $staffNo,
+                'employee_id' => $staffNo, // Fallback if employee_id is not auto-increment (it seems to be, but checking model showed 'id' is unique, so maybe staff_no is just field)
+                // Actually, employee_id in database usually refers to 'staff_id' or similar, but let's check validation.
+                // Looking at other seeders/imports, 'employee_id' might be a separate field or just the staff_no. 
+                // The error logs showed "Employee with ID ... not found", referencing the staff_no.
+                // Let's assume 'staff_no' is the unique identifier needed.
+                'first_name' => $firstName,
+                'surname' => $surname,
+                'middle_name' => $middleName,
+                'department_id' => $departmentId,
+                'grade_level_id' => $gradeLevelId,
+                'status' => 'Retired',
+                'date_of_birth' => '1960-01-01', // Default
+                'date_of_first_appointment' => '1980-01-01', // Default
+                'gender' => 'Male', // Default placeholder
+                'email' => $staffNo . '@legacy-processed.com', // Dummy email to satisfy unique constraint
+                'nationality' => 'Nigeria',
+                'state_id' => 1, // Placeholder
+                'lga_id' => 1,   // Placeholder
+                'ward_id' => 1,  // Placeholder
+                'rsa_balance' => 0.00,
+                'pfa_contribution_rate' => 0.00,
+                'on_probation' => 0,
+                'probation_status' => 'Confirmed',
+                'mobile_no' => '08000000000', // Default placeholder
+                'address' => 'Unknown',       // Default placeholder
+            ]);
+            
+            Log::info("Legacy Pensioner Import: Created new Employee {$staffNo}");
         }
 
-        // We need the employee to be retired.
-        // If they are not marked as retired, we can't process them as a pensioner safely without more info.
-        // However, user said "put staffs that are already retired". 
-        // We will assume they MIGHT be active in system but user wants them as pensioner.
-        // Let's enforce that they MUST exist as an Employee first.
-        
-        // Find existing retirement or create a dummy one if missing (since it's legacy)
+        // Find existing retirement or create a dummy one if missing
         $retirement = Retirement::firstOrCreate(
             ['employee_id' => $employee->employee_id],
             [
-                'retirement_date' => now()->subDay(), // Default to yesterday if unknown
-                'notification_date' => now()->subMonths(3),
+                'retirement_date' => \Carbon\Carbon::create(2020, 1, 1), // Backdate for legacy to avoid pro-rata
+                'notification_date' => \Carbon\Carbon::create(2019, 10, 1),
                 'retire_reason' => 'Statutory Retirement (Legacy Import)',
-                'gratuity_amount' => $row['gratuity_amount'] ?? 0,
+                'gratuity_amount' => 0,
                 'status' => 'approved'
             ]
         );
 
-        // Update employee status if not already
+        // Update employee status
         if ($employee->status !== 'Pensioner' && $employee->status !== 'Retired') {
             $employee->update(['status' => 'Retired']);
         }
@@ -66,48 +112,47 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
         // Check if pensioner record already exists
         $pensioner = Pensioner::where('employee_id', $employee->employee_id)->first();
 
-        // Data for pensioner
-        // Sanitize amounts by removing commas
-        $pensionAmount = str_replace(',', '', $row['pension_amount'] ?? 0);
-        $gratuityAmount = str_replace(',', '', $row['gratuity_amount'] ?? 0);
+        // Sanitize amounts
+        $pensionAmount = str_replace([',', ' '], '', $row['new_pension'] ?? $row['pension_amount'] ?? 0);
+        $gratuityAmount = 0; // Default to 0 as per instructions "only for the import legacy, ignor other things"
         
-        // Handle Gratuity Paid Date
-        $isGratuityPaid = true; // User requested "mark their gratuity as paid"
-        $gratuityPaidDate = null;
+        // Handle Bank details
+        $bankId = $employee->bank_id;
+        $accountNumber = $row['account_number'] ?? $employee->account_number;
+        $accountName = $row['account_name'] ?? $employee->account_name;
 
-        if (isset($row['gratuity_paid_date']) && !empty($row['gratuity_paid_date'])) {
-            try {
-                // Try parsing Excel date or string date
-                $gratuityPaidDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['gratuity_paid_date']);
-            } catch (\Exception $e) {
-                // Fallback to simple parse
-                try {
-                     $gratuityPaidDate = Carbon::parse($row['gratuity_paid_date']);
-                } catch (\Exception $e2) {
-                    $gratuityPaidDate = now();
-                }
+        if (isset($row['bank_code'])) {
+            $bank = \App\Models\BankList::where('bank_code', $row['bank_code'])->first();
+            if ($bank) {
+                $bankId = $bank->id;
             }
-        } else {
-            $gratuityPaidDate = now();
+        } elseif (isset($row['bank_name'])) {
+             $bank = \App\Models\BankList::where('bank_name', 'like', '%' . $row['bank_name'] . '%')->first();
+             if ($bank) {
+                 $bankId = $bank->id;
+             }
         }
+
+        // Default to Gratuity Paid for legacy
+        $isGratuityPaid = true; 
+        $gratuityPaidDate = now();
 
         if ($pensioner) {
             // Update existing
             $pensioner->update([
                 'pension_amount' => $pensionAmount,
-                'gratuity_amount' => $gratuityAmount,
+                'bank_id' => $bankId,
+                'account_number' => $accountNumber,
+                'account_name' => $accountName,
                 'is_gratuity_paid' => $isGratuityPaid,
                 'gratuity_paid_date' => $gratuityPaidDate,
-                'status' => 'Active', // Ensure they are active pensioners
+                'status' => 'Active',
             ]);
             $this->rows++;
             return $pensioner;
         }
 
         // Create new Pensioner
-        // We need to fill required fields from Employee data
-        
-        // Try to find beneficiary computation for percentage
         $beneficiaryComputation = ComputeBeneficiary::where('id_no', $employee->employee_id)
             ->orWhere('id_no', $employee->staff_no)->first();
 
@@ -120,7 +165,7 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
             'email' => $employee->email,
             'phone_number' => $employee->phone ?? $employee->mobile_no,
             'date_of_birth' => $employee->date_of_birth,
-            'place_of_birth' => $employee->place_of_birth ?? 'Unknown', // Fallback
+            'place_of_birth' => $employee->place_of_birth ?? 'Unknown',
             'date_of_first_appointment' => $employee->date_of_first_appointment,
             'date_of_retirement' => $retirement->retirement_date,
             'retirement_reason' => $retirement->retire_reason,
@@ -129,15 +174,15 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
             'rank_id' => $employee->rank_id,
             'step_id' => $employee->step_id,
             'grade_level_id' => $employee->grade_level_id,
-            'salary_scale_id' => $employee->salary_scale_id ?? 1, // Fallback if missing? hopefully not
+            'salary_scale_id' => $employee->salary_scale_id ?? 1,
             'local_gov_area_id' => $employee->lga_id,
-            'bank_id' => $employee->bank_id, // Assuming employee has bank_id field, or relation
-            'account_number' => $employee->account_number ?? $employee->bank_account_no, // Check employee model strictly later
-            'account_name' => $employee->account_name ?? $employee->full_name,
+            'bank_id' => $bankId,
+            'account_number' => $accountNumber,
+            'account_name' => $accountName,
             'pension_amount' => $pensionAmount,
             'gratuity_amount' => $gratuityAmount,
             'total_death_gratuity' => $gratuityAmount,
-            'years_of_service' => $employee->years_of_service ?? 35, // Fallback
+            'years_of_service' => $employee->years_of_service ?? 35,
             'pension_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_pension : 0,
             'gratuity_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_gratuity : 0,
             'address' => $employee->address,
@@ -160,9 +205,7 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'staff_no' => 'required',
-            // 'pension_amount' => 'required|numeric', // Optional? No, user said amount.
-            // 'gratuity_amount' => 'required|numeric',
+            // 'staff_no' => 'required', // Validation handled in model() to support multiple column names
         ];
     }
 

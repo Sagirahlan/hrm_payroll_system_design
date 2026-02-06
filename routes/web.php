@@ -285,6 +285,7 @@ Route::middleware(['auth'])->group(function () {
             // Payroll generation and export (with filters) - MUST BE FIRST
             Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
             Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
+            Route::get('/payroll/export/detailed-pdf', [PayrollController::class, 'generateDetailedReport'])->name('payroll.export.detailed-pdf');
 
             // AJAX and Search routes - MUST BE BEFORE DYNAMIC ROUTES
             Route::get('/payroll/api/search', [PayrollController::class, 'search'])->name('payroll.search');

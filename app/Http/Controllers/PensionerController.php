@@ -574,21 +574,27 @@ class PensionerController extends Controller
         ];
 
         $columns = [
-            'staff_no', 
-            'first_name', 
-            'surname', 
-            'middle_name', 
-            'Full_name', 
-            'pension_amount', 
-            'gratuity_amount'
+            'S/N',
+            'Staff Number', 
+            'First Name', 
+            'Middle Name', 
+            'Surname', 
+            'Department',
+            'Retired Grade Level',
+            'New Pension', 
+            'Bank Name',
+            'Bank Code',
+            'Account Number',
+            'Account Name',
+            'Remark'
         ];
 
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
             
-            // Fetch Active employees who are eligible for retirement (matches Retirements > Create list)
-            $employees = \App\Models\Employee::with(['gradeLevel.salaryScale'])
+            // Fetch Active employees who are eligible for retirement
+            $employees = \App\Models\Employee::with(['gradeLevel.salaryScale', 'department', 'bank'])
                 ->whereIn('status', ['Active', 'Deceased'])
                 ->get();
 
@@ -616,21 +622,28 @@ class PensionerController extends Controller
                 return $age >= $retirementAge || $serviceDuration >= $yearsOfService;
             });
             
+            $sn = 1;
             foreach ($eligibleEmployees as $employee) {
                 fputcsv($file, [
+                    $sn++,
                     $employee->staff_no,
                     $employee->first_name,
-                    $employee->surname,
                     $employee->middle_name,
-                    $employee->full_name,
-                    '0', // Blank/Zero pension amount
-                    '0' // Blank/Zero gratuity
+                    $employee->surname,
+                    $employee->department ? $employee->department->name : '',
+                    $employee->gradeLevel ? $employee->gradeLevel->name : '',
+                    '0', // New Pension
+                    $employee->bank ? $employee->bank->bank_name : '', // Bank Name
+                    $employee->bank ? $employee->bank->bank_code : '', // Bank Code
+                    $employee->account_number,
+                    $employee->account_name,
+                    '' // Remark
                 ]);
             }
             
             if ($eligibleEmployees->isEmpty()) {
                 // Determine why it's empty - maybe just give a generic sample if logic fails
-                 fputcsv($file, ['RG20002', 'Maryam', 'Sample', 'Only', 'If No Eligible Found', '0', '0']);
+                fputcsv($file, ['1', 'RG20002', 'Maryam', 'Sample', 'Only', 'IT Dept', 'GL 10', '50000', 'GTBank', '058', '1234567890', 'Maryam Sample', 'No Eligible Found']);
             }
             
             fclose($file);

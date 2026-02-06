@@ -77,11 +77,11 @@
                 <div class="tab-pane fade" id="work" role="tabpanel">
                     <h5 class="text-primary mb-3">Work Information</h5>
                     <div class="row">
-                        @if ($employee->appointmentType->name !== 'Casual')
+                        @if ($employee->appointmentType && $employee->appointmentType->name !== 'Casual')
                             <div class="col-md-6"><p><strong>Date of First Appointment:</strong> {{ $employee->date_of_first_appointment ? \Carbon\Carbon::parse($employee->date_of_first_appointment)->format('j M Y') : '—' }}</p></div>
                             <div class="col-md-6"><p><strong>Years of Service:</strong> {{ $employee->years_of_service !== null ? $employee->years_of_service . ' ' . Str::plural('year', $employee->years_of_service) : '—' }}</p></div>
                             <div class="col-md-6"><p><strong>Cadre:</strong> {{ $employee->cadre->name ?? 'N/A' }}</p></div>
-                            <div class="col-md-6"><p><strong>Salary Scale:</strong> {{ $employee->gradeLevel->salaryScale->acronym ?? 'N/A' }} - {{ $employee->gradeLevel->salaryScale->full_name ?? 'N/A' }}</p></div>
+                            <div class="col-md-6"><p><strong>Salary Scale:</strong> {{ $employee->gradeLevel?->salaryScale?->acronym ?? 'N/A' }} - {{ $employee->gradeLevel?->salaryScale?->full_name ?? 'N/A' }}</p></div>
                             <div class="col-md-6"><p><strong>Grade Level:</strong> {{ $employee->gradeLevel->name ?? 'N/A' }}</p></div>
                             <div class="col-md-6"><p><strong>Step:</strong> {{ $employee->step->name ?? 'N/A' }}</p></div>
                             <div class="col-md-6"><p><strong>Rank:</strong> {{ $employee->rank->title ?? 'N/A' }}</p></div>

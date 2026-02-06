@@ -452,12 +452,12 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'payroll_summary':
                 filtersSection.innerHTML = `
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="year_filter" class="form-label">Year</label>
                             <input type="number" class="form-control" id="year_filter" name="filters[year]"
                                    min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="month_filter" class="form-label">Month</label>
                             <select class="form-select" id="month_filter" name="filters[month]">
                                 <option value="">All Months</option>
@@ -473,6 +473,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="payment_type_filter" class="form-label">Payment Type</label>
+                            <select class="form-select" id="payment_type_filter" name="filters[payment_type]">
+                                <option value="">All Types</option>
+                                <option value="Regular">Regular (Salary)</option>
+                                <option value="Permanent">Permanent Staff</option>
+                                <option value="Casual">Casual Staff</option>
+                                <option value="Pension">Pensioners</option>
+                                <option value="Gratuity">Gratuity</option>
                             </select>
                         </div>
                     </div>

@@ -149,7 +149,7 @@ class ComprehensiveReportService
 
     public function generatePayrollSummaryReport($year = null, $month = null, $filters = [])
     {
-        $query = PayrollRecord::with(['employee.department', 'employee.gradeLevel', 'employee.appointmentType']);
+        $query = PayrollRecord::with(['employee.department', 'employee.gradeLevel', 'employee.appointmentType', 'employee.bank']);
 
         if ($year) {
             $query->whereYear('payroll_month', $year);
@@ -175,12 +175,18 @@ class ComprehensiveReportService
             });
         }
 
+        // Apply payment type filter (Regular, Pension, Gratuity, Permanent, Casual)
+        if (!empty($filters['payment_type'])) {
+            $query->where('payment_type', $filters['payment_type']);
+        }
+
         $payrollRecords = $query->get();
 
         $reportData = [
             'report_title' => 'Payroll Summary Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
             'period' => $year . '-' . ($month ? $this->getMonthName($month) : '*'),
+            'payment_type' => $filters['payment_type'] ?? null,
             'total_records' => $payrollRecords->count(),
             'total_basic_salary' => $payrollRecords->sum('basic_salary'),
             'total_deductions' => $payrollRecords->sum('total_deductions'),
@@ -190,6 +196,21 @@ class ComprehensiveReportService
         ];
 
         foreach ($payrollRecords as $record) {
+            // Get individual deductions for this employee with their types
+            $employeeDeductions = \App\Models\Deduction::where('employee_id', $record->employee_id)
+                ->with('deductionType')
+                ->get();
+            
+            // Build deduction breakdown by type name
+            $deductionBreakdown = [];
+            foreach ($employeeDeductions as $deduction) {
+                $typeName = $deduction->deductionType->name ?? $deduction->deduction_type ?? 'Unknown';
+                if (!isset($deductionBreakdown[$typeName])) {
+                    $deductionBreakdown[$typeName] = 0;
+                }
+                $deductionBreakdown[$typeName] += $deduction->amount;
+            }
+            
             $reportData['payroll_records'][] = [
                 'employee_id' => $record->employee->staff_no ?? $record->employee->employee_id,
                 'full_name' => trim($record->employee->first_name . ' ' . $record->employee->middle_name . ' ' . $record->employee->surname),
@@ -200,7 +221,10 @@ class ComprehensiveReportService
                 'total_additions' => $record->total_additions,
                 'net_salary' => $record->net_salary,
                 'payment_date' => $record->payment_date,
-                'status' => $record->status
+                'status' => $record->status,
+                'bank_name' => $record->employee->bank->bank_name ?? 'NO BANK',
+                'account_number' => $record->employee->bank->account_no ?? 'N/A',
+                'deduction_breakdown' => $deductionBreakdown
             ];
         }
 

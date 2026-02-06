@@ -238,6 +238,9 @@ class ComprehensiveReportController extends Controller
             case 'payroll_journal':
                 return $this->reportService->generatePayrollJournalReport($filters);
 
+            case 'payroll_detailed':
+                return $this->reportService->generatePayrollDetailedReport($filters);
+
             default:
                 return ['error' => 'Invalid report type'];
         }
@@ -680,7 +683,8 @@ class ComprehensiveReportController extends Controller
             'payroll_analysis' => 'Payroll Analysis Report',
             'retirement' => 'Employees Approaching Retirement Report',
             'historical_retirement' => 'Historical Retirement Report',
-            'payroll_journal' => 'Payroll Journal Report'
+            'payroll_journal' => 'Payroll Journal Report',
+            'payroll_detailed' => 'Detailed Payroll Report (Bank Grouped)'
         ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';

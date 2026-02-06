@@ -379,7 +379,7 @@ unset($__errorArgs, $__bag); ?>
                                         <label class="form-label font-weight-bold">Rank <span class="text-danger">*</span></label>
                                         <select name="rank_id" class="form-select">
                                             <?php $__currentLoopData = $ranks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rank): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($rank->id); ?>" <?php echo e(old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : ''); ?>><?php echo e($rank->title); ?></option>
+                                                <option value="<?php echo e($rank->id); ?>" <?php echo e(old('rank_id', $employee->rank_id) == $rank->id ? 'selected' : ''); ?>><?php echo e($rank->name); ?></option>
                                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                         <?php $__errorArgs = ['rank_id'];

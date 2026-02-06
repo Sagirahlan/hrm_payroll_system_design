@@ -203,21 +203,29 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
 
         // Handle bank data if present in the Excel file
         $bankData = null;
-        $bankName = $row['bank_name'] ?? $row['bank'] ?? null;
+        $bankName = $row['bank_name'] ?? $row['bank'] ?? $row['bankname'] ?? $row['bank_name_display'] ?? null;
+
+        // Log bank-related fields for debugging
+        \Illuminate\Support\Facades\Log::info('Bank Import Debug:', [
+            'bank_name_found' => $bankName,
+            'account_no_raw' => $row['account_no'] ?? $row['account_number'] ?? $row['accountno'] ?? $row['acc_no'] ?? 'NOT FOUND',
+            'account_name_raw' => $row['account_name'] ?? $row['accountname'] ?? 'NOT FOUND',
+            'available_keys' => array_keys($row)
+        ]);
 
         if (!empty($bankName) && !in_array(strtolower(trim($bankName)), ['n/a', 'na', 'not applicable', 'none', 'null', ''])) {
-            // Look up the bank code from the BankList
-            $bankList = BankList::where('bank_name', 'like', '%' . $bankName . '%')->first();
+            // Look up the bank code from the BankList (case-insensitive)
+            $bankList = BankList::whereRaw('LOWER(bank_name) LIKE ?', ['%' . strtolower(trim($bankName)) . '%'])->first();
             $bankCode = $bankList ? $bankList->bank_code : null;
 
             // If not in BankList, use a default or try to get from Excel
-            $excelBankCode = $row['bank_code'] ?? $row['bankcode'] ?? null;
+            $excelBankCode = $row['bank_code'] ?? $row['bankcode'] ?? $row['code'] ?? null;
             if (!$bankCode && $excelBankCode && !in_array(strtolower(trim($excelBankCode)), ['n/a', 'na', 'not applicable', 'none', 'null', ''])) {
                 $bankCode = $excelBankCode;
             }
 
-            $accountName = $row['account_name'] ?? $row['account_name'] ?? ($row['first_name'] . ' ' . $row['surname']);
-            $accountNumber = $row['account_no'] ?? $row['account_number'] ?? $row['accountno'] ?? null;
+            $accountName = $row['account_name'] ?? $row['accountname'] ?? $row['acc_name'] ?? ($row['first_name'] . ' ' . $row['surname']);
+            $accountNumber = $row['account_no'] ?? $row['account_number'] ?? $row['accountno'] ?? $row['acc_no'] ?? $row['account_num'] ?? null;
 
             $bankData = [
                 'bank_name' => $bankName,
@@ -225,6 +233,18 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 'account_name' => $accountName,
                 'account_no' => $accountNumber,
             ];
+            
+            \Illuminate\Support\Facades\Log::info('Bank Data Created:', $bankData);
+        }
+
+        // Casual/Contract fields
+        $contractStartDate = $this->transformDate($row['casual_start_date'] ?? $row['contract_start_date'] ?? null);
+        $contractEndDate = $this->transformDate($row['casual_end_date'] ?? $row['casual_end_date'] ?? $row['contract_end_date'] ?? null);
+        $amount = $row['amount'] ?? null;
+        
+        // Clean amount if it contains currency symbols or commas
+        if ($amount) {
+            $amount = floatval(preg_replace('/[^0-9.]/', '', $amount));
         }
 
         if ($existingEmployee) {
@@ -256,6 +276,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 'highest_certificate' => $row['highest_certificate'] ?? null,
                 'grade_level_limit' => $row['grade_level_limit'] ?? null,
                 'appointment_type_id' => $appointmentTypeId,
+                'contract_start_date' => $contractStartDate,
+                'contract_end_date' => $contractEndDate,
+                'amount' => $amount,
             ]);
 
             // Update next of kin if provided
@@ -311,6 +334,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 'highest_certificate' => $row['highest_certificate'] ?? null,
                 'grade_level_limit' => $row['grade_level_limit'] ?? null,
                 'appointment_type_id' => $appointmentTypeId,
+                'contract_start_date' => $contractStartDate,
+                'contract_end_date' => $contractEndDate,
+                'amount' => $amount,
             ]);
             $employee->save();
 
