@@ -430,8 +430,8 @@
                                                         $payrollMonth = $payroll->payroll_month;
                                                         $additions = collect();
                                                         
-                                                        // Only show additions for Active/Standard payroll, not Pension/Gratuity (unless logic changes)
-                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Pension' && $payroll->payment_type !== 'Gratuity') {
+                                                        // Show additions for Active/Standard payroll and Pension - only exclude Gratuity
+                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Gratuity') {
                                                             $additions = \App\Models\Addition::where('employee_id', $payroll->employee_id)
                                                                 ->where(function($query) use ($payrollMonth) {
                                                                     $query->where('start_date', '<=', $payrollMonth)
@@ -472,8 +472,8 @@
                                                     @php
                                                         $deductions = collect();
                                                         
-                                                        // Only show deductions for Active/Standard payroll, not Pension/Gratuity
-                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Pension' && $payroll->payment_type !== 'Gratuity') {
+                                                        // Show deductions for Active/Standard payroll and Pension - only exclude Gratuity
+                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Gratuity') {
                                                             $deductions = \App\Models\Deduction::where('employee_id', $payroll->employee_id)
                                                                 ->where(function($query) use ($payrollMonth) {
                                                                     $query->where('start_date', '<=', $payrollMonth)

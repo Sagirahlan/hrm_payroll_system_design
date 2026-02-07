@@ -106,6 +106,137 @@ class PayrollController extends Controller
                 }
                 // -------------------------------------------
 
+                // Calculate additions for this pensioner
+                $totalAdditions = 0;
+                $additions = \App\Models\Addition::where('employee_id', $pensioner->employee_id)
+                    ->where(function($query) use ($month) {
+                        $query->where(function($q) use ($month) {
+                            // Monthly or Perpetual additions that are active in this month
+                            $q->whereIn('addition_period', ['Monthly', 'Perpetual'])
+                              ->where('start_date', '<=', $month . '-01')
+                              ->where(function($dateQuery) use ($month) {
+                                  $dateQuery->whereNull('end_date')
+                                           ->orWhere('end_date', '>=', $month . '-01');
+                              });
+                        })->orWhere(function($q) use ($month) {
+                            // OneTime additions for this specific month
+                            $q->where('addition_period', 'OneTime')
+                              ->whereYear('start_date', '=', explode('-', $month)[0])
+                              ->whereMonth('start_date', '=', explode('-', $month)[1]);
+                        });
+                    })
+                    ->get();
+                
+                foreach ($additions as $addition) {
+                    $totalAdditions += $addition->amount;
+                }
+                
+                // Calculate deductions for this pensioner
+                $totalDeductions = 0;
+                $deductions = \App\Models\Deduction::where('employee_id', $pensioner->employee_id)
+                    ->where(function($query) use ($month) {
+                        $query->where(function($q) use ($month) {
+                            // Monthly or Perpetual deductions that are active in this month
+                            $q->whereIn('deduction_period', ['Monthly', 'Perpetual'])
+                              ->where('start_date', '<=', $month . '-01')
+                              ->where(function($dateQuery) use ($month) {
+                                  $dateQuery->whereNull('end_date')
+                                           ->orWhere('end_date', '>=', $month . '-01');
+                              });
+                        })->orWhere(function($q) use ($month) {
+                            // OneTime deductions for this specific month
+                            $q->where('deduction_period', 'OneTime')
+                              ->whereYear('start_date', '=', explode('-', $month)[0])
+                              ->whereMonth('start_date', '=', explode('-', $month)[1]);
+                        });
+                    })
+                    ->get();
+                
+                foreach ($deductions as $deduction) {
+                    $deductionAmount = $deduction->amount;
+                    
+                    // Check if this is a loan deduction
+                    if ($deduction->loan_id) {
+                        $loan = \App\Models\Loan::find($deduction->loan_id);
+                        if ($loan && $loan->status === 'active') {
+                            // Check if loan deduction has already been processed for this payroll month
+                            $existingLoanDeduction = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)
+                                ->where('payroll_month', $month)
+                                ->first();
+                            
+                            if ($existingLoanDeduction) {
+                                // Already processed for this month, skip
+                                continue;
+                            }
+                            
+                            // Verify that the loan start date is on or before the end of the current payroll month
+                            $payrollMonthEnd = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
+                            $loanStartDate = \Carbon\Carbon::parse($loan->start_date);
+                            
+                            if ($loanStartDate->gt($payrollMonthEnd)) {
+                                // Loan starts after this payroll month ends, skip
+                                continue;
+                            }
+                            
+                            // Check if loan is fully repaid or completed
+                            if ($loan->remaining_balance <= 0 || $loan->status === 'completed') {
+                                continue;
+                            }
+                            
+                            // Use the loan's monthly deduction amount
+                            $deductionAmount = $loan->monthly_deduction ?: $deduction->amount;
+                            
+                            // Ensure deduction doesn't exceed remaining balance
+                            $deductionAmount = min($deductionAmount, $loan->remaining_balance);
+                            
+                            // Update loan details
+                            $loan->total_repaid += $deductionAmount;
+                            $loan->remaining_balance -= $deductionAmount;
+                            
+                            // Check if loan is now fully repaid
+                            if ($loan->remaining_balance <= 0.01) {
+                                $loan->remaining_balance = 0;
+                                $loan->status = 'completed';
+                                $loan->end_date = \Carbon\Carbon::now();
+                            }
+                            
+                            // Calculate months completed
+                            $loanStart = \Carbon\Carbon::parse($loan->start_date);
+                            $currentMonth = \Carbon\Carbon::parse($month . '-01');
+                            $monthsSinceStart = $loanStart->diffInMonths($currentMonth, false) + 1;
+                            
+                            // Update remaining months
+                            $existingDeductionsCount = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->count();
+                            $loan->remaining_months = max(0, $loan->total_months - ($existingDeductionsCount + 1));
+                            
+                            // Check if loan term has been reached
+                            if ($monthsSinceStart >= $loan->total_months) {
+                                $loan->status = 'completed';
+                                $loan->end_date = \Carbon\Carbon::now();
+                            }
+                            
+                            $loan->save();
+                            
+                            // Create loan deduction record for tracking
+                            \App\Models\LoanDeduction::create([
+                                'loan_id' => $loan->loan_id,
+                                'employee_id' => $pensioner->employee_id,
+                                'amount_deducted' => $deductionAmount,
+                                'remaining_balance' => $loan->remaining_balance,
+                                'month_number' => min($monthsSinceStart, $loan->total_months),
+                                'payroll_month' => $month,
+                                'deduction_date' => \Carbon\Carbon::now(),
+                                'status' => 'completed',
+                            ]);
+                        }
+                    }
+                    
+                    $totalDeductions += $deductionAmount;
+                }
+                
+                // Calculate net salary
+                $netSalary = $monthlyPension + $totalAdditions - $totalDeductions;
+
                 // Create or update payroll record
                 PayrollRecord::updateOrCreate(
                     [
@@ -117,9 +248,9 @@ class PayrollController extends Controller
                         'grade_level_id' => $pensioner->grade_level_id,
                         'basic_salary' => $monthlyPension,
                         'payment_type' => 'Pension', // Explicitly set type to Pension
-                        'total_additions' => 0, // Deductions/Additions logic for pensioners can be added later
-                        'total_deductions' => 0,
-                        'net_salary' => $monthlyPension,
+                        'total_additions' => $totalAdditions,
+                        'total_deductions' => $totalDeductions,
+                        'net_salary' => $netSalary,
                         'status' => 'Pending Review',
                         'payment_date' => null,
                         'remarks' => $remarks,
@@ -137,7 +268,7 @@ class PayrollController extends Controller
                         ['payroll_id' => $payrollRecord->payroll_id],
                         [
                             'employee_id' => $pensioner->employee_id,
-                            'amount' => $monthlyPension,
+                            'amount' => $netSalary,
                             'payment_date' => null,
                             'bank_code' => $pensioner->bank->bank_code ?? null,
                             'account_name' => $pensioner->account_name ?? ($pensioner->first_name . ' ' . $pensioner->surname),
@@ -946,9 +1077,21 @@ class PayrollController extends Controller
 
     public function manageAllAdjustments(Request $request)
     {
-        $query = \App\Models\Employee::whereIn('status', ['Active', 'Suspended'])
-            ->where('status', '!=', 'Hold')  // Exclude employees with hold status
-            ->with(['department', 'gradeLevel']);
+        // Get employee type from request (default to 'active')
+        $employeeType = $request->input('employee_type', 'active');
+
+        // Base query with relationships
+        $query = \App\Models\Employee::with(['department', 'gradeLevel']);
+
+        // Filter by employee type (active or retired)
+        if ($employeeType === 'retired') {
+            // Show only retired employees (pensioners)
+            $query->where('status', 'Retired');
+        } else {
+            // Show active and suspended employees (default)
+            $query->whereIn('status', ['Active', 'Suspended'])
+                  ->where('status', '!=', 'Hold');  // Exclude employees with hold status
+        }
 
         // Search functionality - include full name search
         if ($request->filled('search')) {
@@ -994,7 +1137,7 @@ class PayrollController extends Controller
         // Get departments for filter dropdown
         $departments = \App\Models\Department::orderBy('department_name')->get();
 
-        return view('payroll.manage_all_adjustments', compact('employees', 'deductionTypes', 'additionTypes', 'departments'));
+        return view('payroll.manage_all_adjustments', compact('employees', 'deductionTypes', 'additionTypes', 'departments', 'employeeType'));
     }
 
 
@@ -1432,18 +1575,31 @@ class PayrollController extends Controller
         $gradeLevels = GradeLevel::orderBy('name')->get();
         $appointmentTypes = \App\Models\AppointmentType::all();
 
-        $employeesQuery = Employee::where(function($query) {
-            $query->whereIn('status', ['Active', 'Suspended'])
-                  ->orWhere(function($q) {
-                      $q->where('status', 'Retired')
-                        ->where(function($d) {
-                             $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
-                               ->orWhereHas('pensioner', function($p) {
-                                   $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
-                               });
-                        });
-                  });
-        })->with(['department', 'gradeLevel']);
+        // Get employee type from request (default to 'active')
+        $employeeType = $request->input('employee_type', 'active');
+
+        // Base query with department and grade level relationships
+        $employeesQuery = Employee::with(['department', 'gradeLevel']);
+
+        // Filter by employee type (active or retired)
+        if ($employeeType === 'retired') {
+            // Show only retired employees (pensioners)
+            $employeesQuery->where('status', 'Retired');
+        } else {
+            // Show active and suspended employees (default)
+            $employeesQuery->where(function($query) {
+                $query->whereIn('status', ['Active', 'Suspended'])
+                      ->orWhere(function($q) {
+                          $q->where('status', 'Retired')
+                            ->where(function($d) {
+                                 $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                                   ->orWhereHas('pensioner', function($p) {
+                                       $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                                   });
+                            });
+                      });
+            });
+        }
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -1476,7 +1632,7 @@ class PayrollController extends Controller
             ]);
         }
 
-        return view('payroll.additions', compact('statutoryAdditions', 'nonStatutoryAdditions', 'departments', 'gradeLevels', 'employees', 'appointmentTypes'));
+        return view('payroll.additions', compact('statutoryAdditions', 'nonStatutoryAdditions', 'departments', 'gradeLevels', 'employees', 'appointmentTypes', 'employeeType'));
     }
 
     public function storeBulkAdditions(Request $request)
@@ -1637,18 +1793,31 @@ class PayrollController extends Controller
         $gradeLevels = GradeLevel::orderBy('name')->get();
         $appointmentTypes = \App\Models\AppointmentType::all();
 
-        $employeesQuery = Employee::where(function($query) {
-            $query->whereIn('status', ['Active', 'Suspended'])
-                  ->orWhere(function($q) {
-                      $q->where('status', 'Retired')
-                        ->where(function($d) {
-                             $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
-                               ->orWhereHas('pensioner', function($p) {
-                                   $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
-                               });
-                        });
-                  });
-        })->with(['department', 'gradeLevel']);
+        // Get employee type from request (default to 'active')
+        $employeeType = $request->input('employee_type', 'active');
+
+        // Base query with department and grade level relationships
+        $employeesQuery = Employee::with(['department', 'gradeLevel']);
+
+        // Filter by employee type (active or retired)
+        if ($employeeType === 'retired') {
+            // Show only retired employees (pensioners)
+            $employeesQuery->where('status', 'Retired');
+        } else {
+            // Show active and suspended employees (default)
+            $employeesQuery->where(function($query) {
+                $query->whereIn('status', ['Active', 'Suspended'])
+                      ->orWhere(function($q) {
+                          $q->where('status', 'Retired')
+                            ->where(function($d) {
+                                 $d->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()])
+                                   ->orWhereHas('pensioner', function($p) {
+                                       $p->whereBetween('date_of_retirement', [now()->startOfMonth(), now()->endOfMonth()]);
+                                   });
+                            });
+                      });
+            });
+        }
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -1681,7 +1850,7 @@ class PayrollController extends Controller
             ]);
         }
 
-        return view('payroll.deductions', compact('statutoryDeductions', 'nonStatutoryDeductions', 'departments', 'gradeLevels', 'employees', 'appointmentTypes'));
+        return view('payroll.deductions', compact('statutoryDeductions', 'nonStatutoryDeductions', 'departments', 'gradeLevels', 'employees', 'appointmentTypes', 'employeeType'));
     }
 
     public function storeBulkDeductions(Request $request)
@@ -1878,7 +2047,8 @@ class PayrollController extends Controller
             'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => null, 'employee_count' => $employees->count(), 'deduction_types' => $deductionTypeIds, 'deductions_created' => $deductionsCreated, 'casual_skipped' => $casualSkipped]),
         ]);
 
-        $successMessage = "Bulk deduction assignment completed: {$deductionsCreated} deductions created.";
+        $staffCount = $employees->count();
+        $successMessage = "Bulk deduction assignment completed: {$staffCount} staff members assigned deductions ({$deductionsCreated} deduction records created).";
         if ($casualSkipped > 0) {
             $successMessage .= " ({$casualSkipped} statutory deductions skipped for casual employees)";
         }
@@ -2294,6 +2464,39 @@ class PayrollController extends Controller
         // If we don't delete them, re-running the Bulk Tool would create duplicates.
         // Items starting in previous months (historical) will NOT be touched because of the start_date check.
         
+        // First, get all additions that will be deleted to check for associated loans
+        $additionsToDelete = \App\Models\Addition::whereBetween('start_date', [$monthStart, $monthEnd])
+            ->whereIn('addition_period', ['OneTime', 'Monthly'])
+            ->get();
+        
+        // Delete loans that were created from these additions
+        $deletedLoans = 0;
+        $deletedLoanDeductions = 0;
+        foreach ($additionsToDelete as $addition) {
+            // Find loans associated with this addition by matching employee_id and creation date
+            $loans = \App\Models\Loan::where('employee_id', $addition->employee_id)
+                ->whereDate('created_at', '>=', $monthStart)
+                ->whereDate('created_at', '<=', $monthEnd)
+                ->get();
+            
+            foreach ($loans as $loan) {
+                // Delete the loan's deduction record first
+                $loanDeduction = \App\Models\Deduction::where('loan_id', $loan->loan_id)->first();
+                if ($loanDeduction) {
+                    $loanDeduction->delete();
+                    $deletedLoanDeductions++;
+                }
+                
+                // Delete any loan deduction history
+                \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->delete();
+                
+                // Delete the loan itself
+                $loan->delete();
+                $deletedLoans++;
+            }
+        }
+        
+        // Now delete the additions
         $deletedAdditions = \App\Models\Addition::whereBetween('start_date', [$monthStart, $monthEnd])
             ->whereIn('addition_period', ['OneTime', 'Monthly'])
             ->delete();
@@ -2342,9 +2545,9 @@ class PayrollController extends Controller
         AuditTrail::create([
             'user_id' => Auth::id(),
             'action' => 'deleted_monthly_payroll',
-            'description' => "Deleted entire payroll batch for {$request->month}. Removed {$count} records, {$deletedAdditions} additions, {$deletedDeductions} deductions, and loans starting in this month.",
+            'description' => "Deleted entire payroll batch for {$request->month}. Removed {$count} records, {$deletedAdditions} additions, {$deletedDeductions} deductions, {$deletedLoans} loans, and {$deletedLoanDeductions} loan deductions.",
             'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $request->month, 'records_count' => $count]),
+            'log_data' => json_encode(['entity_type' => 'Payroll', 'month' => $request->month, 'records_count' => $count, 'loans_deleted' => $deletedLoans]),
         ]);
 
         return redirect()->route('payroll.index')->with('success', "Payroll for {$request->month} deleted successfully. ({$count} records removed)");

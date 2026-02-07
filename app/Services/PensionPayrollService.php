@@ -100,6 +100,146 @@ class PensionPayrollService
     }
 
     /**
+     * Generate pension payroll records for a given month
+     * Creates PayrollRecord entries for retired employees (pensioners)
+     */
+    public function generatePensionPayroll($month)
+    {
+        // Parse the month (format: Y-m)
+        list($year, $monthNum) = explode('-', $month);
+        
+        // Get all active pensioners with their employee relationship
+        $pensioners = Pensioner::where('status', 'Active')
+            ->whereNotNull('pension_amount')
+            ->where('pension_amount', '>', 0)
+            ->with('employee')
+            ->get();
+
+        $processedPensioners = [];
+        
+        DB::beginTransaction();
+        
+        try {
+            foreach ($pensioners as $pensioner) {
+                $employee = $pensioner->employee;
+                
+                if (!$employee) {
+                    \Log::warning("Pensioner {$pensioner->id} has no associated employee record");
+                    continue;
+                }
+                
+                // Check if payroll already exists for this pensioner for this month
+                $existingPayroll = \App\Models\PayrollRecord::where('employee_id', $employee->employee_id)
+                    ->where('payroll_month', $month . '-01')
+                    ->where('payment_type', 'Pension')
+                    ->first();
+                
+                if ($existingPayroll) {
+                    \Log::info("Payroll already exists for pensioner {$employee->employee_id} for month {$month}");
+                    continue;
+                }
+                
+                // Get the pension amount
+                $pensionAmount = $this->calculateMonthlyPension($pensioner);
+                
+                // Calculate additions for this pensioner
+                $totalAdditions = 0;
+                $additions = \App\Models\Addition::where('employee_id', $employee->employee_id)
+                    ->where(function($query) use ($month) {
+                        $query->where(function($q) use ($month) {
+                            // Monthly or Perpetual additions that are active in this month
+                            $q->whereIn('addition_period', ['Monthly', 'Perpetual'])
+                              ->where('start_date', '<=', $month . '-01')
+                              ->where(function($dateQuery) use ($month) {
+                                  $dateQuery->whereNull('end_date')
+                                           ->orWhere('end_date', '>=', $month . '-01');
+                              });
+                        })->orWhere(function($q) use ($month) {
+                            // OneTime additions for this specific month
+                            $q->where('addition_period', 'OneTime')
+                              ->whereYear('start_date', '=', explode('-', $month)[0])
+                              ->whereMonth('start_date', '=', explode('-', $month)[1]);
+                        });
+                    })
+                    ->get();
+                
+                foreach ($additions as $addition) {
+                    $totalAdditions += $addition->amount;
+                }
+                
+                // Calculate deductions for this pensioner
+                $totalDeductions = 0;
+                $deductions = \App\Models\Deduction::where('employee_id', $employee->employee_id)
+                    ->where(function($query) use ($month) {
+                        $query->where(function($q) use ($month) {
+                            // Monthly or Perpetual deductions that are active in this month
+                            $q->whereIn('deduction_period', ['Monthly', 'Perpetual'])
+                              ->where('start_date', '<=', $month . '-01')
+                              ->where(function($dateQuery) use ($month) {
+                                  $dateQuery->whereNull('end_date')
+                                           ->orWhere('end_date', '>=', $month . '-01');
+                              });
+                        })->orWhere(function($q) use ($month) {
+                            // OneTime deductions for this specific month
+                            $q->where('deduction_period', 'OneTime')
+                              ->whereYear('start_date', '=', explode('-', $month)[0])
+                              ->whereMonth('start_date', '=', explode('-', $month)[1]);
+                        });
+                    })
+                    ->get();
+                
+                foreach ($deductions as $deduction) {
+                    $totalDeductions += $deduction->amount;
+                }
+                
+                // Calculate net salary
+                $netSalary = $pensionAmount + $totalAdditions - $totalDeductions;
+                
+                // Create payroll record
+                $payrollRecord = \App\Models\PayrollRecord::create([
+                    'employee_id' => $employee->employee_id,
+                    'payroll_month' => $month . '-01',
+                    'basic_salary' => $pensionAmount,
+                    'total_additions' => $totalAdditions,
+                    'total_deductions' => $totalDeductions,
+                    'net_salary' => $netSalary,
+                    'payment_type' => 'Pension',
+                    'status' => 'Pending Review',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                $processedPensioners[] = [
+                    'pensioner_id' => $pensioner->id,
+                    'employee_id' => $employee->employee_id,
+                    'pension_amount' => $pensionAmount,
+                    'additions' => $totalAdditions,
+                    'deductions' => $totalDeductions,
+                    'net_amount' => $netSalary,
+                ];
+                
+                \Log::info("Created pension payroll for {$employee->employee_id}", [
+                    'pension' => $pensionAmount,
+                    'additions' => $totalAdditions,
+                    'deductions' => $totalDeductions,
+                    'net' => $netSalary
+                ]);
+            }
+            
+            DB::commit();
+            
+            return $processedPensioners;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error generating pension payroll: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Process pension payments
      */
     public function processPensionPayments($paymentRecords)

@@ -140,6 +140,27 @@ class LoanController extends Controller
      */
     public function getEmployeeSalary(Employee $employee)
     {
+        // Check if employee is retired - use pension amount
+        if ($employee->status === 'Retired') {
+            // For retired employees (pensioners), use pension amount
+            $pensioner = $employee->pensioner;
+            
+            if ($pensioner && $pensioner->pension_amount) {
+                return response()->json([
+                    'basic_salary' => $pensioner->pension_amount,
+                    'is_retired' => true,
+                    'salary_type' => 'pension'
+                ]);
+            }
+            
+            // If no pensioner record, return error
+            return response()->json([
+                'basic_salary' => null,
+                'error' => 'Retired employee does not have a valid pension amount configured',
+                'is_retired' => true
+            ]);
+        }
+        
         // Check if employee is a Casual employee using the new method
         $isCasualEmployee = $employee->isCasualEmployee();
 
@@ -147,7 +168,9 @@ class LoanController extends Controller
             // For Casual employees, use the amount field
             if ($employee->amount) {
                 return response()->json([
-                    'basic_salary' => $employee->amount
+                    'basic_salary' => $employee->amount,
+                    'is_retired' => false,
+                    'salary_type' => 'contract'
                 ]);
             }
         } else {
@@ -156,14 +179,17 @@ class LoanController extends Controller
 
             if ($step && $step->basic_salary) {
                 return response()->json([
-                    'basic_salary' => $step->basic_salary
+                    'basic_salary' => $step->basic_salary,
+                    'is_retired' => false,
+                    'salary_type' => 'basic_salary'
                 ]);
             }
         }
 
         return response()->json([
             'basic_salary' => null,
-            'error' => 'Employee does not have a valid salary configured'
+            'error' => 'Employee does not have a valid salary configured',
+            'is_retired' => false
         ]);
     }
 
@@ -194,24 +220,36 @@ class LoanController extends Controller
         $addition = Addition::find($request->addition_id);
         $employee = Employee::find($request->employee_id);
 
-        // Determine if employee is contract or regular using the new method
-        $isCasualEmployee = $employee->isCasualEmployee();
+        // Determine salary/pension amount based on employee type
         $salary = 0;
-
-        if ($isCasualEmployee) {
+        
+        // Check if employee is retired - use pension amount
+        if ($employee->status === 'Retired') {
+            $pensioner = $employee->pensioner;
+            if ($pensioner && $pensioner->pension_amount) {
+                $salary = $pensioner->pension_amount;
+            }
+        } 
+        // Check if employee is a Casual employee
+        elseif ($employee->isCasualEmployee()) {
             // For Casual employees, use the amount field
             $salary = $employee->amount;
-        } else {
-            // For regular employees, use step basic salary
+        } 
+        // For regular employees, use step basic salary
+        else {
             $step = $employee->step;
             $salary = $step ? $step->basic_salary : 0;
         }
 
-        // Validate that the employee has a salary
+        // Validate that the employee has a salary/pension
         if (!$salary) {
+            $errorMessage = $employee->status === 'Retired' 
+                ? 'Retired employee does not have a valid pension amount for loan calculation.'
+                : 'Employee does not have a valid salary for loan calculation.';
+                
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['employee_id' => 'Employee does not have a valid salary for percentage calculation.']);
+                ->withErrors(['employee_id' => $errorMessage]);
         }
 
         // CRITICAL: Principal amount is FIXED - never modify it

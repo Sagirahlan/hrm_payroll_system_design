@@ -5,6 +5,33 @@
             <h5 class="mb-0">Manage Staff Deductions & Additions</h5>
         </div>
         <div class="card-body">
+            <!-- Employee Type Toggle -->
+            <div class="card border-info mb-4 shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-2">Select Employee Category</h5>
+                            <p class="text-muted mb-0 small">Choose whether to manage adjustments for active staff or retired staff</p>
+                        </div>
+                        <div class="btn-group" role="group" aria-label="Employee Type">
+                            <input type="radio" class="btn-check" name="employee_type_radio" id="active_staff" value="active" <?php echo e(($employeeType ?? 'active') === 'active' ? 'checked' : ''); ?> autocomplete="off">
+                            <label class="btn btn-outline-primary" for="active_staff">
+                                <i class="bi bi-people-fill me-1"></i> Active Staff
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="employee_type_radio" id="retired_staff" value="retired" <?php echo e(($employeeType ?? 'active') === 'retired' ? 'checked' : ''); ?> autocomplete="off">
+                            <label class="btn btn-outline-success" for="retired_staff">
+                                <i class="bi bi-person-badge-fill me-1"></i> Retired Staff
+                            </label>
+                        </div>
+                    </div>
+                    <div id="employee-type-indicator" class="mt-3 alert <?php echo e(($employeeType ?? 'active') === 'retired' ? 'alert-success' : 'alert-primary'); ?>" role="alert">
+                        <strong><i class="bi <?php echo e(($employeeType ?? 'active') === 'retired' ? 'bi-person-badge-fill' : 'bi-people-fill'); ?> me-2"></i></strong>
+                        Currently showing: <strong id="current-type-text"><?php echo e(($employeeType ?? 'active') === 'retired' ? 'Retired Staff/Pensioners' : 'Active Employees'); ?></strong>
+                    </div>
+                </div>
+            </div>
+
             <!-- Search and Filter Section -->
             <div class="card border-info mb-4 shadow">
                 <div class="card-header" style="background-color: #17a2b8; color: white;">
@@ -15,7 +42,8 @@
                 </div>
                 <div class="collapse show" id="filterCollapse">
                     <div class="card-body">
-                        <form method="GET" action="<?php echo e(route('payroll.adjustments.manage')); ?>" class="mb-3">
+                        <form method="GET" action="<?php echo e(route('payroll.adjustments.manage')); ?>" class="mb-3" id="filter-form">
+                            <input type="hidden" name="employee_type" id="filter_employee_type" value="<?php echo e($employeeType ?? 'active'); ?>">
                             <div class="row g-3">
                                 <!-- Search -->
                                 <div class="col-md-3">
@@ -161,5 +189,60 @@
         </div>
     </div>
 </div>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle employee type toggle
+    const activeStaffRadio = document.getElementById('active_staff');
+    const retiredStaffRadio = document.getElementById('retired_staff');
+    const filterEmployeeTypeInput = document.getElementById('filter_employee_type');
+    const employeeTypeIndicator = document.getElementById('employee-type-indicator');
+    const currentTypeText = document.getElementById('current-type-text');
+    const filterForm = document.getElementById('filter-form');
+
+    function updateEmployeeType(type) {
+        // Update hidden input
+        if (filterEmployeeTypeInput) filterEmployeeTypeInput.value = type;
+        
+        // Update indicator
+        if (type === 'retired') {
+            employeeTypeIndicator.classList.remove('alert-primary');
+            employeeTypeIndicator.classList.add('alert-success');
+            currentTypeText.textContent = 'Retired Staff/Pensioners';
+            employeeTypeIndicator.querySelector('i').classList.remove('bi-people-fill');
+            employeeTypeIndicator.querySelector('i').classList.add('bi-person-badge-fill');
+        } else {
+            employeeTypeIndicator.classList.remove('alert-success');
+            employeeTypeIndicator.classList.add('alert-primary');
+            currentTypeText.textContent = 'Active Employees';
+            employeeTypeIndicator.querySelector('i').classList.remove('bi-person-badge-fill');
+            employeeTypeIndicator.querySelector('i').classList.add('bi-people-fill');
+        }
+        
+        // Reload employee list with new filter
+        if (filterForm) {
+            filterForm.submit();
+        }
+    }
+
+    if (activeStaffRadio) {
+        activeStaffRadio.addEventListener('change', function() {
+            if (this.checked) {
+                updateEmployeeType('active');
+            }
+        });
+    }
+
+    if (retiredStaffRadio) {
+        retiredStaffRadio.addEventListener('change', function() {
+            if (this.checked) {
+                updateEmployeeType('retired');
+            }
+        });
+    }
+});
+</script>
+<?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/payroll/manage_all_adjustments.blade.php ENDPATH**/ ?>

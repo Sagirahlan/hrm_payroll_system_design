@@ -2,7 +2,34 @@
 
 <?php $__env->startSection('content'); ?>
 <div class="container-fluid">
-    <h1 class="mb-4">Bulk Deductions</h1>
+    <h1 class="mb-3">Bulk Deductions</h1>
+
+    <!-- Employee Type Toggle -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-2">Select Employee Category</h5>
+                    <p class="text-muted mb-0 small">Choose whether to add deductions for active staff or retired staff</p>
+                </div>
+                <div class="btn-group" role="group" aria-label="Employee Type">
+                    <input type="radio" class="btn-check" name="employee_type_radio" id="active_staff" value="active" <?php echo e(($employeeType ?? 'active') === 'active' ? 'checked' : ''); ?> autocomplete="off">
+                    <label class="btn btn-outline-primary" for="active_staff">
+                        <i class="bi bi-people-fill me-1"></i> Active Staff
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="employee_type_radio" id="retired_staff" value="retired" <?php echo e(($employeeType ?? 'active') === 'retired' ? 'checked' : ''); ?> autocomplete="off">
+                    <label class="btn btn-outline-success" for="retired_staff">
+                        <i class="bi bi-person-badge-fill me-1"></i> Retired Staff
+                    </label>
+                </div>
+            </div>
+            <div id="employee-type-indicator" class="mt-3 alert <?php echo e(($employeeType ?? 'active') === 'retired' ? 'alert-success' : 'alert-primary'); ?>" role="alert">
+                <strong><i class="bi <?php echo e(($employeeType ?? 'active') === 'retired' ? 'bi-person-badge-fill' : 'bi-people-fill'); ?> me-2"></i></strong>
+                Currently showing: <strong id="current-type-text"><?php echo e(($employeeType ?? 'active') === 'retired' ? 'Retired Staff/Pensioners' : 'Active Employees'); ?></strong>
+            </div>
+        </div>
+    </div>
 
     <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -31,6 +58,7 @@
             <form action="<?php echo e(route('payroll.deductions.bulk.store')); ?>" method="POST" id="bulk-assignment-form">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="select_all_pages" id="select_all_pages" value="0">
+                <input type="hidden" name="employee_type" id="employee_type_input" value="<?php echo e($employeeType ?? 'active'); ?>">
                 <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
                 <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
                 <input type="hidden" name="grade_level_id" value="<?php echo e(request('grade_level_id')); ?>">
@@ -130,6 +158,7 @@
                 <div class="card-body">
                     <!-- Filter Form -->
                     <form action="<?php echo e(route('payroll.deductions')); ?>" method="GET" id="employee-filter-form">
+                        <input type="hidden" name="employee_type" id="filter_employee_type" value="<?php echo e($employeeType ?? 'active'); ?>">
                         <div class="input-group mb-3">
                             <input type="text" name="search" class="form-control" placeholder="Search by name or ID..." value="<?php echo e(request('search')); ?>">
                             <button class="btn btn-outline-secondary" type="submit">Search</button>
@@ -451,6 +480,61 @@ document.addEventListener('DOMContentLoaded', function() {
             nonStatutoryFields.forEach(input => {
                 input.closest('.mb-3, .row').style.display = showNonStatutory ? 'block' : 'none';
             });
+        });
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle employee type toggle
+    const activeStaffRadio = document.getElementById('active_staff');
+    const retiredStaffRadio = document.getElementById('retired_staff');
+    const employeeTypeInput = document.getElementById('employee_type_input');
+    const filterEmployeeTypeInput = document.getElementById('filter_employee_type');
+    const employeeTypeIndicator = document.getElementById('employee-type-indicator');
+    const currentTypeText = document.getElementById('current-type-text');
+    const filterForm = document.getElementById('employee-filter-form');
+
+    function updateEmployeeType(type) {
+        // Update hidden inputs
+        if (employeeTypeInput) employeeTypeInput.value = type;
+        if (filterEmployeeTypeInput) filterEmployeeTypeInput.value = type;
+        
+        // Update indicator
+        if (type === 'retired') {
+            employeeTypeIndicator.classList.remove('alert-primary');
+            employeeTypeIndicator.classList.add('alert-success');
+            currentTypeText.textContent = 'Retired Staff/Pensioners';
+            employeeTypeIndicator.querySelector('i').classList.remove('bi-people-fill');
+            employeeTypeIndicator.querySelector('i').classList.add('bi-person-badge-fill');
+        } else {
+            employeeTypeIndicator.classList.remove('alert-success');
+            employeeTypeIndicator.classList.add('alert-primary');
+            currentTypeText.textContent = 'Active Employees';
+            employeeTypeIndicator.querySelector('i').classList.remove('bi-person-badge-fill');
+            employeeTypeIndicator.querySelector('i').classList.add('bi-people-fill');
+        }
+        
+        // Reload employee list with new filter
+        if (filterForm) {
+            filterForm.submit();
+        }
+    }
+
+    if (activeStaffRadio) {
+        activeStaffRadio.addEventListener('change', function() {
+            if (this.checked) {
+                updateEmployeeType('active');
+            }
+        });
+    }
+
+    if (retiredStaffRadio) {
+        retiredStaffRadio.addEventListener('change', function() {
+            if (this.checked) {
+                updateEmployeeType('retired');
+            }
         });
     }
 });

@@ -27,7 +27,7 @@
                                     <option value="{{ $employee->employee_id }}" data-appointment-type="{{ $employee->appointmentType->name ?? 'Permanent' }}">
                                         {{ $employee->first_name }} {{ $employee->middle_name ?? '' }} {{ $employee->surname }} ({{ $employee->employee_id ?? $employee->employee_number }})
                                         @if($employee->isCasualEmployee())
-                                            [Contract: {{ number_format($employee->amount ?? 0) }}]
+                                            [Casual: {{ number_format($employee->amount ?? 0) }}]
                                         @endif
                                     </option>
                                 @endforeach
@@ -101,7 +101,7 @@
                             <div class="col-md-4 mb-3">
                                 <label for="monthly_percentage" class="form-label">Monthly Percentage of Salary (%)</label>
                                 <input type="number" step="0.01" name="monthly_percentage" id="monthly_percentage" class="form-control" value="{{ old('monthly_percentage') }}" max="100">
-                                <small class="form-text text-muted">OR number of months</small>
+                                <small class="form-text text-muted" id="percentage_help_text">OR number of months</small>
                                 @error('monthly_percentage')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
@@ -125,7 +125,7 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="display_monthly_deduction" class="form-label">Calculated Monthly Deduction</label>
+                                <label for="display_monthly_deduction" class="form-label" id="monthly_deduction_label">Calculated Monthly Deduction</label>
                                 <input type="number" step="0.01" id="display_monthly_deduction" class="form-control" readonly>
                                 <small class="form-text text-muted">Amount to be deducted monthly</small>
                             </div>
@@ -212,15 +212,49 @@
                                 console.log('Calculated:', {
                                     monthlyDeduction: monthlyDeduction,
                                     percentage: percentage,
-                                    verifyTotal: monthlyDeduction * loanDurationMonths
+                                    verifyTotal: monthlyDeduction * loanDurationMonths,
+                                    isRetired: data.is_retired,
+                                    salaryType: data.salary_type
                                 });
 
                                 autoCalculatedPercentageInput.value = percentage.toFixed(2);
                                 if (displayMonthlyDeductionInput) {
                                     displayMonthlyDeductionInput.value = monthlyDeduction.toFixed(2);
                                 }
+                                
+                                // Update help text based on employee type
+                                const percentageHelpText = document.getElementById('percentage_help_text');
+                                const autoCalcLabel = document.querySelector('label[for="auto_calculated_percentage"]');
+                                const monthlyDeductionLabel = document.getElementById('monthly_deduction_label');
+                                
+                                if (data.is_retired) {
+                                    if (percentageHelpText) {
+                                        percentageHelpText.textContent = 'OR number of months (based on pension amount)';
+                                        percentageHelpText.classList.add('text-success');
+                                    }
+                                    if (autoCalcLabel) {
+                                        autoCalcLabel.innerHTML = 'Auto-Calculated Percentage <span class="badge bg-success">Pension-based</span>';
+                                    }
+                                    if (monthlyDeductionLabel) {
+                                        monthlyDeductionLabel.innerHTML = 'Calculated Monthly Deduction <span class="badge bg-success">From Pension</span>';
+                                    }
+                                } else {
+                                    if (percentageHelpText) {
+                                        percentageHelpText.textContent = 'OR number of months';
+                                        percentageHelpText.classList.remove('text-success');
+                                    }
+                                    if (autoCalcLabel) {
+                                        autoCalcLabel.textContent = 'Auto-Calculated Percentage';
+                                    }
+                                    if (monthlyDeductionLabel) {
+                                        monthlyDeductionLabel.textContent = 'Calculated Monthly Deduction';
+                                    }
+                                }
                             } else {
-                                alert('Employee does not have a valid salary for percentage calculation.');
+                                const errorMsg = data.is_retired 
+                                    ? 'Retired employee does not have a valid pension amount for percentage calculation.'
+                                    : 'Employee does not have a valid salary for percentage calculation.';
+                                alert(errorMsg);
                                 loanDurationMonthsInput.value = '';
                                 autoCalculatedPercentageInput.value = '';
                                 if (displayMonthlyDeductionInput) {
