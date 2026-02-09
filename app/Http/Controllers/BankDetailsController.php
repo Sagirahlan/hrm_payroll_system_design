@@ -89,6 +89,8 @@ class BankDetailsController extends Controller
                 $q->where('first_name', 'LIKE', "%{$query}%")
                   ->orWhere('surname', 'LIKE', "%{$query}%")
                   ->orWhere('middle_name', 'LIKE', "%{$query}%")
+                  ->orWhereRaw("CONCAT(first_name, ' ', surname) LIKE ?", ["%{$query}%"])
+                  ->orWhereRaw("CONCAT(surname, ' ', first_name) LIKE ?", ["%{$query}%"])
                   ->orWhereRaw("CONCAT_WS(' ', first_name, middle_name, surname) LIKE ?", ["%{$query}%"])
                   ->orWhere('employee_id', 'LIKE', "%{$query}%")
                   ->orWhere('staff_no', 'LIKE', "%{$query}%");
