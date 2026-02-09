@@ -636,12 +636,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            // Check if appointment type is contract using the new method
-            $tempEmployee = new Employee();
-            $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
-            $tempEmployee->load('appointmentType');
-
-            if ($tempEmployee->isCasualEmployee()) {
+            if ($appointmentType && $appointmentType->name === 'Casual') {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -664,16 +659,16 @@ class EmployeeController extends Controller
             $dateOfFirstAppointment = Carbon::parse($request->input('date_of_first_appointment'));
             $ageAtAppointment = $dateOfBirth->diffInYears($dateOfFirstAppointment);
 
-            if ($ageAtAppointment < 18) {
-                throw ValidationException::withMessages([
-                    'date_of_birth' => 'Staff must be at least 18 years old at the time of first appointment. Current age at appointment: ' . $ageAtAppointment . ' years.'
-                ]);
-            }
 
-            if ($ageAtAppointment > 45) {
-                throw ValidationException::withMessages([
-                    'date_of_birth' => 'Staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
-                ]);
+
+            // Enforce max age (45) only for Permanent staff
+            // Enforce max age (45) only for Permanent staff
+            if (!($appointmentType && $appointmentType->name === 'Casual') && $appointmentType && $appointmentType->name === 'Permanent') {
+                if ($ageAtAppointment > 45) {
+                    throw ValidationException::withMessages([
+                        'date_of_birth' => 'Permanent staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
+                    ]);
+                }
             }
 
             if ($request->hasFile('photo')) {
@@ -833,11 +828,7 @@ class EmployeeController extends Controller
 
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
-            $tempEmployee = new Employee();
-            $tempEmployee->appointment_type_id = $request->input('appointment_type_id');
-            $tempEmployee->load('appointmentType');
-
-            if ($tempEmployee->isCasualEmployee()) {
+            if ($appointmentType && $appointmentType->name === 'Casual') {
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
@@ -859,16 +850,16 @@ class EmployeeController extends Controller
             $dateOfFirstAppointment = Carbon::parse($request->input('date_of_first_appointment'));
             $ageAtAppointment = $dateOfBirth->diffInYears($dateOfFirstAppointment);
 
-            if ($ageAtAppointment < 18) {
-                throw ValidationException::withMessages([
-                    'date_of_birth' => 'Staff must be at least 18 years old at the time of first appointment. Current age at appointment: ' . $ageAtAppointment . ' years.'
-                ]);
-            }
 
-            if ($ageAtAppointment > 45) {
-                throw ValidationException::withMessages([
-                    'date_of_birth' => 'Staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
-                ]);
+
+            // Enforce max age (45) only for Permanent staff
+            // Enforce max age (45) only for Permanent staff
+            if (!($appointmentType && $appointmentType->name === 'Casual') && $appointmentType && $appointmentType->name === 'Permanent') {
+                if ($ageAtAppointment > 45) {
+                    throw ValidationException::withMessages([
+                        'date_of_birth' => 'Permanent staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
+                    ]);
+                }
             }
 
             $currentData = $employee->toArray();

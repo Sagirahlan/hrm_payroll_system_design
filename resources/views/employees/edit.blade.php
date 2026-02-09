@@ -829,9 +829,8 @@
         let maxRetirementAge = null;
         let maxYearsOfService = null;
 
-        salaryScaleSelect.addEventListener('change', function() {
-            const salaryScaleId = this.value;
-            if (salaryScaleId) {
+        function fetchRetirementInfo(salaryScaleId) {
+             if (salaryScaleId) {
                 fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
                     .then(response => response.json())
                     .then(data => {
@@ -842,7 +841,16 @@
                         }
                     });
             }
+        }
+
+        salaryScaleSelect.addEventListener('change', function() {
+            fetchRetirementInfo(this.value);
         });
+
+        // Trigger on load if value exists
+        if (salaryScaleSelect.value) {
+            fetchRetirementInfo(salaryScaleSelect.value);
+        }
 
         function calculateRetirementDate() {
             if (maxRetirementAge === null || maxYearsOfService === null) {

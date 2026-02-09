@@ -21,6 +21,16 @@
                                 &larr; Back
                             </a>
                         </div>
+                        @if(count($approvedPayrollMonths) > 0)
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>Note:</strong> Some payroll months are approved. Additions for those months cannot be deleted. You can still add additions for unapproved months.
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                         <!-- Addition Form -->
                         <div class="col-lg-6 mb-4">
                             <div class="card border-success shadow">
@@ -100,13 +110,25 @@
                                                         <td>{{ \Carbon\Carbon::parse($addition->start_date)->format('M d, Y') }}</td>
                                                         <td>{{ $addition->end_date ? \Carbon\Carbon::parse($addition->end_date)->format('M d, Y') : 'N/A' }}</td>
                                                         <td>
-                                                            <form action="{{ route('payroll.additions.destroy', ['employeeId' => $employee->employee_id, 'additionId' => $addition->addition_id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this addition?');">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </form>
+                                                            @can('delete_additions')
+                                                                @php
+                                                                    $additionMonth = $addition->start_date ? \Carbon\Carbon::parse($addition->start_date)->format('Y-m') : null;
+                                                                    $isMonthLocked = $additionMonth && in_array($additionMonth, $approvedPayrollMonths);
+                                                                @endphp
+                                                                @if($isMonthLocked)
+                                                                    <button type="button" class="btn btn-sm btn-secondary" disabled title="Cannot delete: Payroll for {{ \Carbon\Carbon::parse($addition->start_date)->format('F Y') }} has been approved">
+                                                                        <i class="fas fa-lock"></i>
+                                                                    </button>
+                                                                @else
+                                                                    <form action="{{ route('payroll.additions.destroy', ['employeeId' => $employee->employee_id, 'additionId' => $addition->addition_id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this addition?');">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                @endif
+                                                            @endcan
                                                         </td>
                                                     </tr>
                                                 @empty

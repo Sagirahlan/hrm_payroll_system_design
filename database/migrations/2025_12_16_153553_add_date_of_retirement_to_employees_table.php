@@ -21,12 +21,14 @@ return new class extends Migration
         // Backfill data from retirements table
         // Ensure that we only update where there is a matching retirement record
         // Raw SQL for efficiency and simplicity in migration
-        DB::statement("
-            UPDATE employees e
-            INNER JOIN retirements r ON e.employee_id = r.employee_id
-            SET e.date_of_retirement = r.retirement_date
-            WHERE e.date_of_retirement IS NULL
-        ");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("
+                UPDATE employees e
+                INNER JOIN retirements r ON e.employee_id = r.employee_id
+                SET e.date_of_retirement = r.retirement_date
+                WHERE e.date_of_retirement IS NULL
+            ");
+        }
     }
 
     /**

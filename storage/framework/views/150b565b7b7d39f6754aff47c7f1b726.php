@@ -635,7 +635,7 @@ unset($__errorArgs, $__bag); ?>
                             <div class="row g-3">
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="bank_name" class="form-control" required value="<?php echo e(old('bank_name', $employee->bank->bank_name ?? '')); ?>" readonly>
+                                    <input type="text" name="bank_name" class="form-control" required value="<?php echo e(old('bank_name', $employee->bank->bank_name ?? '')); ?>">
                                     <?php $__errorArgs = ['bank_name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -647,7 +647,7 @@ unset($__errorArgs, $__bag); ?>
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Bank Code <span class="text-danger">*</span></label>
-                                    <input type="text" name="bank_code" id="bank_code" class="form-control" required value="<?php echo e(old('bank_code', $employee->bank->bank_code ?? '')); ?>" readonly>
+                                    <input type="text" name="bank_code" id="bank_code" class="form-control" required value="<?php echo e(old('bank_code', $employee->bank->bank_code ?? '')); ?>">
                                     <?php $__errorArgs = ['bank_code'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -659,7 +659,7 @@ unset($__errorArgs, $__bag); ?>
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_name" class="form-control" required value="<?php echo e(old('account_name', $employee->bank->account_name ?? '')); ?>" readonly>
+                                    <input type="text" name="account_name" class="form-control" required value="<?php echo e(old('account_name', $employee->bank->account_name ?? '')); ?>">
                                     <?php $__errorArgs = ['account_name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -671,7 +671,7 @@ unset($__errorArgs, $__bag); ?>
                                 </div>
                                 <div class="col-md-6 col-12">
                                     <label class="form-label font-weight-bold">Account Number <span class="text-danger">*</span></label>
-                                    <input type="text" name="account_no" class="form-control" required value="<?php echo e(old('account_no', $employee->bank->account_no ?? '')); ?>" readonly>
+                                    <input type="text" name="account_no" class="form-control" required value="<?php echo e(old('account_no', $employee->bank->account_no ?? '')); ?>">
                                     <?php $__errorArgs = ['account_no'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -1114,9 +1114,8 @@ unset($__errorArgs, $__bag); ?>
         let maxRetirementAge = null;
         let maxYearsOfService = null;
 
-        salaryScaleSelect.addEventListener('change', function() {
-            const salaryScaleId = this.value;
-            if (salaryScaleId) {
+        function fetchRetirementInfo(salaryScaleId) {
+             if (salaryScaleId) {
                 fetch(`/salary-scales/${salaryScaleId}/retirement-info`)
                     .then(response => response.json())
                     .then(data => {
@@ -1127,7 +1126,16 @@ unset($__errorArgs, $__bag); ?>
                         }
                     });
             }
+        }
+
+        salaryScaleSelect.addEventListener('change', function() {
+            fetchRetirementInfo(this.value);
         });
+
+        // Trigger on load if value exists
+        if (salaryScaleSelect.value) {
+            fetchRetirementInfo(salaryScaleSelect.value);
+        }
 
         function calculateRetirementDate() {
             if (maxRetirementAge === null || maxYearsOfService === null) {

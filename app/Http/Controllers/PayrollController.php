@@ -859,7 +859,14 @@ class PayrollController extends Controller
             ->paginate(10, ['*'], 'deductions_page');
         $deductionTypes = \App\Models\DeductionType::where('is_statutory', false)->get();
 
-        return view('payroll.show_deductions', compact('employee', 'deductions', 'deductionTypes'));
+        // Get list of approved/paid payroll months for this employee (as 'Y-m' strings)
+        $approvedPayrollMonths = PayrollRecord::where('employee_id', $employeeId)
+            ->whereIn('status', ['Approved', 'Paid'])
+            ->pluck('payroll_month')
+            ->map(fn($month) => Carbon::parse($month)->format('Y-m'))
+            ->toArray();
+
+        return view('payroll.show_deductions', compact('employee', 'deductions', 'deductionTypes', 'approvedPayrollMonths'));
     }
 
     public function showAdditions(Request $request, $employeeId)
@@ -869,22 +876,21 @@ class PayrollController extends Controller
             ->paginate(10, ['*'], 'additions_page');
         $additionTypes = \App\Models\AdditionType::where('is_statutory', false)->get();
 
-        return view('payroll.show_additions', compact('employee', 'additions', 'additionTypes'));
+        // Get list of approved/paid payroll months for this employee (as 'Y-m' strings)
+        $approvedPayrollMonths = PayrollRecord::where('employee_id', $employeeId)
+            ->whereIn('status', ['Approved', 'Paid'])
+            ->pluck('payroll_month')
+            ->map(fn($month) => Carbon::parse($month)->format('Y-m'))
+            ->toArray();
+
+        return view('payroll.show_additions', compact('employee', 'additions', 'additionTypes', 'approvedPayrollMonths'));
     }
 
     public function storeDeduction(Request $request, $employeeId)
     {
         $employee = Employee::with('gradeLevel.steps', 'step', 'appointmentType')->findOrFail($employeeId);
-        $deductionType = DeductionType::find($request->deduction_type_id);
 
-        // Prevent creating statutory deductions individually - they should be created via bulk process
-        if ($deductionType && $deductionType->is_statutory) {
-            return redirect()->back()
-                ->withErrors(['error' => 'Statutory deductions must be created via the bulk deduction process.'])
-                ->withInput();
-        }
-
-        // Validation rules for non-statutory deductions
+        // Validation rules for non-statutory deductions - validate first to get the start_date
         $rules = [
             'deduction_type_id' => 'required|exists:deduction_types,id',
             'amount_type' => 'required|in:fixed,percentage',
@@ -895,6 +901,28 @@ class PayrollController extends Controller
         ];
 
         $request->validate($rules);
+
+        // Check if there's an approved or paid payroll for the month of the start_date
+        $startDate = Carbon::parse($request->start_date);
+        $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employeeId)
+            ->whereIn('status', ['Approved', 'Paid'])
+            ->whereYear('payroll_month', $startDate->year)
+            ->whereMonth('payroll_month', $startDate->month)
+            ->exists();
+
+        if ($hasApprovedPayrollForMonth) {
+            return redirect()->route('payroll.deductions.show', $employeeId)
+                ->with('error', 'Cannot add deduction for ' . $startDate->format('F Y') . '. Payroll for this month has been approved or paid.');
+        }
+
+        $deductionType = DeductionType::find($request->deduction_type_id);
+
+        // Prevent creating statutory deductions individually - they should be created via bulk process
+        if ($deductionType && $deductionType->is_statutory) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Statutory deductions must be created via the bulk deduction process.'])
+                ->withInput();
+        }
 
         // For non-statutory deductions, we need amount_type and amount
         if ($deductionType && !$deductionType->is_statutory) {
@@ -992,6 +1020,19 @@ class PayrollController extends Controller
 
         $request->validate($rules);
 
+        // Check if there's an approved or paid payroll for the month of the start_date
+        $startDate = Carbon::parse($request->start_date);
+        $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employeeId)
+            ->whereIn('status', ['Approved', 'Paid'])
+            ->whereYear('payroll_month', $startDate->year)
+            ->whereMonth('payroll_month', $startDate->month)
+            ->exists();
+
+        if ($hasApprovedPayrollForMonth) {
+            return redirect()->route('payroll.additions.show', $employeeId)
+                ->with('error', 'Cannot add addition for ' . $startDate->format('F Y') . '. Payroll for this month has been approved or paid.');
+        }
+
         $additionType = AdditionType::find($request->addition_type_id);
 
         // Prevent creating statutory additions individually - they should be created via bulk process
@@ -1073,6 +1114,84 @@ class PayrollController extends Controller
 
         return redirect()->route('payroll.additions.show', $employeeId)
             ->with('success', 'Addition added successfully.');
+    }
+
+    /**
+     * Delete a deduction for an employee
+     */
+    public function destroyDeduction($employeeId, $deductionId)
+    {
+        $deduction = Deduction::where('employee_id', $employeeId)
+            ->findOrFail($deductionId);
+
+        // Check if there's an approved or paid payroll for the month of this deduction
+        if ($deduction->start_date) {
+            $deductionMonth = Carbon::parse($deduction->start_date);
+            $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employeeId)
+                ->whereIn('status', ['Approved', 'Paid'])
+                ->whereYear('payroll_month', $deductionMonth->year)
+                ->whereMonth('payroll_month', $deductionMonth->month)
+                ->exists();
+
+            if ($hasApprovedPayrollForMonth) {
+                return redirect()->route('payroll.deductions.show', $employeeId)
+                    ->with('error', 'Cannot delete deduction for ' . $deductionMonth->format('F Y') . '. Payroll for this month has been approved or paid.');
+            }
+        }
+
+        $deductionType = $deduction->deduction_type;
+
+        $deduction->delete();
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted_deduction',
+            'description' => "Deleted deduction '{$deductionType}' for employee ID: {$employeeId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Deduction', 'entity_id' => $deductionId, 'employee_id' => $employeeId, 'deduction_type' => $deductionType]),
+        ]);
+
+        return redirect()->route('payroll.deductions.show', $employeeId)
+            ->with('success', 'Deduction deleted successfully.');
+    }
+
+    /**
+     * Delete an addition for an employee
+     */
+    public function destroyAddition($employeeId, $additionId)
+    {
+        $addition = Addition::where('employee_id', $employeeId)
+            ->findOrFail($additionId);
+
+        // Check if there's an approved or paid payroll for the month of this addition
+        if ($addition->start_date) {
+            $additionMonth = Carbon::parse($addition->start_date);
+            $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employeeId)
+                ->whereIn('status', ['Approved', 'Paid'])
+                ->whereYear('payroll_month', $additionMonth->year)
+                ->whereMonth('payroll_month', $additionMonth->month)
+                ->exists();
+
+            if ($hasApprovedPayrollForMonth) {
+                return redirect()->route('payroll.additions.show', $employeeId)
+                    ->with('error', 'Cannot delete addition for ' . $additionMonth->format('F Y') . '. Payroll for this month has been approved or paid.');
+            }
+        }
+
+        $additionType = $addition->additionType ? $addition->additionType->name : 'Unknown';
+
+        $addition->delete();
+
+        AuditTrail::create([
+            'user_id' => Auth::id(),
+            'action' => 'deleted_addition',
+            'description' => "Deleted addition '{$additionType}' for employee ID: {$employeeId}",
+            'action_timestamp' => now(),
+            'log_data' => json_encode(['entity_type' => 'Addition', 'entity_id' => $additionId, 'employee_id' => $employeeId, 'addition_type' => $additionType]),
+        ]);
+
+        return redirect()->route('payroll.additions.show', $employeeId)
+            ->with('success', 'Addition deleted successfully.');
     }
 
     public function manageAllAdjustments(Request $request)
@@ -1713,7 +1832,32 @@ class PayrollController extends Controller
 
         $data = $request->only(['period', 'start_date', 'end_date', 'amount', 'amount_type', 'statutory_addition_month']);
 
+        $additionsCreated = 0;
+        $skippedApproved = 0;
+
         foreach ($employees as $employee) {
+            // Determine the target month for this employee's additions
+            $targetMonth = null;
+            if ($request->filled('addition_types') && isset($data['statutory_addition_month'])) {
+                $targetMonth = Carbon::parse($data['statutory_addition_month'] . '-01');
+            } elseif (isset($data['start_date'])) {
+                $targetMonth = Carbon::parse($data['start_date']);
+            }
+
+            // Check if payroll for target month is approved/paid for this employee
+            if ($targetMonth) {
+                $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employee->employee_id)
+                    ->whereIn('status', ['Approved', 'Paid'])
+                    ->whereYear('payroll_month', $targetMonth->year)
+                    ->whereMonth('payroll_month', $targetMonth->month)
+                    ->exists();
+
+                if ($hasApprovedPayrollForMonth) {
+                    $skippedApproved++;
+                    continue; // Skip this employee - their payroll is already approved
+                }
+            }
+
             foreach ($additionTypes as $additionType) {
                 $amount = 0;
                 if ($additionType->is_statutory) {
@@ -1754,19 +1898,27 @@ class PayrollController extends Controller
                         )) :
                         $data['end_date'],
                 ]);
+                $additionsCreated++;
             }
         }
+
+        $actuallyProcessed = $employees->count() - $skippedApproved;
 
         AuditTrail::create([
             'user_id' => Auth::id(),
             'action' => 'bulk_created_additions',
-            'description' => "Bulk created additions for " . $employees->count() . " employees.",
+            'description' => "Bulk created {$additionsCreated} additions for {$actuallyProcessed} employees. Skipped {$skippedApproved} employees with approved payroll.",
             'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Addition', 'entity_id' => null, 'employee_count' => $employees->count(), 'addition_types' => $additionTypeIds]),
+            'log_data' => json_encode(['entity_type' => 'Addition', 'entity_id' => null, 'employee_count' => $actuallyProcessed, 'addition_types' => $additionTypeIds, 'skipped_approved' => $skippedApproved]),
         ]);
 
+        $successMessage = "Bulk addition assignment completed: {$actuallyProcessed} staff members assigned additions ({$additionsCreated} addition records created).";
+        if ($skippedApproved > 0) {
+            $successMessage .= " ({$skippedApproved} employees skipped due to approved payroll for target month)";
+        }
+
         return redirect()->route('payroll.additions')
-            ->with('success', 'Bulk addition assignment completed successfully for ' . $employees->count() . ' employees.');
+            ->with('success', $successMessage);
     }
 
     public function deductions(Request $request)
@@ -1932,8 +2084,31 @@ class PayrollController extends Controller
 
         $deductionsCreated = 0;
         $casualSkipped = 0;
+        $skippedApproved = 0;
 
         foreach ($employees as $employee) {
+            // Determine the target month for this employee's deductions
+            $targetMonth = null;
+            if ($request->filled('deduction_types') && isset($data['statutory_deduction_month'])) {
+                $targetMonth = Carbon::parse($data['statutory_deduction_month'] . '-01');
+            } elseif (isset($data['start_date'])) {
+                $targetMonth = Carbon::parse($data['start_date']);
+            }
+
+            // Check if payroll for target month is approved/paid for this employee
+            if ($targetMonth) {
+                $hasApprovedPayrollForMonth = PayrollRecord::where('employee_id', $employee->employee_id)
+                    ->whereIn('status', ['Approved', 'Paid'])
+                    ->whereYear('payroll_month', $targetMonth->year)
+                    ->whereMonth('payroll_month', $targetMonth->month)
+                    ->exists();
+
+                if ($hasApprovedPayrollForMonth) {
+                    $skippedApproved++;
+                    continue; // Skip this employee - their payroll is already approved
+                }
+            }
+
             foreach ($deductionTypes as $deductionType) {
                 $amount = 0;
                 

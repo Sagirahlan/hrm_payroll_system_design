@@ -9,16 +9,12 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
         $adminRole = Role::where('name', 'admin')->first();
 
-        $user = User::firstOrCreate(
+        // Existing admin (already in DB)
+        $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'username' => 'Admin User',
@@ -27,7 +23,20 @@ class UserSeeder extends Seeder
         );
 
         if ($adminRole) {
-            $user->assignRole($adminRole);
+            $admin->assignRole($adminRole);
+        }
+
+        // New user (will only be inserted if not exists)
+        $newUser = User::firstOrCreate(
+            ['email' => 'sagirahlan00@gmail.com'],
+            [
+                'username' => 'sagirahlan',
+                'password_hash' => Hash::make('12345678'),
+            ]
+        );
+
+        if ($adminRole) {
+            $newUser->assignRole($adminRole); // optional
         }
     }
 }
