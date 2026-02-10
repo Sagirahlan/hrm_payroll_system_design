@@ -1001,6 +1001,7 @@ class EmployeeController extends Controller
         ]);
 
         $file = $request->file('import_file');
+        $updateMode = $request->has('update_mode');
 
         // Determine the number of sheets in the Excel file
         $fileExtension = $file->getClientOriginalExtension();
@@ -1013,17 +1014,19 @@ class EmployeeController extends Controller
             $sheetCount = $spreadsheet->getSheetCount();
 
             // Create a dynamic import based on the number of sheets
-            $import = new class($sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+            $import = new class($sheetCount, $updateMode) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
                 private $sheetCount;
+                private $updateMode;
 
-                public function __construct($sheetCount) {
+                public function __construct($sheetCount, $updateMode) {
                     $this->sheetCount = $sheetCount;
+                    $this->updateMode = $updateMode;
                 }
 
                 public function sheets(): array
                 {
                     $sheets = [
-                        0 => new \App\Imports\EmployeeImport(),      // Always import first sheet (Employees)
+                        0 => new \App\Imports\EmployeeImport($this->updateMode),      // Always import first sheet (Employees)
                     ];
 
                     // Import Next of Kin sheet if it exists
@@ -1043,7 +1046,7 @@ class EmployeeController extends Controller
             Excel::import($import, $file);
         } else {
             // For CSV files, use single sheet import
-            Excel::import(new \App\Imports\EmployeeImport(), $file);
+            Excel::import(new \App\Imports\EmployeeImport($updateMode), $file);
         }
 
         AuditTrail::create([

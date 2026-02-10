@@ -15,6 +15,13 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
 {
+    protected $updateMode;
+
+    public function __construct($updateMode = false)
+    {
+        $this->updateMode = $updateMode;
+    }
+
     public function model(array $row)
     {
         \Illuminate\Support\Facades\Log::info('Import Row Data:', $row);
@@ -54,7 +61,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$state) {
                 $state = \App\Models\State::where('state_id', $row['state_of_origin'])->first(); // If it's already an ID
             }
-            $stateId = $state ? $state->state_id : null;
+            $stateId = $state ? $state->state_id : ($existingEmployee ? $existingEmployee->state_id : null);
+        } elseif ($existingEmployee) {
+            $stateId = $existingEmployee->state_id;
         }
 
         // Handle lga mapping - check for various possible column names
@@ -69,7 +78,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$lga) {
                 $lga = \App\Models\Lga::where('id', $lgaValue)->first(); // If it's already an ID
             }
-            $lgaId = $lga ? $lga->id : null;
+            $lgaId = $lga ? $lga->id : ($existingEmployee ? $existingEmployee->lga_id : null);
+        } elseif ($existingEmployee) {
+            $lgaId = $existingEmployee->lga_id;
         }
 
         // Handle ward mapping - check for various possible column names
@@ -83,7 +94,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$ward) {
                 $ward = \App\Models\Ward::where('ward_id', $wardValue)->first(); // If it's already an ID
             }
-            $wardId = $ward ? $ward->ward_id : null;
+            $wardId = $ward ? $ward->ward_id : ($existingEmployee ? $existingEmployee->ward_id : null);
+        } elseif ($existingEmployee) {
+            $wardId = $existingEmployee->ward_id;
         }
 
         // Add pay point value (if present and not a placeholder)
@@ -98,7 +111,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$cadre) {
                 $cadre = \App\Models\Cadre::where('cadre_id', $row['cadre_id'])->first(); // If it's already an ID
             }
-            $cadreId = $cadre ? $cadre->cadre_id : null;
+            $cadreId = $cadre ? $cadre->cadre_id : ($existingEmployee ? $existingEmployee->cadre_id : null);
+        } elseif ($existingEmployee) {
+            $cadreId = $existingEmployee->cadre_id;
         }
 
         if (!empty($row['grade_level_id'])) {
@@ -107,7 +122,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$gradeLevel) {
                 $gradeLevel = \App\Models\GradeLevel::where('id', $row['grade_level_id'])->first(); // If it's already an ID
             }
-            $gradeLevelId = $gradeLevel ? $gradeLevel->id : null;
+            $gradeLevelId = $gradeLevel ? $gradeLevel->id : ($existingEmployee ? $existingEmployee->grade_level_id : null);
+        } elseif ($existingEmployee) {
+            $gradeLevelId = $existingEmployee->grade_level_id;
         }
 
         if (!empty($row['step_id'])) {
@@ -132,7 +149,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 $step = $stepById->where('id', $searchValue)->first(); 
             }
             
-            $stepId = $step ? $step->id : null;
+            $stepId = $step ? $step->id : ($existingEmployee ? $existingEmployee->step_id : null);
+        } elseif ($existingEmployee) {
+            $stepId = $existingEmployee->step_id;
         }
 
         if (!empty($row['rank_id'])) {
@@ -141,7 +160,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$rank) {
                 $rank = \App\Models\Rank::where('id', $row['rank_id'])->first(); // If it's already an ID
             }
-            $rankId = $rank ? $rank->id : null;
+            $rankId = $rank ? $rank->id : ($existingEmployee ? $existingEmployee->rank_id : null);
+        } elseif ($existingEmployee) {
+            $rankId = $existingEmployee->rank_id;
         }
 
         if (!empty($row['department_id'])) {
@@ -150,7 +171,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$department) {
                 $department = \App\Models\Department::where('department_id', $row['department_id'])->first(); // If it's already an ID
             }
-            $departmentId = $department ? $department->department_id : null;
+            $departmentId = $department ? $department->department_id : ($existingEmployee ? $existingEmployee->department_id : null);
+        } elseif ($existingEmployee) {
+            $departmentId = $existingEmployee->department_id;
         }
 
         if (!empty($row['appointment_type_id'])) {
@@ -159,7 +182,9 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
             if (!$appointmentType) {
                 $appointmentType = \App\Models\AppointmentType::where('id', $row['appointment_type_id'])->first(); // If it's already an ID
             }
-            $appointmentTypeId = $appointmentType ? $appointmentType->id : null;
+            $appointmentTypeId = $appointmentType ? $appointmentType->id : ($existingEmployee ? $existingEmployee->appointment_type_id : null);
+        } elseif ($existingEmployee) {
+            $appointmentTypeId = $existingEmployee->appointment_type_id;
         }
 
         // Helper to check for occupation columns
@@ -251,40 +276,81 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
         }
 
         if ($existingEmployee) {
-            // Update existing employee instead of creating a new one
-            $existingEmployee->update([
-                'first_name' => $row['first_name'] ?? null,
-                'surname' => $row['surname'] ?? null,
-                'middle_name' => $row['middle_name'] ?? null,
-                'gender' => $row['gender'] ?? null,
-                'date_of_birth' => $this->transformDate($row['date_of_birth'] ?? null),
-                'state_id' => $stateId,
-                'lga_id' => $lgaId,
-                'ward_id' => $wardId,
-                'pay_point' => $payPoint,
-                'nationality' => $row['nationality'] ?? null,
-                'nin' => $row['nin'] ?? null,
-                'mobile_no' => $this->transformPhone($row['mobile_no'] ?? null),
-                'email' => $row['email'] ?? null,
-                'address' => $row['address'] ?? null,
-                'date_of_first_appointment' => $this->transformDate($row['date_of_first_appointment'] ?? null),
-                'cadre_id' => $cadreId,
-                'grade_level_id' => $gradeLevelId,
-                'step_id' => $stepId,
-                'rank_id' => $rankId,
-                'department_id' => $departmentId,
-                'expected_next_promotion' => $this->transformDate($row['expected_next_promotion'] ?? null),
-                'expected_retirement_date' => $this->transformDate($row['expected_retirement_date'] ?? null),
-                'status' => $row['status'] ?? null,
-                'highest_certificate' => $row['highest_certificate'] ?? null,
-                'grade_level_limit' => $row['grade_level_limit'] ?? null,
-                'appointment_type_id' => $appointmentTypeId,
-                'contract_start_date' => $contractStartDate,
-                'contract_end_date' => $contractEndDate,
-                'amount' => $amount,
-            ]);
+            // Update existing employee
+            if ($this->updateMode) {
+                // UPDATE MODE: Only update safe fields, preserve payroll-sensitive data
+                $existingEmployee->update([
+                    // Names
+                    'first_name' => $row['first_name'] ?? $existingEmployee->first_name,
+                    'surname' => $row['surname'] ?? $existingEmployee->surname,
+                    'middle_name' => $row['middle_name'] ?? $existingEmployee->middle_name,
+                    
+                    // Contact & Personal
+                    'gender' => $row['gender'] ?? $existingEmployee->gender,
+                    'date_of_birth' => $this->transformDate($row['date_of_birth'] ?? null) ?? $existingEmployee->date_of_birth,
+                    'nationality' => $row['nationality'] ?? $existingEmployee->nationality,
+                    'nin' => $row['nin'] ?? $existingEmployee->nin,
+                    'mobile_no' => $this->transformPhone($row['mobile_no'] ?? null) ?? $existingEmployee->mobile_no,
+                    'email' => $row['email'] ?? $existingEmployee->email,
+                    'address' => $row['address'] ?? $existingEmployee->address,
+                    
+                    // Location
+                    'state_id' => $stateId ?? $existingEmployee->state_id,
+                    'lga_id' => $lgaId ?? $existingEmployee->lga_id,
+                    'ward_id' => $wardId ?? $existingEmployee->ward_id,
+                    'pay_point' => $payPoint ?? $existingEmployee->pay_point,
+                    
+                    // Career fields (Now moved to SAFE list per user request)
+                    'cadre_id' => $cadreId ?? $existingEmployee->cadre_id,
+                    'grade_level_id' => $gradeLevelId ?? $existingEmployee->grade_level_id,
+                    'step_id' => $stepId ?? $existingEmployee->step_id,
+                    'rank_id' => $rankId ?? $existingEmployee->rank_id,
+                    'department_id' => $departmentId ?? $existingEmployee->department_id,
+                    
+                    // Casual/Contract fields (safe to update)
+                    'contract_start_date' => $contractStartDate ?? $existingEmployee->contract_start_date,
+                    'contract_end_date' => $contractEndDate ?? $existingEmployee->contract_end_date,
+                    'amount' => $amount ?? $existingEmployee->amount,
+                    
+                    // SKIP: status, appointment_type_id, date_of_first_appointment, 
+                    // expected_retirement_date, expected_next_promotion, etc.
+                ]);
+            } else {
+                // NORMAL MODE: Update all fields as before
+                $existingEmployee->update([
+                    'first_name' => $row['first_name'] ?? null,
+                    'surname' => $row['surname'] ?? null,
+                    'middle_name' => $row['middle_name'] ?? null,
+                    'gender' => $row['gender'] ?? null,
+                    'date_of_birth' => $this->transformDate($row['date_of_birth'] ?? null),
+                    'state_id' => $stateId,
+                    'lga_id' => $lgaId,
+                    'ward_id' => $wardId,
+                    'pay_point' => $payPoint,
+                    'nationality' => $row['nationality'] ?? null,
+                    'nin' => $row['nin'] ?? null,
+                    'mobile_no' => $this->transformPhone($row['mobile_no'] ?? null),
+                    'email' => $row['email'] ?? null,
+                    'address' => $row['address'] ?? null,
+                    'date_of_first_appointment' => $this->transformDate($row['date_of_first_appointment'] ?? null),
+                    'cadre_id' => $cadreId,
+                    'grade_level_id' => $gradeLevelId,
+                    'step_id' => $stepId,
+                    'rank_id' => $rankId,
+                    'department_id' => $departmentId,
+                    'expected_next_promotion' => $this->transformDate($row['expected_next_promotion'] ?? null),
+                    'expected_retirement_date' => $this->transformDate($row['expected_retirement_date'] ?? null),
+                    'status' => $row['status'] ?? null,
+                    'highest_certificate' => $row['highest_certificate'] ?? null,
+                    'grade_level_limit' => $row['grade_level_limit'] ?? null,
+                    'appointment_type_id' => $appointmentTypeId,
+                    'contract_start_date' => $contractStartDate,
+                    'contract_end_date' => $contractEndDate,
+                    'amount' => $amount,
+                ]);
+            }
 
-            // Update next of kin if provided
+            // Update next of kin if provided (safe in both modes)
             if ($nextOfKinData) {
                 $existingNextOfKin = NextOfKin::where('employee_id', $existingEmployee->employee_id)->first();
                 if ($existingNextOfKin) {
@@ -295,7 +361,7 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 }
             }
 
-            // Update bank data if provided
+            // Update bank data if provided (safe in both modes)
             if ($bankData) {
                 $existingBank = Bank::where('employee_id', $existingEmployee->employee_id)->first();
                 if ($existingBank) {

@@ -41,8 +41,17 @@
                                         <i class="fas fa-upload me-2"></i>Import Employees
                                     </label>
                                 </div>
-                                <div class="col-12 col-md-6">
+                                <div class="col-12 col-md-4">
                                     <input type="file" class="form-control" name="import_file" id="import_file" accept=".xlsx,.xls" required>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="update_mode" id="updateMode">
+                                        <label class="form-check-label fw-bold text-primary" for="updateMode">
+                                            <i class="fas fa-shield-alt me-1"></i>Update Mode
+                                            <small class="text-muted d-block" style="font-size: 0.7rem;">Update safe fields, preserve payroll data</small>
+                                        </label>
+                                    </div>
                                 </div>
                                 <div class="col-12 col-md-auto">
                                     <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm w-100">
