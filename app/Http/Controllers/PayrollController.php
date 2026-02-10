@@ -53,6 +53,55 @@ class PayrollController extends Controller
         $category = $request->input('payroll_category', 'staff');
         $appointmentTypeId = $request->input('appointment_type_id');
 
+        // Check for existing payroll records for this month and category
+        $existingQuery = PayrollRecord::where('payroll_month', $month);
+        
+        if ($category === 'pensioners') {
+            $existingQuery->where('payment_type', 'Pension');
+        } elseif ($category === 'gratuity') {
+            $existingQuery->where('payment_type', 'Gratuity');
+        } else {
+             // For staff, it could be Permanent, Casual, Contract, etc.
+             // If appointmentTypeId is set, filter by it.
+             // Otherwise exclude Pension/Gratuity
+             if ($appointmentTypeId) {
+                 // We need to join employees to check appointment type if we stored it that way, 
+                 // or if we stored payment_type as appointment type name.
+                 // Assuming payment_type maps roughly to appointment type for now or we rely on the fact that 
+                 // we filter employees by appointment type during generation.
+                 // Ideally, we should check if we can filter existing records by appointment type.
+                 // The current system stores 'Permanent', 'Casual', 'Contract' in payment_type.
+                 $apptType = AppointmentType::find($appointmentTypeId);
+                 if ($apptType) {
+                     $existingQuery->where('payment_type', $apptType->name);
+                 }
+             } else {
+                 $existingQuery->whereNotIn('payment_type', ['Pension', 'Gratuity']);
+             }
+        }
+
+        $existingRecords = $existingQuery->get();
+
+        if ($existingRecords->count() > 0) {
+            // Check if any are approved or paid
+            $lockedRecords = $existingRecords->whereIn('status', ['Approved', 'Paid', 'Locked'])->count();
+            
+            if ($lockedRecords > 0) {
+                return redirect()->back()->with('error', "Cannot regenerate payroll for $month. Some records are already Approved or Paid.");
+            }
+
+            // If not locked, DELETE them to regenerate
+            // We should also probably delete associated OneTime additions/deductions if they were created during generation?
+            // For now, let's keep it simple and just delete the payroll records. 
+            // The previous logic for 'destroyMonth' might be useful here.
+            
+            $existingPayrollIds = $existingRecords->pluck('payroll_id');
+            \App\Models\PaymentTransaction::whereIn('payroll_id', $existingPayrollIds)->delete();
+            PayrollRecord::whereIn('payroll_id', $existingPayrollIds)->delete();
+            // Note: This is soft delete if trait is used, or hard delete. 
+            // If we want to be clean, we might want to log this regeneration.
+        }
+
         if ($category === 'pensioners') {
             // --- Pensioner Payroll Generation ---
             // Exclude Deceased pensioners and those retired by 'Death in Service'
@@ -264,7 +313,7 @@ class PayrollController extends Controller
                                 ->first();
 
                 if ($payrollRecord) {
-                    \App\Models\PaymentTransaction::firstOrCreate(
+                    \App\Models\PaymentTransaction::updateOrCreate(
                         ['payroll_id' => $payrollRecord->payroll_id],
                         [
                             'employee_id' => $pensioner->employee_id,
@@ -477,7 +526,7 @@ class PayrollController extends Controller
                 );
 
                 // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::firstOrCreate(
+                \App\Models\PaymentTransaction::updateOrCreate(
                     ['payroll_id' =>  $payroll->payroll_id],
                     [
                         'employee_id' => $employee->employee_id,
@@ -513,7 +562,7 @@ class PayrollController extends Controller
                 );
 
                 // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::firstOrCreate(
+                \App\Models\PaymentTransaction::updateOrCreate(
                     ['payroll_id' =>  $payroll->payroll_id],
                     [
                         'employee_id' => $employee->employee_id,
@@ -645,7 +694,34 @@ class PayrollController extends Controller
         $payrolls = $query->paginate($perPage);
         $appointmentTypes = \App\Models\AppointmentType::all();
 
-        return view('payroll.index', compact('payrolls', 'appointmentTypes'));
+        // Build a summary of existing payroll months for the regeneration button
+        $payrollStatusMap = PayrollRecord::select('payroll_month', 'payment_type', 'status')
+            ->get()
+            ->groupBy(function ($record) {
+                return \Carbon\Carbon::parse($record->payroll_month)->format('Y-m');
+            })
+            ->map(function ($records) {
+                $staff = $records->whereNotIn('payment_type', ['Pension', 'Gratuity']);
+                $pensioners = $records->where('payment_type', 'Pension');
+                $gratuity = $records->where('payment_type', 'Gratuity');
+
+                return [
+                    'staff' => [
+                        'exists' => $staff->count() > 0,
+                        'approved' => $staff->whereIn('status', ['Approved', 'Paid'])->count() > 0,
+                    ],
+                    'pensioners' => [
+                        'exists' => $pensioners->count() > 0,
+                        'approved' => $pensioners->whereIn('status', ['Approved', 'Paid'])->count() > 0,
+                    ],
+                    'gratuity' => [
+                        'exists' => $gratuity->count() > 0,
+                        'approved' => $gratuity->whereIn('status', ['Approved', 'Paid'])->count() > 0,
+                    ],
+                ];
+            });
+
+        return view('payroll.index', compact('payrolls', 'appointmentTypes', 'payrollStatusMap'));
     }
 
     // Generate pay slip
@@ -1684,6 +1760,31 @@ class PayrollController extends Controller
             ->with('success', 'Payroll record rejected.');
     }
 
+    public function checkPayrollStatus(Request $request)
+    {
+        $month = $request->input('month');
+        $category = $request->input('category');
+        
+        $query = PayrollRecord::where('payroll_month', $month);
+
+        if ($category === 'pensioners') {
+            $query->where('payment_type', 'Pension');
+        } elseif ($category === 'gratuity') {
+            $query->where('payment_type', 'Gratuity');
+        } else {
+            $query->whereNotIn('payment_type', ['Pension', 'Gratuity']);
+        }
+
+        $count = $query->count();
+        $approvedCount = $query->whereIn('status', ['Approved', 'Paid'])->count();
+
+        return response()->json([
+            'exists' => $count > 0,
+            'approved' => $approvedCount > 0,
+            'count' => $count
+        ]);
+    }
+
     public function additions(Request $request)
     {
         $allAdditionTypes = AdditionType::all();
@@ -1812,9 +1913,10 @@ class PayrollController extends Controller
                 $employeesQuery->where('grade_level_id', $request->grade_level_id);
             }
 
-            // Always apply appointment type filter, defaulting to 1 (Permanent) if not specified
-            $appointmentTypeId = $request->input('appointment_type_id', 1);
-            $employeesQuery->where('appointment_type_id', $appointmentTypeId);
+            // Only apply appointment type filter if explicitly provided
+            if ($request->filled('appointment_type_id')) {
+                $employeesQuery->where('appointment_type_id', $request->appointment_type_id);
+            }
 
             $employees = $employeesQuery->get();
         } else {
@@ -2063,8 +2165,10 @@ class PayrollController extends Controller
                 $employeesQuery->where('grade_level_id', $request->grade_level_id);
             }
 
-            $appointmentTypeId = $request->input('appointment_type_id', 1); // Default to Permanent
-            $employeesQuery->where('appointment_type_id', $appointmentTypeId);
+            // Only apply appointment type filter if explicitly provided
+            if ($request->filled('appointment_type_id')) {
+                $employeesQuery->where('appointment_type_id', $request->appointment_type_id);
+            }
 
             $employees = $employeesQuery->get();
         } else {

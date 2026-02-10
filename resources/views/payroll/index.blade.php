@@ -49,8 +49,8 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-cogs me-1"></i>Generate
+                            <button type="submit" class="btn btn-primary w-100" id="generate-payroll-btn">
+                                <i class="fas fa-cogs me-1"></i><span>Generate</span>
                             </button>
                         </div>
                     </form>
@@ -799,6 +799,55 @@ document.addEventListener('DOMContentLoaded', function() {
                     checkbox.checked = this.checked;
                 });
             });
+        }
+
+        /* Check Payroll Status for Regeneration */
+        const monthInput = document.getElementById('month');
+        const categorySelect = document.getElementById('payroll_category');
+        const generateBtn = document.getElementById('generate-payroll-btn');
+        const generateBtnText = generateBtn ? generateBtn.querySelector('span') : null;
+        const generateBtnIcon = generateBtn ? generateBtn.querySelector('i') : null;
+        
+        // Data passed from controller
+        const payrollStatusMap = @json($payrollStatusMap ?? []);
+
+        function checkPayrollStatus() {
+            if (!monthInput || !categorySelect || !generateBtn) return;
+
+            const month = monthInput.value;
+            const category = categorySelect.value;
+            
+            // Get status from local data
+            const statusData = payrollStatusMap[month] ? payrollStatusMap[month][category] : null;
+
+            if (statusData && statusData.exists) {
+                if (statusData.approved) {
+                    generateBtn.className = 'btn btn-secondary w-100';
+                    if(generateBtnText) generateBtnText.textContent = 'Already Approved';
+                    if(generateBtnIcon) generateBtnIcon.className = 'fas fa-lock me-1';
+                    generateBtn.disabled = true;
+                    generateBtn.title = 'Payroll for this month is already approved/paid and cannot be regenerated.';
+                } else {
+                    generateBtn.className = 'btn btn-warning w-100';
+                    if(generateBtnText) generateBtnText.textContent = 'Regenerate';
+                    if(generateBtnIcon) generateBtnIcon.className = 'fas fa-sync-alt me-1';
+                    generateBtn.disabled = false;
+                    generateBtn.title = 'Payroll exists but is not approved. Clicking this will DELETE existing records and regenerate them. WARNING: Any manual edits to payroll records will be lost!';
+                }
+            } else {
+                generateBtn.className = 'btn btn-primary w-100';
+                if(generateBtnText) generateBtnText.textContent = 'Generate';
+                if(generateBtnIcon) generateBtnIcon.className = 'fas fa-cogs me-1';
+                generateBtn.title = '';
+                generateBtn.disabled = false;
+            }
+        }
+
+        if (monthInput && categorySelect) {
+            monthInput.addEventListener('change', checkPayrollStatus);
+            categorySelect.addEventListener('change', checkPayrollStatus);
+            // Check status on load
+            checkPayrollStatus();
         }
     }
     

@@ -531,13 +531,19 @@ class PensionerController extends Controller
         ]);
 
         try {
-            $import = new PensionersImport;
+            $updateMode = $request->boolean('update_mode');
+            $import = new PensionersImport($updateMode);
             Excel::import($import, $request->file('file'));
 
             $rows = $import->getRowCount();
             $skipped = $import->getSkippedCount();
+            $updated = $import->getUpdatedCount();
 
-            $message = "Import processing complete. {$rows} pensioners processed successfully.";
+            if ($updateMode) {
+                $message = "Update mode import complete. {$updated} pensioners updated (safe fields only), {$rows} new pensioners created.";
+            } else {
+                $message = "Import processing complete. {$rows} pensioners processed successfully.";
+            }
             if ($skipped > 0) {
                 $message .= " {$skipped} rows were skipped (employee not found).";
             }
@@ -546,11 +552,15 @@ class PensionerController extends Controller
             \App\Models\AuditTrail::create([
                 'user_id' => auth()->id(),
                 'action' => 'imported_legacy_pensioners',
-                'description' => "Imported legacy pensioners. Processed: {$rows}, Skipped: {$skipped}",
+                'description' => $updateMode
+                    ? "Legacy pensioner update (safe fields only). Updated: {$updated}, New: {$rows}, Skipped: {$skipped}"
+                    : "Imported legacy pensioners. Processed: {$rows}, Skipped: {$skipped}",
                 'action_timestamp' => now(),
                 'log_data' => [
                     'rows_processed' => $rows,
+                    'rows_updated' => $updated,
                     'rows_skipped' => $skipped,
+                    'update_mode' => $updateMode,
                     'file_name' => $request->file('file')->getClientOriginalName(),
                     'status_set_to' => 'Retired'
                 ]

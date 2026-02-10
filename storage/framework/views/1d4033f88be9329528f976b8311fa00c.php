@@ -62,6 +62,7 @@
                 <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
                 <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
                 <input type="hidden" name="grade_level_id" value="<?php echo e(request('grade_level_id')); ?>">
+                <input type="hidden" name="appointment_type_id" value="<?php echo e(request('appointment_type_id')); ?>">
 
                 <div class="card shadow-sm mb-4">
                     <div class="card-header">

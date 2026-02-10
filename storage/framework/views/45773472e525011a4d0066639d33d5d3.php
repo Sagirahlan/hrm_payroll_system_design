@@ -57,6 +57,28 @@ endif;
 unset($__errorArgs, $__bag); ?>
                         </div>
 
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="update_mode" name="update_mode" value="1">
+                                <label class="form-check-label fw-bold" for="update_mode">
+                                    <i class="fas fa-shield-alt me-1"></i> Update existing staff only (preserve pension amounts & history)
+                                </label>
+                            </div>
+                            <div class="form-text text-muted mt-1" id="update_mode_help">
+                                <span id="update_mode_off_text">
+                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                    <strong>Normal Mode:</strong> All fields will be overwritten for existing pensioners, including pension amounts and status.
+                                </span>
+                                <span id="update_mode_on_text" style="display: none;">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    <strong>Update Mode:</strong> Only bank details, account number, account name, and names will be updated. 
+                                    Pension amounts, status, and gratuity fields will <strong>not</strong> be changed.
+                                    New pensioners will still be created normally.
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to import this file? This will modify database records.')">
                                 <i class="fas fa-file-import me-2"></i> Import Pensioners
@@ -69,5 +91,14 @@ unset($__errorArgs, $__bag); ?>
     </div>
 </div>
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+    document.getElementById('update_mode').addEventListener('change', function() {
+        document.getElementById('update_mode_off_text').style.display = this.checked ? 'none' : 'inline';
+        document.getElementById('update_mode_on_text').style.display = this.checked ? 'inline' : 'none';
+    });
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/pensioners/import_legacy.blade.php ENDPATH**/ ?>

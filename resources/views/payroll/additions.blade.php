@@ -63,6 +63,7 @@
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="department_id" value="{{ request('department_id') }}">
                 <input type="hidden" name="grade_level_id" value="{{ request('grade_level_id') }}">
+                <input type="hidden" name="appointment_type_id" value="{{ request('appointment_type_id') }}">
 
                 <div class="card shadow-sm mb-4">
                     <div class="card-header">

@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/bank-details/{employeeId}', [BankDetailsController::class, 'show'])->name('bank-details.show');
         Route::put('/bank-details/{employeeId}', [BankDetailsController::class, 'update'])->name('bank-details.update');
         Route::post('/bank-details/search', [BankDetailsController::class, 'search'])->name('bank-details.search');
+        Route::post('/bank-details/import', [BankDetailsController::class, 'import'])->name('bank-details.import');
     });
 
     // Leave Management Routes
@@ -284,6 +285,7 @@ Route::middleware(['auth'])->group(function () {
 
             // Payroll generation and export (with filters) - MUST BE FIRST
             Route::post('/payroll/generate', [PayrollController::class, 'generatePayroll'])->name('payroll.generate');
+            Route::get('/payroll/check-status', [PayrollController::class, 'checkPayrollStatus'])->name('payroll.check_status');
             Route::get('/payroll/export', [PayrollController::class, 'exportPayroll'])->name('payroll.export');
             Route::get('/payroll/export/detailed-pdf', [PayrollController::class, 'generateDetailedReport'])->name('payroll.export.detailed-pdf');
 

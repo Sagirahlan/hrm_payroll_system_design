@@ -101,4 +101,19 @@ class BankDetailsController extends Controller
 
         return view('bank-details.index', compact('employees', 'banks'));
     }
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\BankDetailsByStaffIdImport, $request->file('import_file'));
+            
+            return redirect()->route('bank-details.index')->with('success', 'Bank details updated successfully based on Staff Number.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Bank Details Import Error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error importing bank details: ' . $e->getMessage());
+        }
+    }
 }

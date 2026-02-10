@@ -16,6 +16,13 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
 {
     private $rows = 0;
     private $skipped = 0;
+    private $updated = 0;
+    private $updateMode = false;
+
+    public function __construct(bool $updateMode = false)
+    {
+        $this->updateMode = $updateMode;
+    }
 
     /**
     * @param array $row
@@ -138,7 +145,52 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
         $gratuityPaidDate = now();
 
         if ($pensioner) {
-            // Update existing
+            if ($this->updateMode) {
+                // Update Mode: Only update safe fields (bank/account/names/contact)
+                // Preserve pension_amount, status, gratuity, and all payroll-sensitive fields
+                $safeUpdates = [];
+
+                if ($bankId) {
+                    $safeUpdates['bank_id'] = $bankId;
+                }
+                if ($accountNumber) {
+                    $safeUpdates['account_number'] = $accountNumber;
+                }
+                if ($accountName) {
+                    $safeUpdates['account_name'] = $accountName;
+                }
+
+                // Update names if provided in the import file
+                $firstName = $row['first_name'] ?? null;
+                $surname = $row['surname'] ?? null;
+                $middleName = $row['middle_name'] ?? null;
+
+                if ($firstName) {
+                    $safeUpdates['first_name'] = $firstName;
+                }
+                if ($surname) {
+                    $safeUpdates['surname'] = $surname;
+                }
+                if ($middleName) {
+                    $safeUpdates['middle_name'] = $middleName;
+                }
+                if ($firstName || $surname) {
+                    $safeUpdates['full_name'] = trim(($firstName ?? $pensioner->first_name) . ' ' . ($middleName ?? $pensioner->middle_name ?? '') . ' ' . ($surname ?? $pensioner->surname));
+                }
+
+                if (!empty($safeUpdates)) {
+                    $pensioner->update($safeUpdates);
+                    $this->updated++;
+                    Log::info("Legacy Pensioner Import (Update Mode): Updated safe fields for Pensioner {$employee->staff_no}", $safeUpdates);
+                } else {
+                    $this->skipped++;
+                    Log::info("Legacy Pensioner Import (Update Mode): No changes for Pensioner {$employee->staff_no}");
+                }
+
+                return $pensioner;
+            }
+
+            // Normal mode: Update all fields (original behavior)
             $pensioner->update([
                 'pension_amount' => $pensionAmount,
                 'bank_id' => $bankId,
@@ -224,5 +276,15 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     public function getSkippedCount()
     {
         return $this->skipped;
+    }
+
+    public function getUpdatedCount()
+    {
+        return $this->updated;
+    }
+
+    public function isUpdateMode()
+    {
+        return $this->updateMode;
     }
 }
