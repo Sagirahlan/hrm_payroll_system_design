@@ -395,8 +395,8 @@
                                                                 <small class="text-muted">ID: {{ $payroll->employee->employee_id }}</small>
                                                             @endif
                                                             <br>
-                                                            @if($payroll->employee->gradeLevel)
-                                                                <small class="text-muted">GL: {{ $payroll->employee->gradeLevel->name }}@if($payroll->employee->step) - Step {{ $payroll->employee->step->name }}@endif</small>
+                                                            @if($payroll->gradeLevel || ($payroll->employee && $payroll->employee->gradeLevel))
+                                                                <small class="text-muted">GL: {{ ($payroll->gradeLevel ?? $payroll->employee->gradeLevel)->name }}@if($payroll->step || ($payroll->employee && $payroll->employee->step)) - Step {{ ($payroll->step ?? $payroll->employee->step)->name }}@endif</small>
                                                             @endif
                                                             <br>
                                                             @if($payroll->employee->status === 'Suspended')

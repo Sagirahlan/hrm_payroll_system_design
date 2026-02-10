@@ -401,8 +401,8 @@
                                                                 <small class="text-muted">ID: <?php echo e($payroll->employee->employee_id); ?></small>
                                                             <?php endif; ?>
                                                             <br>
-                                                            <?php if($payroll->employee->gradeLevel): ?>
-                                                                <small class="text-muted">GL: <?php echo e($payroll->employee->gradeLevel->name); ?><?php if($payroll->employee->step): ?> - Step <?php echo e($payroll->employee->step->name); ?><?php endif; ?></small>
+                                                            <?php if($payroll->gradeLevel || ($payroll->employee && $payroll->employee->gradeLevel)): ?>
+                                                                <small class="text-muted">GL: <?php echo e(($payroll->gradeLevel ?? $payroll->employee->gradeLevel)->name); ?><?php if($payroll->step || ($payroll->employee && $payroll->employee->step)): ?> - Step <?php echo e(($payroll->step ?? $payroll->employee->step)->name); ?><?php endif; ?></small>
                                                             <?php endif; ?>
                                                             <br>
                                                             <?php if($payroll->employee->status === 'Suspended'): ?>

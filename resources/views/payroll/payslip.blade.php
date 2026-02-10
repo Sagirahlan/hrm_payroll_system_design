@@ -100,13 +100,13 @@
             </tr>
             <tr>
                 <td><strong>Department:</strong></td>
-                <td>{{ $payroll->employee->department->department_name ?? 'N/A' }}</td>
+                <td>{{ ($payroll->department ?? ($payroll->employee->department ?? null))->department_name ?? 'N/A' }}</td>
                 <td><strong>Appointment Type:</strong></td>
                 <td>{{ $payroll->employee->appointmentType->name ?? 'N/A' }}</td>
             </tr>
             <tr>
                 <td><strong>Grade Level/Step:</strong></td>
-                <td>{{ $payroll->employee->gradeLevel->name ?? 'N/A' }} / {{ $payroll->employee->step->name ?? 'N/A' }}</td>
+                <td>{{ ($payroll->gradeLevel ?? ($payroll->employee->gradeLevel ?? null))->name ?? 'N/A' }} / {{ ($payroll->step ?? ($payroll->employee->step ?? null))->name ?? 'N/A' }}</td>
                 <td></td>
                 <td></td>
             </tr>

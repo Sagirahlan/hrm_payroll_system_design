@@ -11,6 +11,9 @@ class PayrollRecord extends Model
     protected $fillable = [
         'employee_id',
         'grade_level_id',
+        'step_id',
+        'rank_id',
+        'department_id',
         'basic_salary',
         'status',
         'total_additions',
@@ -33,9 +36,24 @@ class PayrollRecord extends Model
     }
 
     public function gradeLevel()
-{
-    return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
-}
+    {
+        return $this->belongsTo(GradeLevel::class, 'grade_level_id', 'id');
+    }
+
+    public function step()
+    {
+        return $this->belongsTo(Step::class, 'step_id', 'id');
+    }
+
+    public function rank()
+    {
+        return $this->belongsTo(Rank::class, 'rank_id', 'id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id', 'department_id');
+    }
 
     public function deductions()
     {

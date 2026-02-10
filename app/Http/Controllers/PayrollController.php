@@ -295,6 +295,9 @@ class PayrollController extends Controller
                     ],
                     [
                         'grade_level_id' => $pensioner->grade_level_id,
+                        'step_id' => $pensioner->step_id ?? ($pensioner->employee->step_id ?? null),
+                        'rank_id' => $pensioner->rank_id ?? ($pensioner->employee->rank_id ?? null),
+                        'department_id' => $pensioner->department_id ?? ($pensioner->employee->department_id ?? null),
                         'basic_salary' => $monthlyPension,
                         'payment_type' => 'Pension', // Explicitly set type to Pension
                         'total_additions' => $totalAdditions,
@@ -397,6 +400,9 @@ class PayrollController extends Controller
                     'employee_id' => $pensioner->employee_id,
                     'payroll_month' => $month . '-01', // Record it in the current processing month
                     'grade_level_id' => $pensioner->grade_level_id,
+                    'step_id' => $pensioner->step_id ?? ($pensioner->employee->step_id ?? null),
+                    'rank_id' => $pensioner->rank_id ?? ($pensioner->employee->rank_id ?? null),
+                    'department_id' => $pensioner->department_id ?? ($pensioner->employee->department_id ?? null),
                     'basic_salary' => $pensioner->gratuity_amount,
                     'payment_type' => 'Gratuity',
                     'status' => 'Pending Review',
@@ -513,7 +519,10 @@ class PayrollController extends Controller
                         'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                     ],
                     [
-                        'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
+                        'grade_level_id' => $isCasualEmployee ? null : $employee->grade_level_id,
+                        'step_id' => $isCasualEmployee ? null : $employee->step_id,
+                        'rank_id' => $employee->rank_id,
+                        'department_id' => $employee->department_id,
                         'basic_salary' => $calculation['basic_salary'], // Will be half for suspended employees
                         'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                         'total_additions' => $calculation['total_additions'], // Additions still apply
@@ -549,7 +558,10 @@ class PayrollController extends Controller
                         'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                     ],
                     [
-                        'grade_level_id' => $isCasualEmployee ? null : $employee->gradeLevel->id,
+                        'grade_level_id' => $isCasualEmployee ? null : $employee->grade_level_id,
+                        'step_id' => $isCasualEmployee ? null : $employee->step_id,
+                        'rank_id' => $employee->rank_id,
+                        'department_id' => $employee->department_id,
                         'basic_salary' => $calculation['basic_salary'],
                         'payment_type' => $isCasualEmployee ? 'Casual' : 'Permanent',
                         'total_additions' => $calculation['total_additions'],
@@ -591,7 +603,7 @@ class PayrollController extends Controller
     // Display payroll records with search and filter functionality
     public function index(Request $request)
     {
-        $query = PayrollRecord::with(['employee.gradeLevel.steps', 'employee.step', 'gradeLevel', 'transaction']);
+        $query = PayrollRecord::with(['employee.gradeLevel.steps', 'employee.step', 'gradeLevel', 'step', 'rank', 'department', 'transaction']);
 
         // Search functionality
         if ($request->filled('search')) {
