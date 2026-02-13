@@ -11,6 +11,9 @@ use App\Models\Addition;
 use App\Models\AdditionType;
 use App\Models\PayrollRecord;
 use App\Models\Loan;
+use App\Models\PaymentTransaction;
+use App\Models\BankList;
+use App\Models\AppointmentType;
 use App\Services\EmployeeReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1583,5 +1586,181 @@ class ReportController extends Controller
         }
 
         return redirect()->back()->with('error', 'Report file not found');
+    }
+
+    public function paymentTransactions(Request $request)
+    {
+        $query = PaymentTransaction::with(['employee', 'payroll']);
+
+        // Month Filter
+        if ($request->filled('payment_month')) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month);
+            $query->whereHas('payroll', function($q) use ($date) {
+                $q->whereYear('payroll_month', $date->year)
+                  ->whereMonth('payroll_month', $date->month);
+            });
+        } else {
+             $query->whereHas('payroll', function($q) {
+                $q->whereYear('payroll_month', now()->year)
+                  ->whereMonth('payroll_month', now()->month);
+             });
+        }
+
+        // Status Filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Search Filter (Employee Name or ID)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
+            });
+        }
+
+        // Bank Filter
+        if ($request->filled('bank_code')) {
+            $query->where('bank_code', $request->bank_code);
+        }
+
+        // Department Filter
+        if ($request->filled('department_id')) {
+            $departmentId = $request->department_id;
+            $query->whereHas('employee', function($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+
+        // Appointment Type Filter
+        if ($request->filled('appointment_type_id')) {
+            $appointmentTypeId = $request->appointment_type_id;
+            $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                $q->where('appointment_type_id', $appointmentTypeId);
+            });
+        }
+
+        $transactions = $query->latest('payment_date')->paginate(50);
+        
+        $banks = BankList::orderBy('bank_name')->get();
+        $departments = Department::orderBy('department_name')->get();
+        $appointmentTypes = AppointmentType::all();
+
+        return view('reports.new.payment_transactions', compact('transactions', 'banks', 'departments', 'appointmentTypes'));
+    }
+
+    public function exportPaymentTransactions(Request $request)
+    {
+        $query = PaymentTransaction::with(['employee', 'payroll']);
+
+        // Apply filters (same as view)
+        // Month Filter
+        if ($request->filled('payment_month')) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month);
+            $query->whereHas('payroll', function($q) use ($date) {
+                $q->whereYear('payroll_month', $date->year)
+                  ->whereMonth('payroll_month', $date->month);
+            });
+        } else {
+             $query->whereHas('payroll', function($q) {
+                $q->whereYear('payroll_month', now()->year)
+                  ->whereMonth('payroll_month', now()->month);
+             });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
+            });
+        }
+
+        // Bank Filter
+        if ($request->filled('bank_code')) {
+            $query->where('bank_code', $request->bank_code);
+        }
+
+        // Department Filter
+        if ($request->filled('department_id')) {
+            $departmentId = $request->department_id;
+            $query->whereHas('employee', function($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+
+
+
+        // Appointment Type Filter
+        if ($request->filled('appointment_type_id')) {
+            $appointmentTypeId = $request->appointment_type_id;
+            $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                $q->where('appointment_type_id', $appointmentTypeId);
+            });
+        }
+
+        $transactions = $query->latest('payment_date')->get();
+
+        // Generate CSV
+        $filename = 'payment_transactions_' . date('Y-m-d_H-i-s') . '.csv';
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $appointmentTypeId = $request->appointment_type_id;
+        $appointmentTypeName = $appointmentTypeId ? AppointmentType::find($appointmentTypeId)->name : 'ALL STAFF';
+        
+        $month = $request->payment_month ? \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month) : now();
+        $monthStr = $month->format('F Y');
+
+        $callback = function() use ($transactions, $monthStr, $appointmentTypeName) {
+            $file = fopen('php://output', 'w');
+            
+            // Add Report Headers
+            fputcsv($file, ['KATSINA STATE WATER BOARD']);
+            fputcsv($file, [strtoupper($monthStr) . ' SALARY']);
+            fputcsv($file, [strtoupper($appointmentTypeName) . ' PAYMENT SCHEDULE']);
+            fputcsv($file, []); // Empty row
+            // Header row
+            fputcsv($file, [
+                'Date', 
+                'Employee Name', 
+                'Staff ID', 
+                'Payroll Month', 
+                'Amount', 
+                'Bank', 
+                'Account Name',
+                'Account Number', 
+                'Status'
+            ]);
+
+            foreach ($transactions as $transaction) {
+                fputcsv($file, [
+                    $transaction->payment_date,
+                    $transaction->employee ? $transaction->employee->full_name : 'Unknown',
+                    $transaction->employee ? ($transaction->employee->staff_no ?? $transaction->employee_id) : 'N/A',
+                    $transaction->payroll && $transaction->payroll->payroll_month 
+                        ? $transaction->payroll->payroll_month->format('M Y') 
+                        : 'N/A',
+                    $transaction->amount,
+                    $transaction->bank_code,
+                    $transaction->account_name,
+                    $transaction->account_number,
+                    ucfirst($transaction->status)
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

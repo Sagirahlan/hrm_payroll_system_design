@@ -70,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible to all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('/reports/payment-transactions/export', [ReportController::class, 'exportPaymentTransactions'])->name('reports.payment-transactions.export');
+    Route::get('/reports/payment-transactions', [ReportController::class, 'paymentTransactions'])->name('reports.payment-transactions');
     Route::resource('reports', ReportController::class);
     Route::post('/reports/generate', [ReportController::class, 'generateEmployeeReport'])->name('reports.generate');
     Route::post('/reports/bulk-generate', [ReportController::class, 'bulkGenerate'])->name('reports.bulk_generate');

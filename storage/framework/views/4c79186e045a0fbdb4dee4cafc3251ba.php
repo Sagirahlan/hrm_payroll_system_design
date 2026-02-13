@@ -12,6 +12,9 @@
                         <a href="<?php echo e(route('reports.comprehensive.index')); ?>" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i> Comprehensive Reports
                         </a>
+                        <a href="<?php echo e(route('reports.payment-transactions')); ?>" class="btn btn-info text-white">
+                            <i class="fas fa-file-invoice-dollar"></i> Payment Transactions
+                        </a>
                         <?php endif; ?>
                         <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('generate_reports')): ?>
                         <a href="<?php echo e(route('reports.create')); ?>" class="btn btn-secondary">

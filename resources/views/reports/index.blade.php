@@ -14,6 +14,9 @@
                         <a href="{{ route('reports.comprehensive.index') }}" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i> Comprehensive Reports
                         </a>
+                        <a href="{{ route('reports.payment-transactions') }}" class="btn btn-info text-white">
+                            <i class="fas fa-file-invoice-dollar"></i> Payment Transactions
+                        </a>
                         @endcan
                         @can('generate_reports')
                         <a href="{{ route('reports.create') }}" class="btn btn-secondary">
