@@ -190,6 +190,20 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">Pensioner Report</h5>
+                                    <p class="card-text text-muted">Pensioners list with bank details</p>
+                                    <button class="btn btn-primary generate-report-btn"
+                                            data-report-type="pensioner"
+                                            data-title="Pensioner Report with Bank Details">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Financial Reports Section -->
@@ -643,6 +657,30 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'retirement_6months':
                 // No additional filters needed for the 6-months specific report
                 filtersSection.innerHTML = '';
+                break;
+
+            case 'pensioner':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" id="department_filter" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->department_id }}">{{ $dept->department_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Terminated">Terminated</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
                 break;
 
             case 'audit_trail':

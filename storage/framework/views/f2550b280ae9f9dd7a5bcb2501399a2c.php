@@ -415,7 +415,7 @@ unset($__errorArgs, $__bag); ?>
                                 <!-- Casual Appointment Fields -->
                                 <div class="row g-3 d-none" id="casual_appointment_fields">
                                     <div class="col-12">
-                                        <h6 class="text-muted">Casual Appointment Details</h6>
+                                        <h6 class="text-muted" id="casual_section_title">Casual/Contract Details</h6>
                                     </div>
                                     <div class="col-md-6 col-12">
                                         <label class="form-label font-weight-bold">Casual Start Date <span class="text-danger">*</span></label>
@@ -471,6 +471,7 @@ unset($__errorArgs, $__bag); ?>
                                         <option value="Active" <?php echo e(old('status') == 'Active' ? 'selected' : ''); ?>>Active</option>
                                         <option value="Suspended" <?php echo e(old('status') == 'Suspended' ? 'selected' : ''); ?>>Suspended</option>
                                         <option value="Retired" <?php echo e(old('status') == 'Retired' ? 'selected' : ''); ?>>Retired</option>
+                                        <option value="Retired-Active" <?php echo e(old('status') == 'Retired-Active' ? 'selected' : ''); ?>>Retired-Active</option>
                                         <option value="Deceased" <?php echo e(old('status') == 'Deceased' ? 'selected' : ''); ?>>Deceased</option>
                                         <option value="Hold" <?php echo e(old('status') == 'Hold' ? 'selected' : ''); ?>>Hold</option>
                                     </select>
@@ -767,7 +768,7 @@ unset($__errorArgs, $__bag); ?>
             });
 
             // Validate Casual dates
-            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Casual') {
+            if (step === 3 && ['Casual', 'Contract'].includes(appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name)) {
                 const casualStartDate = document.querySelector('input[name="contract_start_date"]');
                 const casualEndDate = document.querySelector('input[name="contract_end_date"]');
                 if (casualStartDate.value && casualEndDate.value) {
@@ -789,7 +790,8 @@ unset($__errorArgs, $__bag); ?>
 
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
-                if (appointmentTypeName !== 'Casual') {
+                // Grade level/step only required for Permanent (not Casual or Contract)
+                if (appointmentTypeName !== 'Casual' && appointmentTypeName !== 'Contract') {
                     const gradeLevelIdInput = document.getElementById('grade_level_id');
                     const stepIdInput = document.getElementById('step_id');
                     if (!gradeLevelIdInput.value) {
@@ -841,18 +843,41 @@ unset($__errorArgs, $__bag); ?>
         function toggleAppointmentFields() {
             const selectedOption = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex];
             const appointmentTypeName = selectedOption.dataset.name;
+            const sectionTitle = document.getElementById('casual_section_title');
+            const statusSelect = document.querySelector('select[name="status"]');
+            const retiredActiveOption = statusSelect ? statusSelect.querySelector('option[value="Retired-Active"]') : null;
 
             regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
             casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
 
             if (appointmentTypeName === 'Casual') {
+                // Casual: hide permanent fields, show contract fields
                 regularAppointmentFields.classList.add('d-none');
                 casualAppointmentFields.classList.remove('d-none');
                 regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
-            } else {
+                if (sectionTitle) sectionTitle.textContent = 'Casual Appointment Details';
+            } else if (appointmentTypeName === 'Contract') {
+                // Contract: show BOTH permanent fields (optional) and contract fields
+                regularAppointmentFields.classList.remove('d-none');
+                casualAppointmentFields.classList.remove('d-none');
+                // Permanent fields are visible but not disabled (optional for contract)
+                if (sectionTitle) sectionTitle.textContent = 'Contract Details';
                 regularAppointmentFields.classList.remove('d-none');
                 casualAppointmentFields.classList.add('d-none');
                 casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+            }
+
+            if (retiredActiveOption) {
+                if (appointmentTypeName === 'Contract') {
+                    retiredActiveOption.hidden = false;
+                    retiredActiveOption.disabled = false;
+                } else {
+                    retiredActiveOption.hidden = true;
+                    retiredActiveOption.disabled = true;
+                    if (statusSelect.value === 'Retired-Active') {
+                        statusSelect.value = 'Active';
+                    }
+                }
             }
         }
 

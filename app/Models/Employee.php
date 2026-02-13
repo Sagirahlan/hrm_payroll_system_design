@@ -187,11 +187,19 @@ public function getCalculatedRetirementDateAttribute()
     }
 
     /**
-     * Check if employee is a casual employee
+     * Check if employee is a casual or contract employee (both use amount-based pay)
      */
     public function isCasualEmployee(): bool
     {
-        return $this->appointmentType && $this->appointmentType->name === 'Casual';
+        return $this->appointmentType && in_array($this->appointmentType->name, ['Casual', 'Contract']);
+    }
+
+    /**
+     * Check if employee is specifically a contract employee
+     */
+    public function isContractEmployee(): bool
+    {
+        return $this->appointmentType && $this->appointmentType->name === 'Contract';
     }
 
     /**

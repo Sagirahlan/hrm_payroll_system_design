@@ -114,13 +114,19 @@ class EmployeeController extends Controller
             $query->where('date_of_first_appointment', '<=', $request->appointment_to);
         }
 
-        // Retirement date range filter
+        // Retirement date range filter (checks both expected_retirement_date and contract_end_date)
         if ($request->filled('retirement_from')) {
-            $query->where('expected_retirement_date', '>=', $request->retirement_from);
+             $query->where(function($q) use ($request) {
+                $q->where('expected_retirement_date', '>=', $request->retirement_from)
+                  ->orWhere('contract_end_date', '>=', $request->retirement_from);
+             });
         }
 
         if ($request->filled('retirement_to')) {
-            $query->where('expected_retirement_date', '<=', $request->retirement_to);
+             $query->where(function($q) use ($request) {
+                $q->where('expected_retirement_date', '<=', $request->retirement_to)
+                  ->orWhere('contract_end_date', '<=', $request->retirement_to);
+             });
         }
 
         // Salary scale filter
@@ -300,12 +306,19 @@ class EmployeeController extends Controller
     }
 
     // Retirement date range filter
+    // Retirement date range filter (checks both expected_retirement_date and contract_end_date)
     if ($request->filled('retirement_from')) {
-        $query->where('expected_retirement_date', '>=', $request->retirement_from);
+         $query->where(function($q) use ($request) {
+            $q->where('expected_retirement_date', '>=', $request->retirement_from)
+              ->orWhere('contract_end_date', '>=', $request->retirement_from);
+         });
     }
 
     if ($request->filled('retirement_to')) {
-        $query->where('expected_retirement_date', '<=', $request->retirement_to);
+         $query->where(function($q) use ($request) {
+            $q->where('expected_retirement_date', '<=', $request->retirement_to)
+              ->orWhere('contract_end_date', '<=', $request->retirement_to);
+         });
     }
 
     // Salary scale filter
@@ -618,7 +631,8 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:Active,Suspended,Retired,Deceased,Hold',
+                'appointment_type_id' => 'required|exists:appointment_types,id',
+                'status' => 'required|in:' . implode(',', $appointmentType && $appointmentType->name === 'Contract' ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -637,11 +651,26 @@ class EmployeeController extends Controller
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
             if ($appointmentType && $appointmentType->name === 'Casual') {
+                // Casual: only contract fields, no permanent fields
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
-
+            } elseif ($appointmentType && $appointmentType->name === 'Contract') {
+                // Contract: require contract fields + allow optional permanent fields
+                $validationRules['contract_start_date'] = 'required|date';
+                $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
+                $validationRules['amount'] = 'required|numeric';
+                // Permanent fields are optional for contract staff
+                $validationRules['cadre_id'] = 'nullable|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'nullable|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'nullable|exists:grade_levels,id';
+                $validationRules['step_id'] = 'nullable|exists:steps,id';
+                $validationRules['step_level'] = 'nullable|string|max:50';
+                $validationRules['expected_next_promotion'] = 'nullable|date';
+                $validationRules['expected_retirement_date'] = 'nullable|date';
+                $validationRules['rank_id'] = 'nullable|exists:ranks,id';
             } else {
+                // Permanent: only permanent fields
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
@@ -811,7 +840,8 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:Active,Suspended,Retired,Deceased,Hold',
+                'appointment_type_id' => 'required|exists:appointment_types,id',
+                'status' => 'required|in:' . implode(',', $appointmentType && $appointmentType->name === 'Contract' ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -829,10 +859,26 @@ class EmployeeController extends Controller
             $validationRules['department_id'] = 'required|exists:departments,department_id';
 
             if ($appointmentType && $appointmentType->name === 'Casual') {
+                // Casual: only contract fields, no permanent fields
                 $validationRules['contract_start_date'] = 'required|date';
                 $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
                 $validationRules['amount'] = 'required|numeric';
+            } elseif ($appointmentType && $appointmentType->name === 'Contract') {
+                // Contract: require contract fields + allow optional permanent fields
+                $validationRules['contract_start_date'] = 'required|date';
+                $validationRules['contract_end_date'] = 'required|date|after:contract_start_date';
+                $validationRules['amount'] = 'required|numeric';
+                // Permanent fields are optional for contract staff
+                $validationRules['cadre_id'] = 'nullable|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'nullable|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'nullable|exists:grade_levels,id';
+                $validationRules['step_id'] = 'nullable|exists:steps,id';
+                $validationRules['step_level'] = 'nullable|string|max:50';
+                $validationRules['expected_next_promotion'] = 'nullable|date';
+                $validationRules['expected_retirement_date'] = 'nullable|date';
+                $validationRules['rank_id'] = 'nullable|exists:ranks,id';
             } else {
+                // Permanent: only permanent fields
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
                 $validationRules['salary_scale_id'] = 'required|exists:salary_scales,id';
                 $validationRules['grade_level_id'] = 'required|exists:grade_levels,id';
@@ -882,7 +928,8 @@ class EmployeeController extends Controller
 
             foreach ($validated as $key => $value) {
                 // Special handling for status field - don't change from 'Hold' to any other value during regular updates
-                if ($key === 'status' && $employee->status === 'Hold') {
+                // EXCEPTION: Allow changing to 'Retired-Active' for contract staff
+                if ($key === 'status' && $employee->status === 'Hold' && $value !== 'Retired-Active') {
                     // If employee is on 'Hold' status, don't allow the status to be changed as part of other updates
                     continue; // Skip updating status field
                 }

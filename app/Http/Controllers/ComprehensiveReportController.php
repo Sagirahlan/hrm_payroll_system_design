@@ -239,10 +239,13 @@ class ComprehensiveReportController extends Controller
                 return $this->reportService->generatePayrollJournalReport($filters);
 
             case 'payroll_detailed':
-                return $this->reportService->generatePayrollDetailedReport($filters);
+            return $this->reportService->generatePayrollDetailedReport($filters);
 
-            default:
-                return ['error' => 'Invalid report type'];
+        case 'pensioner':
+            return $this->reportService->generatePensionerReport($filters);
+
+        default:
+            return ['error' => 'Invalid report type'];
         }
     }
 
@@ -342,11 +345,15 @@ class ComprehensiveReportController extends Controller
                 break;
 
             case 'payroll_journal':
-                $this->writePayrollJournalExcel($file, $reportData);
-                break;
+            $this->writePayrollJournalExcel($file, $reportData);
+            break;
 
-            default:
-                fputcsv($file, ['No data available for this report type']);
+        case 'pensioner':
+            $this->writePensionerExcel($file, $reportData);
+            break;
+
+        default:
+            fputcsv($file, ['No data available for this report type']);
         }
     }
 
@@ -642,6 +649,41 @@ class ComprehensiveReportController extends Controller
         }
     }
 
+    private function writePensionerExcel($file, $reportData)
+    {
+        // Header row
+        fputcsv($file, [
+            'S/N', 'Full Name', 'Staff No', 'Department', 'Rank', 'Grade Level', 'Step',
+            'Date of Retirement', 'Retirement Type', 'Years of Service',
+            'Pension Amount', 'Gratuity Amount', 'Gratuity Paid',
+            'Bank Name', 'Account Number', 'Account Name', 'Phone Number', 'Status'
+        ]);
+
+        $sn = 1;
+        foreach ($reportData['pensioners'] ?? [] as $pensioner) {
+            fputcsv($file, [
+                $sn++,
+                $pensioner['full_name'],
+                $pensioner['staff_no'],
+                $pensioner['department'],
+                $pensioner['rank'],
+                $pensioner['grade_level'],
+                $pensioner['step'],
+                $pensioner['date_of_retirement'],
+                $pensioner['retirement_type'],
+                $pensioner['years_of_service'],
+                number_format($pensioner['pension_amount'], 2),
+                number_format($pensioner['gratuity_amount'], 2),
+                $pensioner['is_gratuity_paid'],
+                $pensioner['bank_name'],
+                $pensioner['account_number'],
+                $pensioner['account_name'],
+                $pensioner['phone_number'],
+                $pensioner['status'],
+            ]);
+        }
+    }
+
     private function writePayrollJournalExcel($file, $reportData)
     {
         fputcsv($file, ['Period', $reportData['period']]);
@@ -684,8 +726,9 @@ class ComprehensiveReportController extends Controller
             'retirement' => 'Employees Approaching Retirement Report',
             'historical_retirement' => 'Historical Retirement Report',
             'payroll_journal' => 'Payroll Journal Report',
-            'payroll_detailed' => 'Detailed Payroll Report (Bank Grouped)'
-        ];
+        'payroll_detailed' => 'Detailed Payroll Report (Bank Grouped)',
+        'pensioner' => 'Pensioner Report with Bank Details'
+    ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';
     }

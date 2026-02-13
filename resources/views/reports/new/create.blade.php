@@ -43,6 +43,9 @@
                                     <optgroup label="Financial Reports">
                                         <option value="loan_status">Loan Status Report</option>
                                     </optgroup>
+                                    <optgroup label="Pension Reports">
+                                        <option value="pensioner">Pensioner Report with Bank Details</option>
+                                    </optgroup>
                                     <optgroup label="Organizational Reports">
                                         <option value="department_summary">Department Summary Report</option>
                                         <option value="grade_level_summary">Grade Level Summary Report</option>
@@ -334,6 +337,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="18">Within 18 Months</option>
                                 <option value="24">Within 2 Years</option>
                                 <option value="36">Within 3 Years</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'pensioner':
+                filtersHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                ${jsonData.departments.map(dept => `<option value="${dept.department_id}">${dept.department_name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Terminated">Terminated</option>
                             </select>
                         </div>
                     </div>

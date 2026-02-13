@@ -1135,5 +1135,57 @@ class ComprehensiveReportService
             'grand_total' => $journalItems->sum('amount')
         ];
     }
-}
 
+    public function generatePensionerReport($filters = [])
+    {
+        $query = \App\Models\Pensioner::with(['bank', 'department', 'rank', 'gradeLevel', 'step']);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        $pensioners = $query->orderBy('full_name')->get();
+
+        $totalPensionAmount = $pensioners->sum('pension_amount');
+        $totalGratuityAmount = $pensioners->sum('gratuity_amount');
+
+        $reportData = [
+            'report_title' => 'Pensioner Report with Bank Details',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'total_pensioners' => $pensioners->count(),
+            'total_pension_amount' => $totalPensionAmount,
+            'total_gratuity_amount' => $totalGratuityAmount,
+            'pensioners' => [],
+        ];
+
+        foreach ($pensioners as $pensioner) {
+            $fullName = $pensioner->full_name ?? trim(($pensioner->first_name ?? '') . ' ' . ($pensioner->middle_name ?? '') . ' ' . ($pensioner->surname ?? ''));
+
+            $reportData['pensioners'][] = [
+                'full_name' => $fullName,
+                'staff_no' => $pensioner->employee ? $pensioner->employee->staff_no : 'N/A',
+                'department' => $pensioner->department->department_name ?? 'N/A',
+                'rank' => $pensioner->rank->name ?? 'N/A',
+                'grade_level' => $pensioner->gradeLevel->name ?? 'N/A',
+                'step' => $pensioner->step->name ?? 'N/A',
+                'date_of_retirement' => $pensioner->date_of_retirement ? $pensioner->date_of_retirement->format('Y-m-d') : 'N/A',
+                'retirement_type' => $pensioner->retirement_type ?? 'N/A',
+                'years_of_service' => $pensioner->years_of_service ?? 'N/A',
+                'pension_amount' => (float) ($pensioner->pension_amount ?? 0),
+                'gratuity_amount' => (float) ($pensioner->gratuity_amount ?? 0),
+                'bank_name' => $pensioner->bank->bank_name ?? 'N/A',
+                'account_number' => $pensioner->account_number ?? 'N/A',
+                'account_name' => $pensioner->account_name ?? 'N/A',
+                'phone_number' => $pensioner->phone_number ?? 'N/A',
+                'status' => $pensioner->status ?? 'N/A',
+                'is_gratuity_paid' => $pensioner->is_gratuity_paid ? 'Yes' : 'No',
+            ];
+        }
+
+        return $reportData;
+    }
+}

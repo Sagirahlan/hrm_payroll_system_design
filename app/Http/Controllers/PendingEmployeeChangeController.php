@@ -290,7 +290,7 @@ class PendingEmployeeChangeController extends Controller
         }
 
         // If it's a permanent employee, place them on probation for 3 months starting from their date of first appointment
-        if ($appointmentType && $appointmentType->name !== 'Casual') {
+        if ($appointmentType && !in_array($appointmentType->name, ['Casual', 'Contract'])) {
             $dateOfFirstAppointment = $data['date_of_first_appointment'] ?? now();
             $probationStartDate = \Carbon\Carbon::parse($dateOfFirstAppointment);
             $probationEndDate = $probationStartDate->copy()->addMonths(3);

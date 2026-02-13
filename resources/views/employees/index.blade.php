@@ -363,7 +363,8 @@
                                     <span class="badge {{
                                         $employee->status == 'Active' ? 'bg-success' :
                                         ($employee->status == 'Suspended' ? 'bg-warning' :
-                                        ($employee->status == 'Retired' ? 'bg-info' : 'bg-dark'))
+                                        ($employee->status == 'Retired' ? 'bg-info' :
+                                        ($employee->status == 'Retired-Active' ? 'bg-primary' : 'bg-dark')))
                                     }}">
                                         {{ $employee->status }}
                                     </span>

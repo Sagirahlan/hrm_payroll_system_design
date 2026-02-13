@@ -247,7 +247,7 @@
                                 <!-- Casual Appointment Fields -->
                                 <div class="row g-3 d-none" id="casual_appointment_fields">
                                     <div class="col-12">
-                                        <h6 class="text-muted">Casual Appointment Details</h6>
+                                        <h6 class="text-muted" id="casual_section_title">Casual/Contract Details</h6>
                                     </div>
                                     <div class="col-md-6 col-12">
                                         <label class="form-label font-weight-bold">Casual Start Date <span class="text-danger">*</span></label>
@@ -282,6 +282,7 @@
                                         <option value="Active" {{ old('status', $employee->status) == 'Active' ? 'selected' : '' }}>Active</option>
                                         <option value="Suspended" {{ old('status', $employee->status) == 'Suspended' ? 'selected' : '' }}>Suspended</option>
                                         <option value="Retired" {{ old('status', $employee->status) == 'Retired' ? 'selected' : '' }}>Retired</option>
+                                        <option value="Retired-Active" {{ old('status', $employee->status) == 'Retired-Active' ? 'selected' : '' }}>Retired-Active</option>
                                         <option value="Deceased" {{ old('status', $employee->status) == 'Deceased' ? 'selected' : '' }}>Deceased</option>
                                         <option value="Hold" {{ old('status', $employee->status) == 'Hold' ? 'selected' : '' }}>Hold</option>
                                     </select>
@@ -485,7 +486,7 @@
             });
 
             // Validate Casual dates
-            if (step === 3 && appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name === 'Casual') {
+            if (step === 3 && ['Casual', 'Contract'].includes(appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name)) {
                 const casualStartDate = document.querySelector('input[name="contract_start_date"]');
                 const casualEndDate = document.querySelector('input[name="contract_end_date"]');
                 if (casualStartDate.value && casualEndDate.value) {
@@ -507,7 +508,7 @@
 
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
-                if (appointmentTypeName !== 'Casual') {
+                if (appointmentTypeName !== 'Casual' && appointmentTypeName !== 'Contract') {
                     const gradeLevelIdInput = document.getElementById('grade_level_id');
                     const stepIdInput = document.getElementById('step_id');
                     if (!gradeLevelIdInput.value) {
@@ -559,6 +560,9 @@
         function toggleAppointmentFields() {
             const selectedOption = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex];
             const appointmentTypeName = selectedOption.dataset.name;
+            const sectionTitle = document.getElementById('casual_section_title');
+            const statusSelect = document.querySelector('select[name="status"]');
+            const retiredActiveOption = statusSelect ? statusSelect.querySelector('option[value="Retired-Active"]') : null;
 
             regularAppointmentFields.querySelectorAll('input, select').forEach(field => {
                 if (!['salary_scale_id', 'grade_level_name', 'step_level'].includes(field.id)) {
@@ -568,13 +572,38 @@
             casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = false);
 
             if (appointmentTypeName === 'Casual') {
+                // Casual: hide permanent fields, show contract fields
                 regularAppointmentFields.classList.add('d-none');
                 casualAppointmentFields.classList.remove('d-none');
                 regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+                if (sectionTitle) sectionTitle.textContent = 'Casual Appointment Details';
+            } else if (appointmentTypeName === 'Contract') {
+                // Contract: show BOTH permanent fields (optional) and contract fields
+                regularAppointmentFields.classList.remove('d-none');
+                casualAppointmentFields.classList.remove('d-none');
+                // Permanent fields are visible but not disabled (optional for contract)
+                if (sectionTitle) sectionTitle.textContent = 'Contract Details';
             } else {
+                // Permanent: show permanent fields, hide contract fields
                 regularAppointmentFields.classList.remove('d-none');
                 casualAppointmentFields.classList.add('d-none');
                 casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+            }
+
+            if (retiredActiveOption) {
+                if (appointmentTypeName === 'Contract') {
+                    retiredActiveOption.hidden = false;
+                    retiredActiveOption.disabled = false;
+                } else {
+                    retiredActiveOption.hidden = true;
+                    retiredActiveOption.disabled = true;
+                    if (statusSelect.value === 'Retired-Active') {
+                         // Only reset if we are not just loading the page with an existing invalid state (which shouldn't happen if data is valid)
+                         // But for edit, we might want to be careful.
+                         // Actually, if the user switches type, they *should* lose the invalid status.
+                        statusSelect.value = 'Active';
+                    }
+                }
             }
         }
 
