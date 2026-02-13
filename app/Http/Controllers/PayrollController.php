@@ -2235,7 +2235,21 @@ class PayrollController extends Controller
                 }
                 
                 if ($deductionType->is_statutory) {
-                    if ($deductionType->calculation_type === 'percentage') {
+                    if ($deductionType->code === 'PAYE') {
+                        // PAYE uses progressive tax brackets based on individual employee's basic salary
+                        $basicSalary = $employee->step ? $employee->step->basic_salary : 0;
+                        if ($basicSalary <= 0 && $employee->gradeLevel && $employee->gradeLevel->steps->isNotEmpty()) {
+                            $basicSalary = $employee->gradeLevel->steps->first()->basic_salary;
+                        }
+                        if ($basicSalary > 0) {
+                            $amount = \App\Services\PAYECalculationService::compute($basicSalary);
+
+                            // For suspended employees, halve the PAYE
+                            if ($employee->status === 'Suspended') {
+                                $amount = $amount / 2;
+                            }
+                        }
+                    } elseif ($deductionType->calculation_type === 'percentage') {
                         // Check if employee has a grade level with steps for statutory deductions
                         if ($employee->gradeLevel && $employee->gradeLevel->steps->isNotEmpty()) {
                             // Use the specific step if assigned, otherwise use the first step

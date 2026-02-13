@@ -138,8 +138,13 @@ class PayrollCalculationService
         if (!$isCasualEmployee && $gradeLevel) {
             foreach ($gradeLevel->deductionTypes as $deductionType) {
                 if ($deductionType->is_statutory) {
-                    // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
-                    $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
+                    // Check if this is a PAYE deduction - use progressive tax brackets
+                    if ($deductionType->code === 'PAYE' || stripos($deductionType->name, 'PAYE') !== false) {
+                        $amount = \App\Services\PAYECalculationService::compute($basicSalary);
+                    } else {
+                        // Calculate statutory deduction based on the actual basic salary (already halved for suspended)
+                        $amount = ($deductionType->pivot->percentage / 100) * $basicSalary;
+                    }
 
                     $totalDeductions += $amount;
                     $deductionRecords[] = [

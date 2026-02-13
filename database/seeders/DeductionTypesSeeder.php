@@ -59,7 +59,7 @@ class DeductionTypesSeeder extends Seeder
                 'code' => 'PAYE',
                 'description' => 'Pay As You Earn tax deduction',
                 'is_statutory' => 1,
-                'calculation_type' => 'percentage',
+                'calculation_type' => 'progressive',
                 'rate_or_amount' => null,
             ],
             [
