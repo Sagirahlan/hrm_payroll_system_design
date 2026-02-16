@@ -370,9 +370,31 @@ class ReportController extends Controller
             // For non-loan deductions, get them directly by type
             $deductionsQuery = Deduction::with(['employee', 'deductionType'])
                          ->where('deduction_type_id', $deductionTypeId);
+            
             if ($request->filled('employee_id')) {
                 $deductionsQuery->where('employee_id', $request->employee_id);
             }
+
+            // Apply date range filter if provided (Active During logic)
+            if ($request->has('start_date') && $request->start_date) {
+                // Deduction must start before or on the end of the report period
+                if ($request->has('end_date') && $request->end_date) {
+                    $deductionsQuery->where('start_date', '<=', $request->end_date);
+                }
+                // And adhere to end date logic below
+            }
+            
+            if ($request->has('end_date') && $request->end_date) {
+                // Deduction must not end before the start of the report period
+                // i.e., end_date >= start_date OR end_date is NULL
+                if ($request->has('start_date') && $request->start_date) {
+                    $deductionsQuery->where(function($q) use ($request) {
+                        $q->whereNull('end_date')
+                          ->orWhere('end_date', '>=', $request->start_date);
+                    });
+                }
+            }
+
             $deductions = $deductionsQuery->get();
         }
 
@@ -484,11 +506,22 @@ class ReportController extends Controller
         }
 
         // Apply date range filter if provided
+        // Apply date range filter if provided (Active During logic)
         if ($request->has('start_date') && $request->start_date) {
-            $query = $query->where('start_date', '>=', $request->start_date);
+            // Addition must start before or on the end of the report period
+            if ($request->has('end_date') && $request->end_date) {
+                $query->where('start_date', '<=', $request->end_date);
+            }
         }
+        
         if ($request->has('end_date') && $request->end_date) {
-            $query = $query->where('end_date', '<=', $request->end_date);
+             // Addition must not end before the start of the report period
+             if ($request->has('start_date') && $request->start_date) {
+                $query->where(function($q) use ($request) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $request->start_date);
+                });
+            }
         }
 
         // Get all additions of this type with their employees
@@ -787,14 +820,13 @@ class ReportController extends Controller
             }
 
             // Apply date range filter to regular deductions if provided
-            if (!$isLoanRelated && $request->has('start_date') && $request->start_date) {
+            if (!$isLoanRelated && $request->has('start_date') && $request->start_date && $request->has('end_date') && $request->end_date) {
                 $deductions = $deductions->filter(function ($deduction) use ($request) {
-                    return $deduction->start_date >= $request->start_date;
-                });
-            }
-            if (!$isLoanRelated && $request->has('end_date') && $request->end_date) {
-                $deductions = $deductions->filter(function ($deduction) use ($request) {
-                    return $deduction->end_date <= $request->end_date;
+                    // Logic: Deduction start date <= Report end date AND (Deduction end date >= Report start date OR Deduction end date is null)
+                    $startDateCondition = $deduction->start_date <= $request->end_date;
+                    $endDateCondition = is_null($deduction->end_date) || $deduction->end_date >= $request->start_date;
+                    
+                    return $startDateCondition && $endDateCondition;
                 });
             }
 
@@ -870,9 +902,19 @@ class ReportController extends Controller
         // Generate a separate report for each addition type
         foreach ($additionTypes as $additionType) {
             // Get all additions of this type with their employees
-            $additions = Addition::with(['employee', 'additionType'])
-                ->where('addition_type_id', $additionType->id)
-                ->get();
+            $additionsQuery = Addition::with(['employee', 'additionType'])
+                ->where('addition_type_id', $additionType->id);
+
+            // Apply date range filter if provided (Active During logic)
+            if ($request->has('start_date') && $request->start_date && $request->has('end_date') && $request->end_date) {
+                 $additionsQuery->where('start_date', '<=', $request->end_date)
+                                ->where(function($q) use ($request) {
+                                    $q->whereNull('end_date')
+                                      ->orWhere('end_date', '>=', $request->start_date);
+                                });
+            }
+
+            $additions = $additionsQuery->get();
 
             // Skip if no additions of this type
             if ($additions->isEmpty()) {

@@ -552,8 +552,10 @@
                                                     <span class="badge bg-purple text-white" style="background-color: #6f42c1;">Gratuity</span>
                                                 <?php elseif($payroll->payment_type === 'Pension'): ?>
                                                     <span class="badge bg-info text-white">Pension</span>
-                                                <?php elseif($payroll->payment_type === 'Casual' || $payroll->payment_type === 'Contract'): ?>
+                                                <?php elseif($payroll->payment_type === 'Casual'): ?>
                                                     <span class="badge bg-warning text-dark">Casual</span>
+                                                <?php elseif($payroll->payment_type === 'Contract'): ?>
+                                                    <span class="badge bg-secondary text-white">Contract</span>
                                                 <?php elseif($payroll->payment_type === 'Permanent'): ?>
                                                     <span class="badge bg-success text-white">Permanent</span>
                                                 <?php else: ?>

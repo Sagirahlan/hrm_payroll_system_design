@@ -197,7 +197,14 @@ class ComprehensiveReportService
 
         foreach ($payrollRecords as $record) {
             // Get individual deductions for this employee with their types
+            // FIX: Filter by payroll month to match "Active During" logic
+            $payrollMonth = Carbon::parse($record->payroll_month);
             $employeeDeductions = \App\Models\Deduction::where('employee_id', $record->employee_id)
+                ->where('start_date', '<=', $payrollMonth->endOfMonth())
+                ->where(function($q) use ($payrollMonth) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $payrollMonth->startOfMonth());
+                })
                 ->with('deductionType')
                 ->get();
             
@@ -275,15 +282,40 @@ class ComprehensiveReportService
             $query->where('deduction_type_id', $filters['deduction_type_id']);
         }
 
-        // Apply year and month filters if provided
+        // Apply year and month filters if provided (Active During logic)
+        $dateFilterStart = null;
+        $dateFilterEnd = null;
+
         if (isset($filters['year']) && $filters['year']) {
             $year = $filters['year'];
-            $query->whereYear('start_date', $year);
+            $dateFilterStart = Carbon::createFromDate($year, 1, 1)->startOfYear();
+            $dateFilterEnd = Carbon::createFromDate($year, 1, 1)->endOfYear();
+            
+            if (isset($filters['month']) && $filters['month']) {
+                $month = $filters['month'];
+                if (is_numeric($month)) {
+                    $dateFilterStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+                    $dateFilterEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+                } else {
+                     // Try to parse month name
+                    try {
+                        $dateObj = Carbon::parse("$year-$month-01");
+                        $dateFilterStart = $dateObj->copy()->startOfMonth();
+                        $dateFilterEnd = $dateObj->copy()->endOfMonth();
+                    } catch (\Exception $e) {}
+                }
+            }
         }
 
-        if (isset($filters['month']) && $filters['month']) {
-            $month = $filters['month'];
-            $query->whereMonth('start_date', $month);
+        if ($dateFilterStart && $dateFilterEnd) {
+             $query->where('start_date', '<=', $dateFilterEnd)
+                  ->where(function($q) use ($dateFilterStart) {
+                      $q->whereNull('end_date')
+                        ->orWhere('end_date', '>=', $dateFilterStart);
+                  });
+        } elseif (isset($filters['month']) && $filters['month']) {
+             $month = $filters['month'];
+             $query->whereMonth('start_date', $month);
         }
 
         $deductions = $query->get();
@@ -324,15 +356,39 @@ class ComprehensiveReportService
             $query->where('addition_type_id', $filters['addition_type_id']);
         }
 
-        // Apply year and month filters if provided
+        // Apply year and month filters if provided (Active During logic)
+        $dateFilterStart = null;
+        $dateFilterEnd = null;
+
         if (isset($filters['year']) && $filters['year']) {
             $year = $filters['year'];
-            $query->whereYear('start_date', $year);
+            $dateFilterStart = Carbon::createFromDate($year, 1, 1)->startOfYear();
+            $dateFilterEnd = Carbon::createFromDate($year, 1, 1)->endOfYear();
+            
+            if (isset($filters['month']) && $filters['month']) {
+                $month = $filters['month'];
+                if (is_numeric($month)) {
+                    $dateFilterStart = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+                    $dateFilterEnd = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+                } else {
+                    try {
+                        $dateObj = Carbon::parse("$year-$month-01");
+                        $dateFilterStart = $dateObj->copy()->startOfMonth();
+                        $dateFilterEnd = $dateObj->copy()->endOfMonth();
+                    } catch (\Exception $e) {}
+                }
+            }
         }
 
-        if (isset($filters['month']) && $filters['month']) {
-            $month = $filters['month'];
-            $query->whereMonth('start_date', $month);
+        if ($dateFilterStart && $dateFilterEnd) {
+             $query->where('start_date', '<=', $dateFilterEnd)
+                  ->where(function($q) use ($dateFilterStart) {
+                      $q->whereNull('end_date')
+                        ->orWhere('end_date', '>=', $dateFilterStart);
+                  });
+        } elseif (isset($filters['month']) && $filters['month']) {
+             $month = $filters['month'];
+             $query->whereMonth('start_date', $month);
         }
 
         $additions = $query->get();
