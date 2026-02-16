@@ -52,6 +52,7 @@
                                     </optgroup>
                                     <optgroup label="Audit Reports">
                                         <option value="audit_trail">Audit Trail Report</option>
+                                        <option value="duplicate_beneficiary">Duplicate Beneficiary Report</option>
                                     </optgroup>
                                 </select>
                             </div>

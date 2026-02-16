@@ -1188,4 +1188,81 @@ class ComprehensiveReportService
 
         return $reportData;
     }
+
+    public function generateDuplicateBeneficiaryReport()
+    {
+        // Fetch all active/suspended/retired employees with their bank details and biometric data
+        $employees = Employee::with(['bank', 'biometricData', 'department'])
+            ->get();
+
+        // Fetch all pensioners with their bank details
+        $pensioners = \App\Models\Pensioner::with(['bank', 'department'])
+            ->get();
+
+        // normalize data into a common structure
+        $beneficiaries = collect();
+
+        foreach ($employees as $employee) {
+            $accountNo = $employee->bank ? trim($employee->bank->account_no) : null;
+            $nin = $employee->biometricData ? trim($employee->biometricData->nin) : ($employee->nin ? trim($employee->nin) : null);
+            
+            if ($accountNo || $nin) {
+                $beneficiaries->push([
+                    'type' => 'Employee',
+                    'id' => $employee->staff_no ?? $employee->employee_id,
+                    'name' => $employee->full_name,
+                    'department' => $employee->department->department_name ?? 'N/A',
+                    'account_number' => $accountNo,
+                    'bank_name' => $employee->bank->bank_name ?? 'N/A',
+                    'nin' => $nin,
+                    'status' => $employee->status,
+                    'original_record' => $employee
+                ]);
+            }
+        }
+
+        foreach ($pensioners as $pensioner) {
+            // Pensioner model has account_number directly
+            $accountNo = $pensioner->account_number ? trim($pensioner->account_number) : null;
+            
+            if ($accountNo) {
+                $beneficiaries->push([
+                    'type' => 'Pensioner',
+                    'id' => $pensioner->employee_id ?? $pensioner->id, // Use employee_id string if available
+                    'name' => trim($pensioner->first_name . ' ' . $pensioner->middle_name . ' ' . $pensioner->surname),
+                    'department' => $pensioner->department->department_name ?? 'N/A',
+                    'account_number' => $accountNo,
+                    'bank_name' => $pensioner->bank->bank_name ?? 'N/A', // Assuming relation exists or bank_name is stored
+                    'nin' => null, // Pensioners don't have NIN in schema
+                    'status' => $pensioner->status,
+                    'original_record' => $pensioner
+                ]);
+            }
+        }
+
+        // Group by Account Number
+        $duplicateAccounts = $beneficiaries
+            ->filter(fn($b) => !empty($b['account_number']))
+            ->groupBy('account_number')
+            ->filter(fn($group) => $group->count() > 1)
+            ->map(fn($group) => $group->values()->all())
+            ->toArray();
+
+        // Group by NIN
+        $duplicateNins = $beneficiaries
+            ->filter(fn($b) => !empty($b['nin']))
+            ->groupBy('nin')
+            ->filter(fn($group) => $group->count() > 1)
+            ->map(fn($group) => $group->values()->all())
+            ->toArray();
+
+        return [
+            'report_title' => 'Duplicate Beneficiary Report',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'total_duplicate_account_groups' => count($duplicateAccounts),
+            'total_duplicate_nin_groups' => count($duplicateNins),
+            'duplicate_accounts' => $duplicateAccounts,
+            'duplicate_nins' => $duplicateNins
+        ];
+    }
 }

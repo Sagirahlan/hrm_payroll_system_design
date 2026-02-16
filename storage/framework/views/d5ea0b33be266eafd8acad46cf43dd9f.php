@@ -73,6 +73,7 @@
                                     <label for="appointment_type_id">Appointment Type</label>
                                     <select name="appointment_type_id" id="appointment_type_id" class="form-control">
                                         <option value="">All Types</option>
+                                        <option value="pensioner" <?php echo e(request('appointment_type_id') == 'pensioner' ? 'selected' : ''); ?>>Pensioners</option>
                                         <?php $__currentLoopData = $appointmentTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <option value="<?php echo e($type->id); ?>" <?php echo e(request('appointment_type_id') == $type->id ? 'selected' : ''); ?>>
                                                 <?php echo e($type->name); ?>
@@ -116,7 +117,11 @@
                         <h5 class="font-weight-bold text-uppercase" style="color: #000;">
                             <?php
                                 $typeId = request('appointment_type_id');
-                                $typeName = $typeId ? $appointmentTypes->firstWhere('id', $typeId)->name : 'ALL STAFF';
+                                if ($typeId === 'pensioner') {
+                                    $typeName = 'PENSIONER';
+                                } else {
+                                    $typeName = $typeId ? $appointmentTypes->firstWhere('id', $typeId)->name : 'ALL STAFF';
+                                }
                             ?>
                             <?php echo e($typeName); ?> PAYMENT SCHEDULE
                         </h5>

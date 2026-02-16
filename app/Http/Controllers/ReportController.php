@@ -1637,9 +1637,16 @@ class ReportController extends Controller
         // Appointment Type Filter
         if ($request->filled('appointment_type_id')) {
             $appointmentTypeId = $request->appointment_type_id;
-            $query->whereHas('employee', function($q) use ($appointmentTypeId) {
-                $q->where('appointment_type_id', $appointmentTypeId);
-            });
+            
+            if ($appointmentTypeId === 'pensioner') {
+                $query->whereHas('payroll', function($q) {
+                    $q->whereIn('payment_type', ['Pension', 'Gratuity']);
+                });
+            } else {
+                $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                    $q->where('appointment_type_id', $appointmentTypeId);
+                });
+            }
         }
 
         $transactions = $query->latest('payment_date')->paginate(50);
@@ -1699,9 +1706,16 @@ class ReportController extends Controller
         // Appointment Type Filter
         if ($request->filled('appointment_type_id')) {
             $appointmentTypeId = $request->appointment_type_id;
-            $query->whereHas('employee', function($q) use ($appointmentTypeId) {
-                $q->where('appointment_type_id', $appointmentTypeId);
-            });
+            
+            if ($appointmentTypeId === 'pensioner') {
+                $query->whereHas('payroll', function($q) {
+                    $q->whereIn('payment_type', ['Pension', 'Gratuity']);
+                });
+            } else {
+                $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                    $q->where('appointment_type_id', $appointmentTypeId);
+                });
+            }
         }
 
         $transactions = $query->latest('payment_date')->get();
@@ -1717,7 +1731,11 @@ class ReportController extends Controller
         ];
 
         $appointmentTypeId = $request->appointment_type_id;
-        $appointmentTypeName = $appointmentTypeId ? AppointmentType::find($appointmentTypeId)->name : 'ALL STAFF';
+        if ($appointmentTypeId === 'pensioner') {
+            $appointmentTypeName = 'PENSIONER';
+        } else {
+            $appointmentTypeName = $appointmentTypeId ? AppointmentType::find($appointmentTypeId)->name : 'ALL STAFF';
+        }
         
         $month = $request->payment_month ? \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month) : now();
         $monthStr = $month->format('F Y');

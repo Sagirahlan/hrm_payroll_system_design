@@ -71,6 +71,7 @@
                                     <label for="appointment_type_id">Appointment Type</label>
                                     <select name="appointment_type_id" id="appointment_type_id" class="form-control">
                                         <option value="">All Types</option>
+                                        <option value="pensioner" {{ request('appointment_type_id') == 'pensioner' ? 'selected' : '' }}>Pensioners</option>
                                         @foreach($appointmentTypes as $type)
                                             <option value="{{ $type->id }}" {{ request('appointment_type_id') == $type->id ? 'selected' : '' }}>
                                                 {{ $type->name }}
@@ -113,7 +114,11 @@
                         <h5 class="font-weight-bold text-uppercase" style="color: #000;">
                             @php
                                 $typeId = request('appointment_type_id');
-                                $typeName = $typeId ? $appointmentTypes->firstWhere('id', $typeId)->name : 'ALL STAFF';
+                                if ($typeId === 'pensioner') {
+                                    $typeName = 'PENSIONER';
+                                } else {
+                                    $typeName = $typeId ? $appointmentTypes->firstWhere('id', $typeId)->name : 'ALL STAFF';
+                                }
                             @endphp
                             {{ $typeName }} PAYMENT SCHEDULE
                         </h5>

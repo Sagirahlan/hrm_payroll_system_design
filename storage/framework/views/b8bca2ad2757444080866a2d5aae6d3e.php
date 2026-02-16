@@ -279,6 +279,20 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title">Duplicate Beneficiary Report</h5>
+                                    <p class="card-text text-muted">Identify duplicate bank accounts & NINs</p>
+                                    <button class="btn btn-warning generate-report-btn"
+                                            data-report-type="duplicate_beneficiary"
+                                            data-title="Duplicate Beneficiary Report">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -679,6 +693,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `;
+                break;
+
+
+            case 'duplicate_beneficiary':
+                // No additional filters needed for duplicate beneficiary report
+                filtersSection.innerHTML = '';
                 break;
 
             case 'audit_trail':

@@ -244,6 +244,9 @@ class ComprehensiveReportController extends Controller
         case 'pensioner':
             return $this->reportService->generatePensionerReport($filters);
 
+        case 'duplicate_beneficiary':
+            return $this->reportService->generateDuplicateBeneficiaryReport();
+
         default:
             return ['error' => 'Invalid report type'];
         }
@@ -350,6 +353,10 @@ class ComprehensiveReportController extends Controller
 
         case 'pensioner':
             $this->writePensionerExcel($file, $reportData);
+            break;
+
+        case 'duplicate_beneficiary':
+            $this->writeDuplicateBeneficiaryExcel($file, $reportData);
             break;
 
         default:
@@ -705,6 +712,61 @@ class ComprehensiveReportController extends Controller
         }
     }
 
+    private function writeDuplicateBeneficiaryExcel($file, $reportData)
+    {
+        // Section 1: Duplicate Accounts
+        fputcsv($file, ['DUPLICATE BANK ACCOUNTS']);
+        fputcsv($file, ['Total Groups', $reportData['total_duplicate_account_groups']]);
+        fputcsv($file, []);
+        
+        fputcsv($file, [
+            'Account Number', 'Bank', 'Beneficiary Name', 'Type', 'ID/Staff No', 'Department', 'Status'
+        ]);
+
+        foreach ($reportData['duplicate_accounts'] as $group) {
+            foreach ($group as $beneficiary) {
+                fputcsv($file, [
+                    $beneficiary['account_number'],
+                    $beneficiary['bank_name'],
+                    $beneficiary['name'],
+                    $beneficiary['type'],
+                    $beneficiary['id'],
+                    $beneficiary['department'],
+                    $beneficiary['status']
+                ]);
+            }
+            // Add a spacer row between groups
+            fputcsv($file, []);
+        }
+
+        fputcsv($file, []);
+        fputcsv($file, []);
+
+        // Section 2: Duplicate NINs
+        fputcsv($file, ['DUPLICATE NINs']);
+        fputcsv($file, ['Total Groups', $reportData['total_duplicate_nin_groups']]);
+        fputcsv($file, []);
+        
+        fputcsv($file, [
+            'NIN', 'Beneficiary Name', 'Type', 'ID/Staff No', 'Department', 'Status'
+        ]);
+
+        foreach ($reportData['duplicate_nins'] as $group) {
+            foreach ($group as $beneficiary) {
+                fputcsv($file, [
+                    $beneficiary['nin'],
+                    $beneficiary['name'],
+                    $beneficiary['type'],
+                    $beneficiary['id'],
+                    $beneficiary['department'],
+                    $beneficiary['status']
+                ]);
+            }
+            // Add a spacer row between groups
+            fputcsv($file, []);
+        }
+    }
+
     private function getReportTypeName($reportType)
     {
         $reportNames = [
@@ -727,7 +789,8 @@ class ComprehensiveReportController extends Controller
             'historical_retirement' => 'Historical Retirement Report',
             'payroll_journal' => 'Payroll Journal Report',
         'payroll_detailed' => 'Detailed Payroll Report (Bank Grouped)',
-        'pensioner' => 'Pensioner Report with Bank Details'
+        'pensioner' => 'Pensioner Report with Bank Details',
+        'duplicate_beneficiary' => 'Duplicate Beneficiary Report'
     ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';

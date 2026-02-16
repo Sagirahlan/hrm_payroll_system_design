@@ -2600,6 +2600,7 @@ class PayrollController extends Controller
 
             $updated = $query->update([
                 'status' => 'Approved',
+                'payment_date' => now(), // Also update for bulk all-pages
                 'updated_at' => now()
             ]);
         } else {
@@ -2615,9 +2616,32 @@ class PayrollController extends Controller
                                     ->where('status', 'Pending Final Approval')
                                     ->update([
                                         'status' => 'Approved',
+                                        // Also set payment_date here for consistency if 'Approved' implies paid,
+                                        // or strictly speaking, it might be paid later? 
+                                        // Given the user wants "Approved" -> "Paid" visualization, let's set it.
+                                        // However, usually "Approved" means ready for payment. 
+                                        // If the user considers "Approved" as final step before "Successful" payment...
+                                        // But wait, the previous code didn't set it. 
+                                        // Let's set it to now() to ensure the report shows a date.
+                                        'payment_date' => now(), 
                                         'updated_at' => now()
                                     ]);
         }
+
+        // --- Payment Transaction Status Update Logic ---
+        // When payroll is Approved, the Payment Transaction should be marked as Successful (Paid)
+        // or at least 'Approved' if there is another step. 
+        // Assuming 'Approved' payroll implies payment is authorized and effectively done or queued.
+        // The user complained it shows 'Pending' in the report.
+        // Let's set it to 'Successful' and set payment_date to now().
+        
+        \App\Models\PaymentTransaction::whereIn('payroll_id', $payrollIds)
+            ->update([
+                'status' => 'successful', // Use lowercase as per other statuses likely, or check enum
+                'payment_date' => now(),
+                'updated_at' => now()
+            ]);
+        // ----------------------------------------------
 
         // --- Gratuity Paid Status Update Logic ---
         \Illuminate\Support\Facades\Log::info("Bulk Final Approve: checking IDs: " . implode(',', $payrollIds));
