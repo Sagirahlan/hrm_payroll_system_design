@@ -4,38 +4,66 @@
     <meta charset="utf-8">
     <title>Payslip PDF</title>
     <style>
+        @page {
+            margin: 0; /* Use body margin instead for border control */
+        }
         body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
-            margin: 10px;
+            font-family: 'Helvetica', 'Arial', sans-serif; /* More professional font stack */
+            font-size: 9px;
+            margin: 5mm;
+            padding: 0;
+            position: relative;
+        }
+        .payslip-container {
+            border: 2px solid #333; /* Professional border */
+            padding: 10px;
+            position: relative;
+            height: 95mm; /* Fixed height to ensure 3 fit per page */
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .right-logo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 50px; /* Reduced size */
+            height: auto;
+            opacity: 1; /* Fully visible */
+            z-index: 10;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
-            page-break-inside: auto;
+            margin-bottom: 3px;
         }
         th, td {
-            border: 1px solid #333;
-            padding: 4px;
+            border: 1px solid #ccc; /* Softer borders */
+            padding: 2px 4px;
             text-align: left;
         }
         th {
-            background: #eee;
-            font-size: 10px;
+            background: #f0f0f0;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase; /* Professional header style */
         }
         .header-table td {
             border: none;
-        }
-        .payslip-header {
-            text-align: center;
-            margin-bottom: 10px;
+            padding: 1px 3px;
         }
         .company-info {
             text-align: center;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 14px;
+            margin-bottom: 5px; /* Reduced */
+        }
+        .company-info h2 {
+            margin: 0 0 2px 0;
+            font-size: 14px; /* Compact header */
+            text-transform: uppercase;
+        }
+        .company-info h3 {
+            margin: 0;
+            font-size: 10px;
+            font-weight: normal;
         }
         .section-header {
             background-color: #f8f9fa;
@@ -46,181 +74,133 @@
             background-color: #f8f9fa;
         }
         .employee-details {
-            margin-bottom: 10px;
-        }
-        .employee-details table {
-            margin-bottom: 5px;
-        }
-        .employee-details th, .employee-details td {
-            border: none;
-            padding: 3px;
+            margin-bottom: 4px;
         }
         h4 {
-            margin: 8px 0 5px 0;
-            font-size: 11px;
+            margin: 4px 0 2px 0; /* Reduced margins */
+            font-size: 10px;
+            text-decoration: underline;
         }
         .text-right {
             text-align: right;
         }
+        /* Two column layout for deductions/additions if needed, but simple table is safer for PDF */
+        .columns-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        .column {
+            float: left;
+            width: 48%;
+        }
+        .column:last-child {
+            float: right;
+        }
     </style>
 </head>
 <body>
-    <div class="company-info">
-        <h2>HRM PAYROLL SYSTEM</h2>
-        <h3>Pay Slip</h3>
-    </div>
+    <div class="payslip-container">
+        <?php if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg'))): ?>
+            <img src="<?php echo e(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')); ?>" class="right-logo" alt="Logo">
+        <?php endif; ?>
 
-    <!-- Basic Payroll Information -->
-    <table class="header-table">
-        <tr>
-            <td><strong>Pay Period:</strong></td>
-            <td><?php echo e($payroll->payroll_month ? \Carbon\Carbon::parse($payroll->payroll_month)->format('F Y') : 'N/A'); ?></td>
-            <td><strong>Payroll Date:</strong></td>
-            <td><?php echo e($payroll->payment_date ? $payroll->payment_date->format('M d, Y') : 'Pending'); ?></td>
-        </tr>
-        <tr>
-            <td><strong>Generated:</strong></td>
-            <td><?php echo e($payroll->created_at->format('M d, Y H:i')); ?></td>
-            <td></td>
-            <td></td>
-        </tr>
-    </table>
+        <div class="company-info">
+            <h2>Katsina State Water Board</h2>
+            <h3>Individual Payment Slip for the Month of <?php echo e($payroll->payroll_month ? \Carbon\Carbon::parse($payroll->payroll_month)->format('F Y') : 'N/A'); ?></h3>
+        </div>
 
-    <!-- Employee Information -->
-    <div class="employee-details">
-        <table class="header-table">
-            <tr class="section-header">
-                <th colspan="4">Employee Information</th>
+        <!-- Combined Header Info (Employee + Payroll) -->
+        <table class="header-table" style="margin-bottom: 5px; border: none;">
+            <tr>
+                <td width="15%" style="border: none;"><strong>Name:</strong></td>
+                <td width="35%" style="border: none;"><?php echo e($payroll->employee->first_name); ?> <?php echo e($payroll->employee->middle_name ?? ''); ?> <?php echo e($payroll->employee->surname); ?></td>
+                <td width="15%" style="border: none;"><strong>Staff No:</strong></td>
+                <td width="35%" style="border: none;"><?php echo e($payroll->employee->staff_no ?? 'N/A'); ?></td>
             </tr>
             <tr>
-                <td><strong>Employee Name:</strong></td>
-                <td><?php echo e($payroll->employee->first_name); ?> <?php echo e($payroll->employee->middle_name ?? ''); ?> <?php echo e($payroll->employee->surname); ?></td>
-                <td><strong>Staff No:</strong></td>
-                <td><?php echo e($payroll->employee->staff_no ?? 'N/A'); ?></td>
+                <td style="border: none;"><strong>Dept:</strong></td>
+                <td style="border: none;"><?php echo e(($payroll->department ?? ($payroll->employee->department ?? null))->department_name ?? 'N/A'); ?></td>
+                <td style="border: none;"><strong>Rank/GL:</strong></td>
+                <td style="border: none;">
+                    <?php echo e(($payroll->gradeLevel ?? ($payroll->employee->gradeLevel ?? null))->name ?? 'N/A'); ?> / 
+                    <?php echo e(($payroll->step ?? ($payroll->employee->step ?? null))->name ?? 'N/A'); ?>
+
+                </td>
             </tr>
             <tr>
-                <td><strong>Department:</strong></td>
-                <td><?php echo e(($payroll->department ?? ($payroll->employee->department ?? null))->department_name ?? 'N/A'); ?></td>
-                <td><strong>Appointment Type:</strong></td>
-                <td><?php echo e($payroll->employee->appointmentType->name ?? 'N/A'); ?></td>
-            </tr>
-            <tr>
-                <td><strong>Grade Level/Step:</strong></td>
-                <td><?php echo e(($payroll->gradeLevel ?? ($payroll->employee->gradeLevel ?? null))->name ?? 'N/A'); ?> / <?php echo e(($payroll->step ?? ($payroll->employee->step ?? null))->name ?? 'N/A'); ?></td>
-                <td></td>
-                <td></td>
-            </tr>
-            <tr>
-                <td><strong>Bank:</strong></td>
-                <td><?php echo e($payroll->employee->bank->bank_name ?? 'N/A'); ?></td>
-                <td><strong>Account No:</strong></td>
-                <td><?php echo e($payroll->employee->bank->account_no ?? 'N/A'); ?></td>
+                <td style="border: none;"><strong>Bank:</strong></td>
+                <td style="border: none;"><?php echo e($payroll->employee->bank->bank_name ?? 'N/A'); ?> - <?php echo e($payroll->employee->bank->account_no ?? 'N/A'); ?></td>
+                <td style="border: none;"><strong>Date:</strong></td>
+                <td style="border: none;"><?php echo e($payroll->payment_date ? $payroll->payment_date->format('M d, Y') : 'Pending'); ?></td>
             </tr>
         </table>
-    </div>
 
-    <!-- Salary Breakdown -->
-    <table>
-        <thead>
-            <tr class="section-header">
-                <th>Salary Component</th>
-                <th>Amount (₦)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><strong>Basic Salary</strong></td>
-                <td class="text-right">₦<?php echo e(number_format($payroll->basic_salary, 2)); ?></td>
-            </tr>
-            <tr>
-                <td><strong>Total Additions</strong></td>
-                <td class="text-right">₦<?php echo e(number_format($payroll->total_additions, 2)); ?></td>
-            </tr>
-            <tr>
-                <td><strong>Total Deductions</strong></td>
-                <td class="text-right">₦<?php echo e(number_format($payroll->total_deductions, 2)); ?></td>
-            </tr>
-            <tr class="total-row">
-                <td><strong>Net Salary</strong></td>
-                <td class="text-right"><strong>₦<?php echo e(number_format($payroll->net_salary, 2)); ?></strong></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <!-- Deductions Section -->
-    <h4>Deductions</h4>
-    <?php if($deductions->count() > 0 || ($payroll->payment_type == 'Gratuity' && $payroll->total_deductions > 0)): ?>
-        <table>
+        <!-- Salary Breakdown -->
+        <table style="margin-top: 0;">
             <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Amount (₦)</th>
-                    <th>Period</th>
+                <tr class="section-header">
+                    <th width="60%">Description</th>
+                    <th width="40%" class="text-right">Amount (₦)</th>
                 </tr>
             </thead>
             <tbody>
+                <tr>
+                    <td>Basic Salary</td>
+                    <td class="text-right"><?php echo e(number_format($payroll->basic_salary, 2)); ?></td>
+                </tr>
+                <?php if($additions->count() > 0): ?>
+                    <?php $__currentLoopData = $additions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $addition): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <tr>
+                        <td><?php echo e(optional($addition->additionType)->name ?? 'Add'); ?></td>
+                        <td class="text-right"><?php echo e(number_format($addition->amount, 2)); ?></td>
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
+                <tr class="total-row">
+                    <td><strong>Gross Salary</strong></td>
+                    <td class="text-right"><strong><?php echo e(number_format($payroll->basic_salary + $payroll->total_additions, 2)); ?></strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Deductions -->
+        <?php if($deductions->count() > 0 || ($payroll->payment_type == 'Gratuity' && $payroll->total_deductions > 0)): ?>
+        <h4 style="border-bottom: 1px solid #ccc; padding-bottom: 2px;">Deductions</h4>
+        <table>
+            <tbody>
                 <?php $__currentLoopData = $deductions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $deduction): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <tr>
-                        <td><?php echo e(optional($deduction->deductionType)->name ?? $deduction->deduction_type); ?></td>
-                        <td>₦<?php echo e(number_format($deduction->amount, 2)); ?></td>
-                        <td><?php echo e($deduction->deduction_period); ?></td>
+                        <td width="60%"><?php echo e(optional($deduction->deductionType)->name ?? $deduction->deduction_type); ?></td>
+                        <td width="40%" class="text-right"><?php echo e(number_format($deduction->amount, 2)); ?></td>
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
                 
                 <?php if($payroll->payment_type == 'Gratuity' && $payroll->total_deductions > 0): ?>
                     <tr>
                         <td>Overstay Deduction</td>
-                        <td>₦<?php echo e(number_format($payroll->total_deductions, 2)); ?></td>
-                        <td>ONE-OFF</td>
+                        <td class="text-right"><?php echo e(number_format($payroll->total_deductions, 2)); ?></td>
                     </tr>
                 <?php endif; ?>
 
                 <tr class="total-row">
                     <td><strong>Total Deductions</strong></td>
-                    
-                    <td><strong>₦<?php echo e(number_format($payroll->total_deductions, 2)); ?></strong></td>
-                    <td></td>
+                    <td class="text-right"><strong><?php echo e(number_format($payroll->total_deductions, 2)); ?></strong></td>
                 </tr>
             </tbody>
         </table>
-    <?php else: ?>
-        <p>No deductions for this period.</p>
-    <?php endif; ?>
+        <?php endif; ?>
 
-    <!-- Additions Section -->
-    <h4>Additions</h4>
-    <?php if($additions->count() > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Amount (₦)</th>
-                    <th>Period</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php $__currentLoopData = $additions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $addition): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <tr>
-                        <td><?php echo e(optional($addition->additionType)->name ?? 'N/A'); ?></td>
-                        <td>₦<?php echo e(number_format($addition->amount, 2)); ?></td>
-                        <td><?php echo e($addition->addition_period); ?></td>
-                    </tr>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                <tr class="total-row">
-                    <td><strong>Total Additions</strong></td>
-                    <td><strong>₦<?php echo e(number_format($additions->sum('amount'), 2)); ?></strong></td>
-                    <td></td>
-                </tr>
-            </tbody>
+        <!-- Net Pay -->
+        <table style="margin-top: 5px; border: 2px solid #000;">
+            <tr style="background-color: #e2e8f0;">
+                <td width="60%" style="font-size: 11px; font-weight: bold; border: none;">NET PAY</td>
+                <td width="40%" class="text-right" style="font-size: 11px; font-weight: bold; border: none;">₦<?php echo e(number_format($payroll->net_salary, 2)); ?></td>
+            </tr>
         </table>
-    <?php else: ?>
-        <p>No additions for this period.</p>
-    <?php endif; ?>
 
-    <div style="margin-top: 15px; text-align: right; font-size: 9px;">
-        <p><em>Generated on: <?php echo e(now('Africa/Lagos')->format('M d, Y H:i')); ?></em></p>
-        <p><em>Powered by HRM Payroll System</em></p>
+        <div style="margin-top: 5px; text-align: right; font-size: 7px; color: #666;">
+            Generated: <?php echo e(now('Africa/Lagos')->format('d/m/Y H:i')); ?> | Katsina State Water Board
+        </div>
     </div>
 </body>
 </html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/payroll/payslip.blade.php ENDPATH**/ ?>

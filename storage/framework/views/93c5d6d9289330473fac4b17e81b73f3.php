@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Employee Status Report</title>
+    <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+                .page {
+                    margin: 0;
+                    padding: 0;
+                    page-break-after: always;
+                }
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: #f5f5f5;
+                padding: 10px;
+            }
+
+            .page {
+                width: 210mm;
+                height: 297mm;
+                margin: 10px auto;
+                padding: 15mm;
+                background: white;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 12px;
+                border-bottom: 2px solid #667eea;
+                padding-bottom: 10px;
+            }
+
+            .report-title {
+                font-size: 14px;
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 4px;
+            }
+
+            .generated-date {
+                font-size: 9px;
+                color: #666;
+                margin-bottom: 2px;
+                line-height: 1.3;
+            }
+
+            .summary-info {
+                font-size: 9px;
+                color: #667eea;
+                font-weight: 600;
+                margin-top: 4px;
+            }
+
+            .content {
+                flex: 1;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .table-wrapper {
+                flex: 1;
+                overflow: hidden;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8px;
+                line-height: 1.2;
+            }
+
+            thead {
+                background-color: #f0f0f0;
+                position: sticky;
+                top: 0;
+            }
+
+            th {
+                border: 1px solid #ddd;
+                padding: 4px 3px;
+                text-align: left;
+                font-weight: bold;
+                color: #333;
+                white-space: nowrap;
+            }
+
+            td {
+                border: 1px solid #ddd;
+                padding: 3px;
+                text-align: left;
+            }
+
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+
+            tbody tr:hover {
+                background-color: #f0f7ff;
+            }
+
+            .employee-name {
+                font-weight: 600;
+                color: #333;
+            }
+
+            .amount {
+                text-align: right;
+                font-weight: 600;
+                color: #667eea;
+            }
+
+            .status-badge {
+                display: inline-block;
+                padding: 2px 5px;
+                border-radius: 3px;
+                font-size: 7px;
+                font-weight: bold;
+                text-transform: uppercase;
+                background: #e8f4f8;
+                color: #333;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: #999;
+                font-size: 11px;
+            }
+
+            .footer {
+                border-top: 1px solid #ddd;
+                padding-top: 6px;
+                margin-top: 8px;
+                font-size: 8px;
+                color: #666;
+                text-align: right;
+            }
+
+            @media (max-width: 800px) {
+                .page {
+                    width: 100%;
+                    height: auto;
+                    margin: 5px 0;
+                    padding: 10px;
+                }
+            }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="report-title">Employee Status Report</div>
+        <div class="generated-date">Generated on: <?php echo e(now()->format('F j, Y g:i A')); ?></div>
+    </div>
+
+    <div class="summary">
+        <h4>Status Summary</h4>
+        <table style="width: auto;">
+            <tr>
+                <th>Status</th>
+                <th>Count</th>
+            </tr>
+            <?php $__currentLoopData = $data['status_summary']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <tr>
+                <td><?php echo e($status['status']); ?></td>
+                <td><?php echo e($status['count']); ?></td>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </table>
+    </div>
+
+    <?php $__currentLoopData = $data['employees_by_status']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status => $employees): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+    <h3><?php echo e($status); ?> Employees</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Staff No</th>
+                <th>Full Name</th>
+                <th>Department</th>
+                <th>Grade Level</th>
+                <th>Step</th>
+                <th>Status</th>
+                <th>Date of Appointment</th>
+                <th>Years of Service</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $__currentLoopData = $employees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <tr>
+                <td><?php echo e($employee['employee_id']); ?></td>
+                <td><?php echo e($employee['full_name']); ?></td>
+                <td><?php echo e($employee['department']); ?></td>
+                <td><?php echo e($employee['grade_level']); ?></td>
+                <td><?php echo e($employee['step']); ?></td>
+                <td><?php echo e($employee['status']); ?></td>
+                <td><?php echo e($employee['date_of_first_appointment']); ?></td>
+                <td><?php echo e($employee['years_of_service']); ?></td>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </tbody>
+    </table>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+</body>
+</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/employee-status-report.blade.php ENDPATH**/ ?>
