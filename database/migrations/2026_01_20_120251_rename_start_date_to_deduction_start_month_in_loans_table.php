@@ -18,9 +18,12 @@ return new class extends Migration
         });
 
         // Migrate existing start_date data to deduction_start_month format (Y-m)
-        DB::table('loans')->whereNotNull('start_date')->update([
-            'deduction_start_month' => DB::raw("DATE_FORMAT(start_date, '%Y-%m')")
-        ]);
+        // Skip for SQLite (testing)
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::table('loans')->whereNotNull('start_date')->update([
+                'deduction_start_month' => DB::raw("DATE_FORMAT(start_date, '%Y-%m')")
+            ]);
+        }
 
         Schema::table('loans', function (Blueprint $table) {
             // Drop the old start_date column

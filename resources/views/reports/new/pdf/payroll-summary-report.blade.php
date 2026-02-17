@@ -149,13 +149,30 @@
             return $record['bank_name'] ?? 'NO BANK';
         });
         
+        // 1. Collect all unique deduction types from ALL records to ensure consistent columns across banks
+        $allDeductionTypes = [];
+        foreach ($data['payroll_records'] as $record) {
+            if (!empty($record['deduction_breakdown'])) {
+                foreach (array_keys($record['deduction_breakdown']) as $type) {
+                    $allDeductionTypes[$type] = true;
+                }
+            }
+        }
+        $sortedDeductionTypes = array_keys($allDeductionTypes);
+        sort($sortedDeductionTypes); // Sort alphabetically or define a specific order if needed
+
+        // Initialize Grand Total with dynamic deduction keys
         $grandTotal = [
             'basic' => 0,
             'gross' => 0,
-            'deductions' => 0,
             'net' => 0,
-            'count' => 0
+            'count' => 0,
+            'total_deductions_sum' => 0 // Sum of "Total Deduction" column
         ];
+        // Initialize deduction-specific grand totals
+        foreach ($sortedDeductionTypes as $type) {
+            $grandTotal['deductions'][$type] = 0;
+        }
     @endphp
 
     @foreach($groupedByBank as $bankName => $records)
@@ -171,16 +188,12 @@
                     <th>GRADE LEVEL</th>
                     <th>BASIC PAY</th>
                     <th>GROSS PAY</th>
-                    <th>PAYE</th>
-                    <th>NHF DEDT</th>
-                    <th>NHIS DEDT</th>
-                    <th>UNIONDL DEDT</th>
-                    <th>RENTDED DEDT</th>
-                    <th>STAFF P LOAN</th>
-                    <th>REFURBI LOAN</th>
-                    <th>SPECIAL LOAN</th>
-                    <th>NHF REN LOAN</th>
-                    <th>SECOND LOAN</th>
+                    
+                    {{-- Dynamic Deduction Headers --}}
+                    @foreach($sortedDeductionTypes as $type)
+                        <th>{{ strtoupper($type) }}</th>
+                    @endforeach
+
                     <th>TOTAL DEDUCTION</th>
                     <th>NET PAY</th>
                 </tr>
@@ -191,34 +204,25 @@
                     $bankTotal = [
                         'basic' => 0,
                         'gross' => 0,
-                        'deductions' => 0,
-                        'net' => 0
+                        'net' => 0,
+                        'total_deductions_sum' => 0
                     ];
+                    // Initialize deduction-specific bank totals
+                    foreach ($sortedDeductionTypes as $type) {
+                        $bankTotal['deductions'][$type] = 0;
+                    }
                 @endphp
                 
                 @foreach($records as $record)
                 @php
                     $basicSalary = $record['basic_salary'] ?? 0;
                     $grossPay = $basicSalary + ($record['total_additions'] ?? 0);
+                    $totalDeductionsForRecord = $record['total_deductions'] ?? 0;
                     
                     $bankTotal['basic'] += $basicSalary;
                     $bankTotal['gross'] += $grossPay;
-                    $bankTotal['deductions'] += $record['total_deductions'] ?? 0;
+                    $bankTotal['total_deductions_sum'] += $totalDeductionsForRecord;
                     $bankTotal['net'] += $record['net_salary'] ?? 0;
-                @endphp
-                @php
-                    $deductions = $record['deduction_breakdown'] ?? [];
-                    // Helper function to get deduction amount by partial name match
-                    $getDeduction = function($keywords) use ($deductions) {
-                        foreach ($deductions as $name => $amount) {
-                            foreach ((array)$keywords as $keyword) {
-                                if (stripos($name, $keyword) !== false) {
-                                    return $amount;
-                                }
-                            }
-                        }
-                        return 0;
-                    };
                 @endphp
                 <tr>
                     <td>{{ $sn++ }}</td>
@@ -227,27 +231,32 @@
                     <td>{{ $record['grade_level'] ?? 'N/A' }}</td>
                     <td class="text-right">{{ number_format($basicSalary, 2) }}</td>
                     <td class="text-right">{{ number_format($grossPay, 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['PAYE', 'Tax']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['NHF']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['NHIS', 'Health']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Union', 'Dues']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Rent']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Staff', 'Personal Loan']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Refurb']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Special']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['NHF Ren', 'Housing Loan']), 2) }}</td>
-                    <td class="text-right">{{ number_format($getDeduction(['Second']), 2) }}</td>
-                    <td class="text-right">{{ number_format($record['total_deductions'] ?? 0, 2) }}</td>
+                    
+                    {{-- Dynamic Deduction Cells --}}
+                    @foreach($sortedDeductionTypes as $type)
+                        @php
+                            $amount = $record['deduction_breakdown'][$type] ?? 0;
+                            $bankTotal['deductions'][$type] += $amount;
+                        @endphp
+                        <td class="text-right">{{ number_format($amount, 2) }}</td>
+                    @endforeach
+
+                    <td class="text-right">{{ number_format($totalDeductionsForRecord, 2) }}</td>
                     <td class="text-right">{{ number_format($record['net_salary'] ?? 0, 2) }}</td>
                 </tr>
                 @endforeach
                 
+                {{-- Bank Totals Row --}}
                 <tr class="bank-total">
                     <td colspan="4" class="text-right">BANK TOTAL</td>
                     <td class="text-right">{{ number_format($bankTotal['basic'], 2) }}</td>
                     <td class="text-right">{{ number_format($bankTotal['gross'], 2) }}</td>
-                    <td colspan="10"></td>
-                    <td class="text-right">{{ number_format($bankTotal['deductions'], 2) }}</td>
+                    
+                    @foreach($sortedDeductionTypes as $type)
+                        <td class="text-right">{{ number_format($bankTotal['deductions'][$type], 2) }}</td>
+                    @endforeach
+
+                    <td class="text-right">{{ number_format($bankTotal['total_deductions_sum'], 2) }}</td>
                     <td class="text-right">{{ number_format($bankTotal['net'], 2) }}</td>
                 </tr>
             </tbody>
@@ -257,19 +266,28 @@
     @php
         $grandTotal['basic'] += $bankTotal['basic'];
         $grandTotal['gross'] += $bankTotal['gross'];
-        $grandTotal['deductions'] += $bankTotal['deductions'];
         $grandTotal['net'] += $bankTotal['net'];
         $grandTotal['count'] += count($records);
+        $grandTotal['total_deductions_sum'] += $bankTotal['total_deductions_sum'];
+        
+        foreach ($sortedDeductionTypes as $type) {
+            $grandTotal['deductions'][$type] += $bankTotal['deductions'][$type];
+        }
     @endphp
     @endforeach
 
+    {{-- Grand Total Table --}}
     <table>
         <tr class="grand-total">
             <td colspan="4" class="text-right"><strong>GRAND TOTAL</strong></td>
             <td class="text-right"><strong>{{ number_format($grandTotal['basic'], 2) }}</strong></td>
             <td class="text-right"><strong>{{ number_format($grandTotal['gross'], 2) }}</strong></td>
-            <td colspan="10"></td>
-            <td class="text-right"><strong>{{ number_format($grandTotal['deductions'], 2) }}</strong></td>
+            
+            @foreach($sortedDeductionTypes as $type)
+                <td class="text-right"><strong>{{ number_format($grandTotal['deductions'][$type], 2) }}</strong></td>
+            @endforeach
+
+            <td class="text-right"><strong>{{ number_format($grandTotal['total_deductions_sum'], 2) }}</strong></td>
             <td class="text-right"><strong>{{ number_format($grandTotal['net'], 2) }}</strong></td>
         </tr>
     </table>

@@ -100,13 +100,13 @@
             </tr>
             <tr>
                 <td><strong>Department:</strong></td>
-                <td><?php echo e($payroll->employee->department->department_name ?? 'N/A'); ?></td>
+                <td><?php echo e(($payroll->department ?? ($payroll->employee->department ?? null))->department_name ?? 'N/A'); ?></td>
                 <td><strong>Appointment Type:</strong></td>
                 <td><?php echo e($payroll->employee->appointmentType->name ?? 'N/A'); ?></td>
             </tr>
             <tr>
                 <td><strong>Grade Level/Step:</strong></td>
-                <td><?php echo e($payroll->employee->gradeLevel->name ?? 'N/A'); ?> / <?php echo e($payroll->employee->step->name ?? 'N/A'); ?></td>
+                <td><?php echo e(($payroll->gradeLevel ?? ($payroll->employee->gradeLevel ?? null))->name ?? 'N/A'); ?> / <?php echo e(($payroll->step ?? ($payroll->employee->step ?? null))->name ?? 'N/A'); ?></td>
                 <td></td>
                 <td></td>
             </tr>
