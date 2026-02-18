@@ -1321,4 +1321,162 @@ class ComprehensiveReportService
             'duplicate_nins' => $duplicateNins
         ];
     }
+    public function generateFullPayrollReport($filters = [])
+    {
+        $year = $filters['year'] ?? date('Y');
+        $month = $filters['month'] ?? date('m');
+        $monthNumber = $this->convertMonthToNumber($month);
+        
+        $monthName = $this->getMonthName($monthNumber);
+        $period = "$year-$monthName";
+
+        // Get all payroll records for the period
+        $query = PayrollRecord::whereYear('payroll_month', $year)
+            ->whereMonth('payroll_month', $monthNumber)
+            ->with(['employee.department', 'employee.gradeLevel', 'employee.step']);
+
+        // Apply Appointment Type Filter
+        if (!empty($filters['appointment_type_id'])) {
+            $appointmentTypeId = $filters['appointment_type_id'];
+            $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                $q->where('appointment_type_id', $appointmentTypeId);
+            });
+        }
+
+        $payrollRecords = $query->get();
+
+        // Collect all unique addition and deduction types (Master List)
+        // We fetch ALL types to ensure columns appear even if not used in this specific month
+        $additionTypes = \App\Models\AdditionType::pluck('name')->toArray();
+        $deductionTypes = \App\Models\DeductionType::pluck('name')->toArray();
+        
+        // Also add unique Loan Types from the system to deduction types
+        $loanTypes = \App\Models\Loan::distinct()->pluck('loan_type')->toArray();
+        foreach ($loanTypes as $loanType) {
+            if (!in_array($loanType, $deductionTypes)) {
+                $deductionTypes[] = $loanType;
+            }
+        }
+        
+        // Ensure "Statutory/Other" exists
+        if (!in_array('Statutory/Other', $deductionTypes)) {
+            $deductionTypes[] = 'Statutory/Other';
+        }
+
+        // We need to fetch the actual breakdown for each record. 
+        // Since the breakdown is often JSON or related models, let's fetch related deductions/additions for the period.
+        // Optimization: Fetch all deductions/additions for these employees in this month
+        
+        // Define date range for the month
+        $startDate = Carbon::createFromDate($year, $monthNumber, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $monthNumber, 1)->endOfMonth();
+
+        // Process each record to build the data structure
+        $processedRecords = [];
+
+        foreach ($payrollRecords as $record) {
+            $employeeId = $record->employee_id;
+            
+            // 1. Get Regular Deductions (Instructions active for this period)
+            // Note: This relies on the assumption that if a Deduction instruction exists active for the period, it was applied.
+            // This is how the system currently estimates historical non-loan deductions.
+            $deductions = \App\Models\Deduction::where('employee_id', $employeeId)
+                ->where('start_date', '<=', $endDate)
+                ->where(function($q) use ($startDate) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $startDate);
+                })
+                ->whereNull('loan_id') // Exclude deductions linked to loans to avoid potential double counting if we fetch LoanDeductions separately
+                ->with('deductionType')
+                ->get();
+
+            // 2. Get Loan Deductions (Actual processed records for this month)
+            // This captures loans processed by the Loan module
+            $loanDeductions = \App\Models\LoanDeduction::where('employee_id', $employeeId)
+                ->where('payroll_month', $period) // LoanDeduction stores 'YYYY-MonthName' e.g. '2025-January' or '2025-01'?
+                // Let's check how PayrollController saves it: 'payroll_month' => $month (which is '2025-01')
+                ->orWhere('payroll_month', $year . '-' . sprintf('%02d', $monthNumber))
+                ->with('loan')
+                ->get();
+
+            // Get Additions
+            $additions = \App\Models\Addition::where('employee_id', $employeeId)
+                ->where('start_date', '<=', $endDate)
+                ->where(function($q) use ($startDate) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $startDate);
+                })
+                ->with('additionType')
+                ->get();
+
+            $recordAdditions = [];
+            $recordDeductions = [];
+
+            // Process Additions
+            foreach ($additions as $add) {
+                $name = $add->additionType->name ?? 'Unknown';
+                if (!in_array($name, $additionTypes)) {
+                    $additionTypes[] = $name;
+                }
+                $recordAdditions[$name] = ($recordAdditions[$name] ?? 0) + $add->amount;
+            }
+
+            // Process Regular Deductions
+            foreach ($deductions as $ded) {
+                $name = $ded->deductionType->name ?? $ded->deduction_type ?? 'Unknown';
+                if (!in_array($name, $deductionTypes)) {
+                    $deductionTypes[] = $name;
+                }
+                $recordDeductions[$name] = ($recordDeductions[$name] ?? 0) + $ded->amount;
+            }
+
+            // Process Loan Deductions
+            foreach ($loanDeductions as $loanDed) {
+                $name = $loanDed->loan->loan_type ?? 'Loan Deduction';
+                if (!in_array($name, $deductionTypes)) {
+                    $deductionTypes[] = $name;
+                }
+                $recordDeductions[$name] = ($recordDeductions[$name] ?? 0) + $loanDed->amount_deducted;
+            }
+
+            // Note: Statutory deductions (PAYE, etc) are calculated on the fly and not stored in tables.
+            // If they are not in Deduction table, we must calculate them or find difference.
+            // Let's check if total_deductions from DB > sum of captured deductions.
+            $capturedDeductionsTotal = array_sum($recordDeductions);
+            $difference = $record->total_deductions - $capturedDeductionsTotal;
+
+            if ($difference > 0.01) {
+                // Assign difference to "Statutory/Other" or try to breakdown if possible.
+                // For now, let's call it "Statutory/Other Deductions" to ensure totals match.
+                $name = 'Statutory/Other';
+                if (!in_array($name, $deductionTypes)) {
+                    $deductionTypes[] = $name;
+                }
+                $recordDeductions[$name] = ($recordDeductions[$name] ?? 0) + $difference;
+            }
+
+            $processedRecords[] = [
+                'staff_no' => $record->employee->staff_no ?? $record->employee->employee_id,
+                'name' => trim($record->employee->first_name . ' ' . $record->employee->surname),
+                'department' => $record->employee->department->department_name ?? 'N/A',
+                'rank' => ($record->employee->gradeLevel->name ?? '') . '/' . ($record->employee->step->name ?? ''),
+                'basic_salary' => $record->basic_salary,
+                'additions' => $recordAdditions,
+                'total_additions' => $record->total_additions,
+                'gross_salary' => $record->basic_salary + $record->total_additions,
+                'deductions' => $recordDeductions,
+                'total_deductions' => $record->total_deductions,
+                'net_salary' => $record->net_salary
+            ];
+        }
+
+        return [
+            'report_title' => 'Full Payroll Report',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'period' => $period,
+            'addition_types' => $additionTypes,
+            'deduction_types' => $deductionTypes,
+            'payroll_records' => $processedRecords
+        ];
+    }
 }

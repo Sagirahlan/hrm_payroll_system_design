@@ -239,13 +239,19 @@ class ComprehensiveReportController extends Controller
                 return $this->reportService->generatePayrollJournalReport($filters);
 
             case 'payroll_detailed':
-            return $this->reportService->generatePayrollDetailedReport($filters);
+                return $this->reportService->generatePayrollDetailedReport($filters);
+
+            case 'full_payroll_report':
+                return $this->reportService->generateFullPayrollReport($filters);
 
         case 'pensioner':
             return $this->reportService->generatePensionerReport($filters);
 
         case 'duplicate_beneficiary':
             return $this->reportService->generateDuplicateBeneficiaryReport();
+
+        case 'full_payroll':
+            return $this->reportService->generateFullPayrollReport($filters);
 
         default:
             return ['error' => 'Invalid report type'];
@@ -357,6 +363,14 @@ class ComprehensiveReportController extends Controller
 
         case 'duplicate_beneficiary':
             $this->writeDuplicateBeneficiaryExcel($file, $reportData);
+            break;
+
+        case 'full_payroll':
+            $this->writeFullPayrollExcel($file, $reportData);
+            break;
+
+        case 'full_payroll_report':
+            $this->writeFullPayrollExcel($file, $reportData);
             break;
 
         default:
@@ -790,7 +804,9 @@ class ComprehensiveReportController extends Controller
             'payroll_journal' => 'Payroll Journal Report',
         'payroll_detailed' => 'Detailed Payroll Report (Bank Grouped)',
         'pensioner' => 'Pensioner Report with Bank Details',
-        'duplicate_beneficiary' => 'Duplicate Beneficiary Report'
+        'duplicate_beneficiary' => 'Duplicate Beneficiary Report',
+        'full_payroll' => 'Full Payroll Report',
+        'full_payroll_report' => 'Full Payroll Report',
     ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';

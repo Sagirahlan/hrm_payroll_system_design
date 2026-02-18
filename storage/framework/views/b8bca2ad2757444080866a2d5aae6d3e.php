@@ -92,6 +92,20 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
+                            <div class="card border-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title">Full Payroll Report</h5>
+                                    <p class="card-text text-muted">Comprehensive breakdown of all earnings and deductions</p>
+                                    <button class="btn btn-dark generate-report-btn"
+                                            data-report-type="full_payroll"
+                                            data-title="Full Payroll Report">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <div class="card border-danger">
                                 <div class="card-body">
                                     <h5 class="card-title">Deduction Summary</h5>
@@ -538,6 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
 
             case 'payroll_journal':
+            case 'full_payroll':
                 filtersSection.innerHTML = `
                     <div class="row">
                         <div class="col-md-6">

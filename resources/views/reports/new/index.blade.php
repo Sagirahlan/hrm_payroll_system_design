@@ -94,6 +94,20 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
+                            <div class="card border-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title">Full Payroll Report</h5>
+                                    <p class="card-text text-muted">Comprehensive breakdown of all earnings and deductions</p>
+                                    <button class="btn btn-dark generate-report-btn"
+                                            data-report-type="full_payroll"
+                                            data-title="Full Payroll Report">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <div class="card border-danger">
                                 <div class="card-body">
                                     <h5 class="card-title">Deduction Summary</h5>
@@ -540,14 +554,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
 
             case 'payroll_journal':
+            case 'full_payroll':
                 filtersSection.innerHTML = `
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="year_filter" class="form-label">Year</label>
                             <input type="number" class="form-control" id="year_filter" name="filters[year]"
                                    min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="month_filter" class="form-label">Month</label>
                             <select class="form-select" id="month_filter" name="filters[month]">
                                 <option value="">All Months</option>
@@ -563,6 +578,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="10">October</option>
                                 <option value="11">November</option>
                                 <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
