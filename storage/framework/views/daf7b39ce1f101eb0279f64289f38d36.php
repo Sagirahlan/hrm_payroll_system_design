@@ -9,16 +9,16 @@
         }
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 8px;
+            font-size: 6px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8px;
+            font-size: 6px;
         }
         th, td {
             border: 1px solid #000;
-            padding: 3px;
+            padding: 2px;
             text-align: center;
         }
         th {
@@ -38,6 +38,7 @@
 </head>
 <body>
     <div class="header">
+        <img src="<?php echo e(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')); ?>" alt="Logo" style="width: 100px; height: auto;">
         <h2>Katsina State Water Board</h2>
         <h3><?php echo e($reportType); ?></h3>
         <p>Period: <?php echo e($data['period']); ?> | Generated: <?php echo e($data['generated_date']); ?></p>

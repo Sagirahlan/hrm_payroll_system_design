@@ -274,6 +274,11 @@ class ComprehensiveReportController extends Controller
             'reportType' => $this->getReportTypeName($reportType)
         ]);
 
+        if ($reportType === 'full_payroll' || $reportType === 'payroll_journal') {
+            $pdf->setOption('orientation', 'Landscape');
+            $pdf->setOption('page-size', 'A4');
+        }
+
         $fileName = str_replace('_', '-', $reportType) . "_report_" . now()->format('Y_m_d_H_i_s') . '.pdf';
         $filePath = "reports/pdf/{$fileName}";
 
