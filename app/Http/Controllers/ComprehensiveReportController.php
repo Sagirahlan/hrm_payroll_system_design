@@ -829,6 +829,72 @@ class ComprehensiveReportController extends Controller
         return view('reports.new.show', compact('report'));
     }
 
+    private function writeFullPayrollExcel($file, $reportData)
+    {
+        $additionTypes = $reportData['addition_types'] ?? [];
+        $deductionTypes = $reportData['deduction_types'] ?? [];
+
+        // header
+        $header = [
+            'Staff No', 'Name', 'Department', 'Rank', 'Basic Salary'
+        ];
+
+        // Add headers for addition types
+        foreach ($additionTypes as $type) {
+            $header[] = $type;
+        }
+
+        $header[] = 'Total Additions';
+        $header[] = 'Gross Salary';
+
+        // Add headers for deduction types
+        foreach ($deductionTypes as $type) {
+            $header[] = $type;
+        }
+
+        $header[] = 'Total Deductions';
+        $header[] = 'Net Salary';
+
+        fputcsv($file, $header);
+
+        foreach ($reportData['payroll_records'] as $record) {
+            $row = [
+                $record['staff_no'],
+                $record['name'],
+                $record['department'],
+                $record['rank'],
+                '₦' . number_format($record['basic_salary'], 2)
+            ];
+
+            // Add values for each addition type
+            foreach ($additionTypes as $type) {
+                // Determine layout of additions in record. 
+                // Service returns: 'additions' => ['Type1' => amount, 'Type2' => amount]
+                $amount = $record['additions'][$type] ?? 0;
+                $row[] = '₦' . number_format($amount, 2);
+            }
+
+            $currentTotalAdditions = $record['total_additions'];
+            // Recalculate gross if needed, but service provides it?
+            // Service provides: 'gross_salary' => $record->basic_salary + $record->total_additions
+            $currentGross = $record['gross_salary'];
+
+            $row[] = '₦' . number_format($currentTotalAdditions, 2);
+            $row[] = '₦' . number_format($currentGross, 2);
+
+            // Add values for each deduction type
+            foreach ($deductionTypes as $type) {
+                $amount = $record['deductions'][$type] ?? 0;
+                $row[] = '₦' . number_format($amount, 2);
+            }
+
+            $row[] = '₦' . number_format($record['total_deductions'], 2);
+            $row[] = '₦' . number_format($record['net_salary'], 2);
+
+            fputcsv($file, $row);
+        }
+    }
+
     public function download($id)
     {
         $report = Report::findOrFail($id);
