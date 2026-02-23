@@ -801,11 +801,23 @@
             <div class="stat-box secondary">
                 <div class="stat-header">
                     <div>
-                        <div class="stat-number"><?php echo e($contractEmployees ?? 0); ?></div>
+                        <div class="stat-number"><?php echo e($casualEmployees ?? 0); ?></div>
                         <div class="stat-title">Casual Staff</div>
                     </div>
                     <div class="stat-icon secondary">
                         <i class="fas fa-file-signature"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-box info">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-number"><?php echo e($contractEmployees ?? 0); ?></div>
+                        <div class="stat-title">Contract Staff</div>
+                    </div>
+                    <div class="stat-icon info">
+                        <i class="fas fa-file-contract"></i>
                     </div>
                 </div>
             </div>

@@ -149,6 +149,18 @@
             return $record['bank_name'] ?? 'NO BANK';
         });
         
+        // 1b. Collect all unique addition types
+        $allAdditionTypes = [];
+        foreach ($data['payroll_records'] as $record) {
+            if (!empty($record['addition_breakdown'])) {
+                foreach (array_keys($record['addition_breakdown']) as $type) {
+                    $allAdditionTypes[$type] = true;
+                }
+            }
+        }
+        $sortedAdditionTypes = array_keys($allAdditionTypes);
+        sort($sortedAdditionTypes);
+
         // 1. Collect all unique deduction types from ALL records to ensure consistent columns across banks
         $allDeductionTypes = [];
         foreach ($data['payroll_records'] as $record) {
@@ -159,19 +171,22 @@
             }
         }
         $sortedDeductionTypes = array_keys($allDeductionTypes);
-        sort($sortedDeductionTypes); // Sort alphabetically or define a specific order if needed
+        sort($sortedDeductionTypes);
 
-        // Initialize Grand Total with dynamic deduction keys
+        // Initialize Grand Total with dynamic keys
         $grandTotal = [
             'basic' => 0,
             'gross' => 0,
             'net' => 0,
             'count' => 0,
-            'total_deductions_sum' => 0 // Sum of "Total Deduction" column
+            'total_deductions_sum' => 0
         ];
-        // Initialize deduction-specific grand totals
+        // Initialize specific grand totals
         foreach ($sortedDeductionTypes as $type) {
             $grandTotal['deductions'][$type] = 0;
+        }
+        foreach ($sortedAdditionTypes as $type) {
+            $grandTotal['additions'][$type] = 0;
         }
     ?>
 
@@ -187,6 +202,12 @@
                     <th>STAFF NAME</th>
                     <th>GRADE LEVEL</th>
                     <th>BASIC PAY</th>
+                    
+                    
+                    <?php $__currentLoopData = $sortedAdditionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <th><?php echo e(strtoupper($type)); ?></th>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
                     <th>GROSS PAY</th>
                     
                     
@@ -207,9 +228,12 @@
                         'net' => 0,
                         'total_deductions_sum' => 0
                     ];
-                    // Initialize deduction-specific bank totals
+                    // Initialize deduction and addition specific bank totals
                     foreach ($sortedDeductionTypes as $type) {
                         $bankTotal['deductions'][$type] = 0;
+                    }
+                     foreach ($sortedAdditionTypes as $type) {
+                        $bankTotal['additions'][$type] = 0;
                     }
                 ?>
                 
@@ -230,6 +254,16 @@
                     <td class="text-left"><?php echo e($record['full_name']); ?></td>
                     <td><?php echo e($record['grade_level'] ?? 'N/A'); ?></td>
                     <td class="text-right"><?php echo e(number_format($basicSalary, 2)); ?></td>
+                    
+                    
+                    <?php $__currentLoopData = $sortedAdditionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
+                            $amount = $record['addition_breakdown'][$type] ?? 0;
+                            $bankTotal['additions'][$type] += $amount;
+                        ?>
+                        <td class="text-right"><?php echo e(number_format($amount, 2)); ?></td>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
                     <td class="text-right"><?php echo e(number_format($grossPay, 2)); ?></td>
                     
                     
@@ -246,10 +280,15 @@
                 </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 
-                
+                // Bank Totals Row
                 <tr class="bank-total">
                     <td colspan="4" class="text-right">BANK TOTAL</td>
                     <td class="text-right"><?php echo e(number_format($bankTotal['basic'], 2)); ?></td>
+                    
+                    <?php $__currentLoopData = $sortedAdditionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <td class="text-right"><?php echo e(number_format($bankTotal['additions'][$type], 2)); ?></td>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
                     <td class="text-right"><?php echo e(number_format($bankTotal['gross'], 2)); ?></td>
                     
                     <?php $__currentLoopData = $sortedDeductionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -273,6 +312,9 @@
         foreach ($sortedDeductionTypes as $type) {
             $grandTotal['deductions'][$type] += $bankTotal['deductions'][$type];
         }
+        foreach ($sortedAdditionTypes as $type) {
+             $grandTotal['additions'][$type] += $bankTotal['additions'][$type];
+        }
     ?>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
@@ -281,6 +323,11 @@
         <tr class="grand-total">
             <td colspan="4" class="text-right"><strong>GRAND TOTAL</strong></td>
             <td class="text-right"><strong><?php echo e(number_format($grandTotal['basic'], 2)); ?></strong></td>
+            
+            <?php $__currentLoopData = $sortedAdditionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <td class="text-right"><strong><?php echo e(number_format($grandTotal['additions'][$type], 2)); ?></strong></td>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
             <td class="text-right"><strong><?php echo e(number_format($grandTotal['gross'], 2)); ?></strong></td>
             
             <?php $__currentLoopData = $sortedDeductionTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>

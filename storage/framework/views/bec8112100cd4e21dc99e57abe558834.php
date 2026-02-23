@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Grade Level Summary Report</title>
+    <title>Audit Trail Report</title>
     <style>
             * {
                 margin: 0;
@@ -182,45 +182,41 @@
 </head>
 <body>
     <div class="header">
-        @if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')))
-            <img src="{{ public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo" class="logo">
-        @endif
+        <?php if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg'))): ?>
+            <img src="<?php echo e(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')); ?>" alt="Logo" class="logo">
+        <?php endif; ?>
         <div class="org-name">KATSINA STATE WATER BOARD</div>
-        <div class="report-title">GRADE LEVEL SUMMARY REPORT</div>
-        <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
+        <div class="report-title">AUDIT TRAIL REPORT</div>
+        <div class="generated-date">Generated on: <?php echo e(now()->format('F j, Y g:i A')); ?></div>
     </div>
 
     <div class="summary">
-        <p><strong>Total Grade Levels:</strong> {{ $data['total_grade_levels'] }}</p>
+        <p><strong>Total Activities:</strong> <?php echo e($data['total_activities']); ?></p>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>Grade Level</th>
-                <th>Salary Scale</th>
-                <th>Total Employees</th>
-                <th>Active Employees</th>
-                <th>Total Basic Salary</th>
-                <th>Avg Basic Salary</th>
-                <th>Min Basic Salary</th>
-                <th>Max Basic Salary</th>
+                <th>User Name</th>
+                <th>Action</th>
+                <th>Description</th>
+                <th>Timestamp</th>
+                <th>Entity Type</th>
+                <th>Entity ID</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($data['grade_levels'] as $level)
+            <?php $__currentLoopData = $data['activities']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
-                <td>{{ $level['grade_level_name'] }}</td>
-                <td>{{ $level['salary_scale'] }}</td>
-                <td>{{ $level['total_employees'] }}</td>
-                <td>{{ $level['active_employees'] }}</td>
-                <td>₦{{ number_format($level['total_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['average_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['min_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['max_basic_salary'], 2) }}</td>
+                <td><?php echo e($activity['user_name']); ?></td>
+                <td><?php echo e($activity['action']); ?></td>
+                <td><?php echo e($activity['description']); ?></td>
+                <td><?php echo e($activity['timestamp']); ?></td>
+                <td><?php echo e($activity['entity_type']); ?></td>
+                <td><?php echo e($activity['entity_id']); ?></td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 </body>
-</html>
+</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/audit-trail-report.blade.php ENDPATH**/ ?>

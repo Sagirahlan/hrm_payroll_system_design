@@ -27,7 +27,8 @@ class DashboardController extends Controller
 
         // Statistics for contract and permanent employees
         $permanentEmployees = Employee::where('appointment_type_id', 1)->count();
-        $contractEmployees = Employee::where('appointment_type_id', 2)->count();
+        $casualEmployees = Employee::where('appointment_type_id', 2)->count();
+        $contractEmployees = Employee::where('appointment_type_id', 3)->count();
 
         // Department statistics
         $totalDepartments = Department::count();
@@ -99,6 +100,7 @@ class DashboardController extends Controller
             'retiredEmployees',
             'holdEmployees',
             'permanentEmployees',
+            'casualEmployees',
             'contractEmployees',
             'recentAudits',
             'departments',

@@ -48,10 +48,10 @@
             }
 
             .report-title {
-                font-size: 14px;
+                font-size: 11px;
                 font-weight: bold;
-                color: #333;
-                margin-bottom: 4px;
+                color: #dc2626;
+                margin-bottom: 1px;
             }
 
             .generated-date {
@@ -59,6 +59,20 @@
                 color: #666;
                 margin-bottom: 2px;
                 line-height: 1.3;
+            }
+
+            .org-name {
+                font-size: 14px;
+                font-weight: bold;
+                color: #1e40af;
+                margin-bottom: 2px;
+            }
+
+            .logo {
+                width: 55px;
+                height: 55px;
+                margin: 0 auto 6px;
+                display: block;
             }
 
             .summary-info {
@@ -168,7 +182,11 @@
 </head>
 <body>
     <div class="header">
-        <div class="report-title">Disciplinary Action Report</div>
+        @if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')))
+            <img src="{{ public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo" class="logo">
+        @endif
+        <div class="org-name">KATSINA STATE WATER BOARD</div>
+        <div class="report-title">DISCIPLINARY ACTION REPORT</div>
         <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 

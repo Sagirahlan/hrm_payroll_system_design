@@ -217,6 +217,26 @@ class ComprehensiveReportService
                 }
                 $deductionBreakdown[$typeName] += $deduction->amount;
             }
+
+            // Get individual additions for this employee with their types
+            $employeeAdditions = \App\Models\Addition::where('employee_id', $record->employee_id)
+                ->where('start_date', '<=', $payrollMonth->endOfMonth())
+                ->where(function($q) use ($payrollMonth) {
+                    $q->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $payrollMonth->startOfMonth());
+                })
+                ->with('additionType')
+                ->get();
+
+            // Build addition breakdown by type name
+            $additionBreakdown = [];
+            foreach ($employeeAdditions as $addition) {
+                $typeName = $addition->additionType->name ?? 'Unknown';
+                if (!isset($additionBreakdown[$typeName])) {
+                    $additionBreakdown[$typeName] = 0;
+                }
+                $additionBreakdown[$typeName] += $addition->amount;
+            }
             
             $reportData['payroll_records'][] = [
                 'employee_id' => $record->employee->staff_no ?? $record->employee->employee_id,
@@ -231,7 +251,8 @@ class ComprehensiveReportService
                 'status' => $record->status,
                 'bank_name' => $record->employee->bank->bank_name ?? 'NO BANK',
                 'account_number' => $record->employee->bank->account_no ?? 'N/A',
-                'deduction_breakdown' => $deductionBreakdown
+                'deduction_breakdown' => $deductionBreakdown,
+                'addition_breakdown' => $additionBreakdown
             ];
         }
 
@@ -282,6 +303,12 @@ class ComprehensiveReportService
             $query->where('deduction_type_id', $filters['deduction_type_id']);
         }
 
+        if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('appointment_type_id', $filters['appointment_type_id']);
+            });
+        }
+
         // Apply year and month filters if provided (Active During logic)
         $dateFilterStart = null;
         $dateFilterEnd = null;
@@ -325,21 +352,40 @@ class ComprehensiveReportService
             'generated_date' => now()->format('Y-m-d H:i:s'),
             'total_deductions' => $deductions->count(),
             'total_amount' => $deductions->sum('amount'),
-            'deductions' => []
+            'deduction_types' => [],
+            'employees' => []
         ];
 
+        $deductionTypes = [];
+        $groupedDeductions = [];
+
         foreach ($deductions as $deduction) {
-            $reportData['deductions'][] = [
-                'employee_id' => $deduction->employee->staff_no ?? $deduction->employee->employee_id,
-                'employee_name' => trim($deduction->employee->first_name . ' ' . $deduction->employee->middle_name . ' ' . $deduction->employee->surname),
-                'department' => $deduction->employee->department->department_name ?? 'N/A',
-                'deduction_type' => $deduction->deductionType->name ?? 'N/A',
-                'amount' => $deduction->amount,
-                'start_date' => $deduction->start_date,
-                'end_date' => $deduction->end_date,
-                'frequency' => $deduction->deduction_period ?? 'N/A'
-            ];
+            $employeeId = $deduction->employee_id;
+            
+            if (!isset($groupedDeductions[$employeeId])) {
+                $groupedDeductions[$employeeId] = [
+                    'employee_id' => $deduction->employee->staff_no ?? $deduction->employee->employee_id,
+                    'employee_name' => trim($deduction->employee->first_name . ' ' . $deduction->employee->middle_name . ' ' . $deduction->employee->surname),
+                    'department' => $deduction->employee->department->department_name ?? 'N/A',
+                    'deductions' => [],
+                    'total_deductions' => 0
+                ];
+            }
+
+            $typeName = $deduction->deductionType->name ?? 'N/A';
+            $deductionTypes[$typeName] = true;
+
+            if (!isset($groupedDeductions[$employeeId]['deductions'][$typeName])) {
+                $groupedDeductions[$employeeId]['deductions'][$typeName] = 0;
+            }
+            
+            $groupedDeductions[$employeeId]['deductions'][$typeName] += $deduction->amount;
+            $groupedDeductions[$employeeId]['total_deductions'] += $deduction->amount;
         }
+
+        $reportData['deduction_types'] = array_keys($deductionTypes);
+        sort($reportData['deduction_types']);
+        $reportData['employees'] = array_values($groupedDeductions);
 
         return $reportData;
     }
@@ -354,6 +400,12 @@ class ComprehensiveReportService
 
         if (isset($filters['addition_type_id']) && $filters['addition_type_id']) {
             $query->where('addition_type_id', $filters['addition_type_id']);
+        }
+
+        if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('appointment_type_id', $filters['appointment_type_id']);
+            });
         }
 
         // Apply year and month filters if provided (Active During logic)
@@ -398,31 +450,72 @@ class ComprehensiveReportService
             'generated_date' => now()->format('Y-m-d H:i:s'),
             'total_additions' => $additions->count(),
             'total_amount' => $additions->sum('amount'),
-            'additions' => []
+            'addition_types' => [],
+            'employees' => []
         ];
 
+        $additionTypes = [];
+        $groupedAdditions = [];
+
         foreach ($additions as $addition) {
-            $reportData['additions'][] = [
-                'employee_id' => $addition->employee->staff_no ?? $addition->employee->employee_id,
-                'employee_name' => trim($addition->employee->first_name . ' ' . $addition->employee->middle_name . ' ' . $addition->employee->surname),
-                'department' => $addition->employee->department->department_name ?? 'N/A',
-                'addition_type' => $addition->additionType->name ?? 'N/A',
-                'amount' => $addition->amount,
-                'start_date' => $addition->start_date,
-                'end_date' => $addition->end_date,
-                'frequency' => $addition->period ?? 'N/A'
-            ];
+            $employeeId = $addition->employee_id;
+            
+            if (!isset($groupedAdditions[$employeeId])) {
+                $groupedAdditions[$employeeId] = [
+                    'employee_id' => $addition->employee->staff_no ?? $addition->employee->employee_id,
+                    'employee_name' => trim($addition->employee->first_name . ' ' . $addition->employee->middle_name . ' ' . $addition->employee->surname),
+                    'department' => $addition->employee->department->department_name ?? 'N/A',
+                    'additions' => [],
+                    'total_additions' => 0
+                ];
+            }
+
+            $typeName = $addition->additionType->name ?? 'N/A';
+            $additionTypes[$typeName] = true;
+
+            if (!isset($groupedAdditions[$employeeId]['additions'][$typeName])) {
+                $groupedAdditions[$employeeId]['additions'][$typeName] = 0;
+            }
+            
+            $groupedAdditions[$employeeId]['additions'][$typeName] += $addition->amount;
+            $groupedAdditions[$employeeId]['total_additions'] += $addition->amount;
         }
+
+        $reportData['addition_types'] = array_keys($additionTypes);
+        sort($reportData['addition_types']);
+        $reportData['employees'] = array_values($groupedAdditions);
 
         return $reportData;
     }
 
     public function generatePromotionHistoryReport($filters = [])
     {
-        $query = PromotionHistory::with(['employee.department', 'employee.gradeLevel']);
+        $query = PromotionHistory::with(['employee.department', 'employee.gradeLevel', 'employee.appointmentType']);
 
         if (isset($filters['employee_id']) && $filters['employee_id']) {
             $query->where('employee_id', $filters['employee_id']);
+        }
+
+        if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('appointment_type_id', $filters['appointment_type_id']);
+            });
+        }
+
+        // Apply year and month filters
+        if (isset($filters['year']) && $filters['year']) {
+            $query->whereYear('promotion_date', $filters['year']);
+            
+            if (isset($filters['month']) && $filters['month']) {
+                 if (is_numeric($filters['month'])) {
+                    $query->whereMonth('promotion_date', $filters['month']);
+                 } else {
+                     try {
+                        $monthNum = Carbon::parse("2000-{$filters['month']}-01")->month;
+                        $query->whereMonth('promotion_date', $monthNum);
+                     } catch (\Exception $e) {}
+                 }
+            }
         }
 
         $promotions = $query->get();
@@ -435,12 +528,38 @@ class ComprehensiveReportService
         ];
 
         foreach ($promotions as $promotion) {
+            // Resolve grade level display value
+            $previousGrade = $promotion->previous_grade_level;
+            $newGrade = $promotion->new_grade_level;
+            $previousStep = $promotion->previous_step;
+            $newStep = $promotion->new_step;
+
+            // Fall back to current employee GL/step if the promotion record is missing them
+            if (empty($previousGrade) && $promotion->employee?->gradeLevel) {
+                $previousGrade = $promotion->employee->gradeLevel->name ?? 'N/A';
+            }
+            if (empty($newGrade) && $promotion->employee?->gradeLevel) {
+                $newGrade = $promotion->employee->gradeLevel->name ?? 'N/A';
+            }
+
+            // Load step name via Step model if step is stored as an ID (integer)
+            if (!empty($previousStep) && is_numeric($previousStep)) {
+                $stepModel = \App\Models\Step::find($previousStep);
+                $previousStep = $stepModel ? $stepModel->name : $previousStep;
+            }
+            if (!empty($newStep) && is_numeric($newStep)) {
+                $stepModel = \App\Models\Step::find($newStep);
+                $newStep = $stepModel ? $stepModel->name : $newStep;
+            }
+
             $reportData['promotions'][] = [
                 'employee_id' => $promotion->employee->staff_no ?? $promotion->employee->employee_id,
                 'employee_name' => trim($promotion->employee->first_name . ' ' . $promotion->employee->middle_name . ' ' . $promotion->employee->surname),
                 'department' => $promotion->employee->department->department_name ?? 'N/A',
-                'previous_grade' => $promotion->previous_grade_level ?? 'N/A',
-                'new_grade' => $promotion->new_grade_level ?? 'N/A',
+                'previous_grade' => $previousGrade ?? 'N/A',
+                'new_grade' => $newGrade ?? 'N/A',
+                'previous_step' => $previousStep ?? 'N/A',
+                'new_step' => $newStep ?? 'N/A',
                 'promotion_date' => $promotion->promotion_date,
                 'promotion_type' => $promotion->promotion_type ?? 'N/A',
                 'reason' => $promotion->reason ?? 'N/A',
@@ -453,7 +572,7 @@ class ComprehensiveReportService
 
     public function generateDisciplinaryReport($filters = [])
     {
-        $query = DisciplinaryAction::with(['employee.department']);
+        $query = DisciplinaryAction::with(['employee.department', 'employee.appointmentType']);
 
         if (isset($filters['employee_id']) && $filters['employee_id']) {
             $query->where('employee_id', $filters['employee_id']);
@@ -461,6 +580,27 @@ class ComprehensiveReportService
 
         if (isset($filters['status']) && $filters['status']) {
             $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
+            $query->whereHas('employee', function($q) use ($filters) {
+                $q->where('appointment_type_id', $filters['appointment_type_id']);
+            });
+        }
+
+        if (isset($filters['year']) && $filters['year']) {
+            $query->whereYear('action_date', $filters['year']);
+
+            if (isset($filters['month']) && $filters['month']) {
+                if (is_numeric($filters['month'])) {
+                    $query->whereMonth('action_date', $filters['month']);
+                } else {
+                    try {
+                        $monthNum = Carbon::parse("2000-{$filters['month']}-01")->month;
+                        $query->whereMonth('action_date', $monthNum);
+                    } catch (\Exception $e) {}
+                }
+            }
         }
 
         $actions = $query->get();

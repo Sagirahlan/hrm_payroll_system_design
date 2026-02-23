@@ -11,26 +11,39 @@
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
         }
         .logo {
-            width: 80px;
-            height: auto;
-            margin-bottom: 10px;
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 6px;
+            display: block;
         }
         .org-name {
-            font-size: 24px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 5px;
+            color: #1e40af;
+            margin-bottom: 2px;
         }
         .report-title {
-            font-size: 18px;
+            font-size: 11px;
             font-weight: bold;
-            margin-bottom: 5px;
+            color: #dc2626;
+            margin-bottom: 1px;
+        }
+        .generated-date {
+            font-size: 9px;
+            color: #666;
+            margin-bottom: 2px;
+            line-height: 1.3;
         }
         .period {
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: 10px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
         table {
             width: 100%;
@@ -66,11 +79,13 @@
 </head>
 <body>
     <div class="header">
-        <!-- Assuming logo path is standard, or we can omit if not available -->
-        <!-- <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Logo"> -->
-        <div class="org-name">Katsina State Water Board</div>
-        <div class="report-title">Payroll Journals</div>
+        @if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')))
+            <img src="{{ public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo" class="logo">
+        @endif
+        <div class="org-name">KATSINA STATE WATER BOARD</div>
+        <div class="report-title">PAYROLL JOURNALS REPORT</div>
         <div class="period">For the Month of {{ $data['period'] }}</div>
+        <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 
     <table>

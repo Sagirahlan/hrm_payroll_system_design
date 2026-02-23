@@ -48,10 +48,10 @@
             }
 
             .report-title {
-                font-size: 11px;
+                font-size: 14px;
                 font-weight: bold;
-                color: #dc2626;
-                margin-bottom: 1px;
+                color: #333;
+                margin-bottom: 4px;
             }
 
             .generated-date {
@@ -59,20 +59,6 @@
                 color: #666;
                 margin-bottom: 2px;
                 line-height: 1.3;
-            }
-
-            .org-name {
-                font-size: 14px;
-                font-weight: bold;
-                color: #1e40af;
-                margin-bottom: 2px;
-            }
-
-            .logo {
-                width: 55px;
-                height: 55px;
-                margin: 0 auto 6px;
-                display: block;
             }
 
             .summary-info {
@@ -182,16 +168,12 @@
 </head>
 <body>
     <div class="header">
-        @if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')))
-            <img src="{{ public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo" class="logo">
-        @endif
-        <div class="org-name">KATSINA STATE WATER BOARD</div>
-        <div class="report-title">GRADE LEVEL SUMMARY REPORT</div>
-        <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
+        <div class="report-title">Grade Level Summary Report</div>
+        <div class="generated-date">Generated on: <?php echo e(now()->format('F j, Y g:i A')); ?></div>
     </div>
 
     <div class="summary">
-        <p><strong>Total Grade Levels:</strong> {{ $data['total_grade_levels'] }}</p>
+        <p><strong>Total Grade Levels:</strong> <?php echo e($data['total_grade_levels']); ?></p>
     </div>
 
     <table>
@@ -208,19 +190,19 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($data['grade_levels'] as $level)
+            <?php $__currentLoopData = $data['grade_levels']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $level): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
-                <td>{{ $level['grade_level_name'] }}</td>
-                <td>{{ $level['salary_scale'] }}</td>
-                <td>{{ $level['total_employees'] }}</td>
-                <td>{{ $level['active_employees'] }}</td>
-                <td>₦{{ number_format($level['total_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['average_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['min_basic_salary'], 2) }}</td>
-                <td>₦{{ number_format($level['max_basic_salary'], 2) }}</td>
+                <td><?php echo e($level['grade_level_name']); ?></td>
+                <td><?php echo e($level['salary_scale']); ?></td>
+                <td><?php echo e($level['total_employees']); ?></td>
+                <td><?php echo e($level['active_employees']); ?></td>
+                <td>₦<?php echo e(number_format($level['total_basic_salary'], 2)); ?></td>
+                <td>₦<?php echo e(number_format($level['average_basic_salary'], 2)); ?></td>
+                <td>₦<?php echo e(number_format($level['min_basic_salary'], 2)); ?></td>
+                <td>₦<?php echo e(number_format($level['max_basic_salary'], 2)); ?></td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 </body>
-</html>
+</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/grade-level-summary-report.blade.php ENDPATH**/ ?>

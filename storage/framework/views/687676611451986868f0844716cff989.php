@@ -63,16 +63,16 @@
 </head>
 <body>
     <div class="header">
-        @if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')))
-            <img src="{{ public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg') }}" alt="Logo" class="logo">
-        @endif
+        <?php if(file_exists(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg'))): ?>
+            <img src="<?php echo e(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')); ?>" alt="Logo" class="logo">
+        <?php endif; ?>
         <div class="org-name">KATSINA STATE WATER BOARD</div>
         <div class="report-title">PROMOTION HISTORY REPORT</div>
-        <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
+        <div class="generated-date">Generated on: <?php echo e(now()->format('F j, Y g:i A')); ?></div>
     </div>
 
     <div class="summary">
-        <p><strong>Total Promotions:</strong> {{ $data['total_promotions'] }}</p>
+        <p><strong>Total Promotions:</strong> <?php echo e($data['total_promotions']); ?></p>
     </div>
 
     <table>
@@ -92,22 +92,22 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($data['promotions'] as $promotion)
+            <?php $__currentLoopData = $data['promotions']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $promotion): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
-                <td>{{ $promotion['employee_id'] }}</td>
-                <td>{{ $promotion['employee_name'] }}</td>
-                <td>{{ $promotion['department'] }}</td>
-                <td>{{ $promotion['previous_grade'] }}</td>
-                <td>{{ $promotion['previous_step'] }}</td>
-                <td>{{ $promotion['new_grade'] }}</td>
-                <td>{{ $promotion['new_step'] }}</td>
-                <td>{{ $promotion['promotion_date'] }}</td>
-                <td>{{ $promotion['promotion_type'] }}</td>
-                <td>{{ $promotion['reason'] }}</td>
-                <td>{{ $promotion['status'] }}</td>
+                <td><?php echo e($promotion['employee_id']); ?></td>
+                <td><?php echo e($promotion['employee_name']); ?></td>
+                <td><?php echo e($promotion['department']); ?></td>
+                <td><?php echo e($promotion['previous_grade']); ?></td>
+                <td><?php echo e($promotion['previous_step']); ?></td>
+                <td><?php echo e($promotion['new_grade']); ?></td>
+                <td><?php echo e($promotion['new_step']); ?></td>
+                <td><?php echo e($promotion['promotion_date']); ?></td>
+                <td><?php echo e($promotion['promotion_type']); ?></td>
+                <td><?php echo e($promotion['reason']); ?></td>
+                <td><?php echo e($promotion['status']); ?></td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 </body>
-</html>
+</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/promotion-history-report.blade.php ENDPATH**/ ?>

@@ -479,25 +479,59 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, ['Total Net Salary', '₦' . number_format($reportData['total_net_salary'], 2)]);
         fputcsv($file, []);
 
-        fputcsv($file, [
+        // 1. Collect all unique addition types
+        $allAdditionTypes = [];
+        foreach ($reportData['payroll_records'] as $record) {
+            if (!empty($record['addition_breakdown'])) {
+                foreach (array_keys($record['addition_breakdown']) as $type) {
+                    $allAdditionTypes[$type] = true;
+                }
+            }
+        }
+        $sortedAdditionTypes = array_keys($allAdditionTypes);
+        sort($sortedAdditionTypes);
+
+        // Build Header Row
+        $header = [
             'Staff No', 'Full Name', 'Department', 'Grade Level',
-            'Basic Salary', 'Total Deductions', 'Total Additions',
-            'Net Salary', 'Payment Date', 'Status'
+            'Basic Salary'
+        ];
+        
+        // Add Addition Headers
+        foreach ($sortedAdditionTypes as $type) {
+            $header[] = $type;
+        }
+
+        // Add remaining headers
+        $header = array_merge($header, [
+            'Total Additions', 'Total Deductions', 'Net Salary', 'Payment Date', 'Status'
         ]);
 
+        fputcsv($file, $header);
+
         foreach ($reportData['payroll_records'] as $record) {
-            fputcsv($file, [
+            $row = [
                 $record['employee_id'],
                 $record['full_name'],
                 $record['department'],
                 $record['grade_level'],
                 '₦' . number_format($record['basic_salary'], 2),
-                '₦' . number_format($record['total_deductions'], 2),
-                '₦' . number_format($record['total_additions'], 2),
-                '₦' . number_format($record['net_salary'], 2),
-                $record['payment_date'],
-                $record['status']
-            ]);
+            ];
+
+            // Add Addition Values
+            foreach ($sortedAdditionTypes as $type) {
+                $amount = $record['addition_breakdown'][$type] ?? 0;
+                $row[] = '₦' . number_format($amount, 2);
+            }
+
+            // Add remaining values
+            $row[] = '₦' . number_format($record['total_additions'], 2);
+            $row[] = '₦' . number_format($record['total_deductions'], 2);
+            $row[] = '₦' . number_format($record['net_salary'], 2);
+            $row[] = $record['payment_date'];
+            $row[] = $record['status'];
+
+            fputcsv($file, $row);
         }
     }
 
@@ -507,22 +541,34 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, ['Total Amount', '₦' . number_format($reportData['total_amount'], 2)]);
         fputcsv($file, []);
 
-        fputcsv($file, [
-            'Staff No', 'Employee Name', 'Department', 'Deduction Type',
-            'Amount', 'Start Date', 'End Date', 'Frequency'
-        ]);
+        // Dynamic Headers
+        $header = [
+            'Staff No', 'Employee Name', 'Department'
+        ];
 
-        foreach ($reportData['deductions'] as $deduction) {
-            fputcsv($file, [
-                $deduction['employee_id'],
-                $deduction['employee_name'],
-                $deduction['department'],
-                $deduction['deduction_type'],
-                '₦' . number_format($deduction['amount'], 2),
-                $deduction['start_date'],
-                $deduction['end_date'],
-                $deduction['frequency']
-            ]);
+        foreach ($reportData['deduction_types'] as $type) {
+            $header[] = $type;
+        }
+
+        $header[] = 'Total Deductions';
+
+        fputcsv($file, $header);
+
+        foreach ($reportData['employees'] as $employee) {
+            $row = [
+                $employee['employee_id'],
+                $employee['employee_name'],
+                $employee['department']
+            ];
+
+            foreach ($reportData['deduction_types'] as $type) {
+                 $amount = $employee['deductions'][$type] ?? 0;
+                 $row[] = '₦' . number_format($amount, 2);
+            }
+
+            $row[] = '₦' . number_format($employee['total_deductions'], 2);
+
+            fputcsv($file, $row);
         }
     }
 
@@ -532,22 +578,34 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, ['Total Amount', '₦' . number_format($reportData['total_amount'], 2)]);
         fputcsv($file, []);
 
-        fputcsv($file, [
-            'Staff No', 'Employee Name', 'Department', 'Addition Type',
-            'Amount', 'Start Date', 'End Date', 'Frequency'
-        ]);
+        // Dynamic Headers
+        $header = [
+            'Staff No', 'Employee Name', 'Department'
+        ];
 
-        foreach ($reportData['additions'] as $addition) {
-            fputcsv($file, [
-                $addition['employee_id'],
-                $addition['employee_name'],
-                $addition['department'],
-                $addition['addition_type'],
-                '₦' . number_format($addition['amount'], 2),
-                $addition['start_date'],
-                $addition['end_date'],
-                $addition['frequency']
-            ]);
+        foreach ($reportData['addition_types'] as $type) {
+            $header[] = $type;
+        }
+
+        $header[] = 'Total Additions';
+
+        fputcsv($file, $header);
+
+        foreach ($reportData['employees'] as $employee) {
+            $row = [
+                $employee['employee_id'],
+                $employee['employee_name'],
+                $employee['department']
+            ];
+
+            foreach ($reportData['addition_types'] as $type) {
+                 $amount = $employee['additions'][$type] ?? 0;
+                 $row[] = '₦' . number_format($amount, 2);
+            }
+
+            $row[] = '₦' . number_format($employee['total_additions'], 2);
+
+            fputcsv($file, $row);
         }
     }
 
@@ -557,8 +615,8 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, []);
 
         fputcsv($file, [
-            'Staff No', 'Employee Name', 'Department', 'Previous Grade',
-            'New Grade', 'Promotion Date', 'Promotion Type', 'Reason', 'Status'
+            'Staff No', 'Employee Name', 'Department', 'Previous Grade', 'Previous Step',
+            'New Grade', 'New Step', 'Promotion Date', 'Promotion Type', 'Reason', 'Status'
         ]);
 
         foreach ($reportData['promotions'] as $promotion) {
@@ -567,7 +625,9 @@ class ComprehensiveReportController extends Controller
                 $promotion['employee_name'],
                 $promotion['department'],
                 $promotion['previous_grade'],
+                $promotion['previous_step'],
                 $promotion['new_grade'],
+                $promotion['new_step'],
                 $promotion['promotion_date'],
                 $promotion['promotion_type'],
                 $promotion['reason'],

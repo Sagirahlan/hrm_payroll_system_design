@@ -192,20 +192,6 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <div class="card border-success">
-                                <div class="card-body">
-                                    <h5 class="card-title">Approaching Retirement (6 Months)</h5>
-                                    <p class="card-text text-muted">Employees retiring within 6 months</p>
-                                    <button class="btn btn-success generate-report-btn"
-                                            data-report-type="retirement_6months"
-                                            data-title="Retirement Planning Report (6 Months)">
-                                        Generate Report
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
                             <div class="card border-primary">
                                 <div class="card-body">
                                     <h5 class="card-title">Pensioner Report</h5>
@@ -605,6 +591,40 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @endforeach
                             </select>
                         </div>
+                         <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
                     </div>
                 `;
                 break;
@@ -619,6 +639,40 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @foreach($additionTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                         <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
                             </select>
                         </div>
                     </div>
@@ -670,9 +724,91 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
 
             case 'promotion_history':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
             case 'disciplinary':
-                // No additional filters needed for promotion history and disciplinary reports
-                filtersSection.innerHTML = '';
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="year_filter" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year_filter" name="filters[year]"
+                                   min="2000" max="{{ date('Y') }}" value="{{ date('Y') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="month_filter" class="form-label">Month</label>
+                            <select class="form-select" id="month_filter" name="filters[month]">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="dismissed">Dismissed</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
                 break;
 
             case 'retirement_planning':

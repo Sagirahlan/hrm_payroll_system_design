@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Deduction Summary Report</title>
+    <title>Addition Summary Report</title>
     <style>
         @page {
             size: A4 landscape;
@@ -53,6 +53,11 @@
             font-weight: bold;
         }
 
+        .generated-date {
+            color: #666;
+            font-size: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -86,9 +91,9 @@
             <img src="<?php echo e(public_path('images/WhatsApp Image 2026-01-22 at 10.28.01 AM.jpeg')); ?>" alt="Logo" class="logo">
         <?php endif; ?>
         <div class="org-name">KATSINA STATE WATER BOARD</div>
-        <div class="report-title">DEDUCTION SUMMARY REPORT</div>
+        <div class="report-title">ADDITION SUMMARY REPORT</div>
         <div class="report-subtitle">Generated on: <?php echo e(now()->format('F j, Y g:i A')); ?></div>
-        <div>Total Deductions: ₦<?php echo e(number_format($data['total_amount'], 2)); ?></div>
+        <div>Total Additions: ₦<?php echo e(number_format($data['total_amount'], 2)); ?></div>
     </div>
 
     <table>
@@ -99,7 +104,7 @@
                 <th>Employee Name</th>
                 <th>Department</th>
                 
-                <?php $__currentLoopData = $data['deduction_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $__currentLoopData = $data['addition_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <th><?php echo e($type); ?></th>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
@@ -109,7 +114,7 @@
         <tbody>
             <?php
                 $sn = 1;
-                $columnTotals = array_fill_keys($data['deduction_types'], 0);
+                $columnTotals = array_fill_keys($data['addition_types'], 0);
                 $grandTotal = 0;
             ?>
             
@@ -120,23 +125,23 @@
                 <td class="text-left"><?php echo e($employee['employee_name']); ?></td>
                 <td><?php echo e($employee['department']); ?></td>
                 
-                <?php $__currentLoopData = $data['deduction_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $__currentLoopData = $data['addition_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <?php
-                        $amount = $employee['deductions'][$type] ?? 0;
+                        $amount = $employee['additions'][$type] ?? 0;
                         $columnTotals[$type] += $amount;
                     ?>
                     <td class="text-right"><?php echo e($amount > 0 ? number_format($amount, 2) : '-'); ?></td>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                <td class="text-right"><strong><?php echo e(number_format($employee['total_deductions'], 2)); ?></strong></td>
-                <?php $grandTotal += $employee['total_deductions']; ?>
+                <td class="text-right"><strong><?php echo e(number_format($employee['total_additions'], 2)); ?></strong></td>
+                <?php $grandTotal += $employee['total_additions']; ?>
             </tr>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
             <tr class="totals-row">
                 <td colspan="4" class="text-right"><strong>TOTALS</strong></td>
                 
-                <?php $__currentLoopData = $data['deduction_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $__currentLoopData = $data['addition_types']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <td class="text-right"><?php echo e(number_format($columnTotals[$type], 2)); ?></td>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
@@ -145,4 +150,4 @@
         </tbody>
     </table>
 </body>
-</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/deduction-summary-report.blade.php ENDPATH**/ ?>
+</html><?php /**PATH C:\Users\Rowwww\Herd\hrm_payroll_system_design\resources\views/reports/new/pdf/addition-summary-report.blade.php ENDPATH**/ ?>

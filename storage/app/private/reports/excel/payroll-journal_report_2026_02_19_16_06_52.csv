@@ -1,0 +1,14 @@
+"Payroll Journal Report"
+"Generated on: February 19, 2026"
+
+Period,2026-February
+"Grand Total","₦31,218,209.29"
+
+Code,Description,Count,Amount,Type
+3,"Health Contribution",167,"₦186,467.73",Deduction
+4,"NHF Deduction",167,"₦466,169.27",Deduction
+NET,"Net Pay",787,"₦28,352,714.40","Net Pay"
+6,PAYE,167,"₦574,267.49",Deduction
+3,"Special Loan",3,"₦60,000.00",Addition
+11,"State Contributory Pension Scheme",154,"₦1,392,122.67",Deduction
+12,"Union Dues",167,"₦186,467.73",Deduction
