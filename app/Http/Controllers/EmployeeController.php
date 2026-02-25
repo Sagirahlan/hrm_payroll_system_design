@@ -1050,50 +1050,62 @@ class EmployeeController extends Controller
         $file = $request->file('import_file');
         $updateMode = $request->has('update_mode');
 
-        // Determine the number of sheets in the Excel file
-        $fileExtension = $file->getClientOriginalExtension();
+        try {
+            DB::transaction(function () use ($file, $updateMode) {
+                // Determine the number of sheets in the Excel file
+                $fileExtension = $file->getClientOriginalExtension();
 
-        if (in_array($fileExtension, ['xlsx', 'xls'])) {
-            // Use PhpSpreadsheet to read the file and get the number of sheets
-            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
-            $reader->setReadDataOnly(true); // Read only cell values, not formulas
-            $spreadsheet = $reader->load($file->getPathname());
-            $sheetCount = $spreadsheet->getSheetCount();
+                if (in_array($fileExtension, ['xlsx', 'xls'])) {
+                    // Use PhpSpreadsheet to read the file and get the number of sheets
+                    $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                    $reader->setReadDataOnly(true);
+                    $spreadsheet = $reader->load($file->getPathname());
+                    $sheetCount = $spreadsheet->getSheetCount();
+                    $spreadsheet->disconnectWorksheets();
+                    unset($spreadsheet);
 
-            // Create a dynamic import based on the number of sheets
-            $import = new class($sheetCount, $updateMode) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
-                private $sheetCount;
-                private $updateMode;
+                    // Phase 1: Import employees first to build the ID mapping
+                    $employeeImport = new \App\Imports\EmployeeImport($updateMode);
+                    \Maatwebsite\Excel\Facades\Excel::import(
+                        new class($employeeImport) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                            private $employeeImport;
+                            public function __construct($employeeImport) { $this->employeeImport = $employeeImport; }
+                            public function sheets(): array { return [0 => $this->employeeImport]; }
+                        },
+                        $file
+                    );
 
-                public function __construct($sheetCount, $updateMode) {
-                    $this->sheetCount = $sheetCount;
-                    $this->updateMode = $updateMode;
-                }
+                    // Get the ID mapping (Excel employee_id => DB employee_id)
+                    $idMapping = $employeeImport->getIdMapping();
+                    \Illuminate\Support\Facades\Log::info('EmployeeImport ID mapping built: ' . count($idMapping) . ' entries');
 
-                public function sheets(): array
-                {
-                    $sheets = [
-                        0 => new \App\Imports\EmployeeImport($this->updateMode),      // Always import first sheet (Employees)
-                    ];
+                    // Phase 2: Import next-of-kin and bank details with the ID mapping
+                    if ($sheetCount >= 2) {
+                        $additionalSheets = [];
 
-                    // Import Next of Kin sheet if it exists
-                    if ($this->sheetCount >= 2) {
-                        $sheets[1] = new \App\Imports\NextOfKinImport();
+                        if ($sheetCount >= 2) {
+                            $additionalSheets[1] = new \App\Imports\NextOfKinImport($idMapping);
+                        }
+                        if ($sheetCount >= 3) {
+                            $additionalSheets[2] = new \App\Imports\BankDetailImport($idMapping);
+                        }
+
+                        $additionalImport = new class($additionalSheets) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                            private $sheets;
+                            public function __construct($sheets) { $this->sheets = $sheets; }
+                            public function sheets(): array { return $this->sheets; }
+                        };
+
+                        \Maatwebsite\Excel\Facades\Excel::import($additionalImport, $file);
                     }
-
-                    // Import Bank Details sheet if it exists
-                    if ($this->sheetCount >= 3) {
-                        $sheets[2] = new \App\Imports\BankDetailImport();
-                    }
-
-                    return $sheets;
+                } else {
+                    // For CSV files, use single sheet import
+                    \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\EmployeeImport($updateMode), $file);
                 }
-            };
-
-            Excel::import($import, $file);
-        } else {
-            // For CSV files, use single sheet import
-            Excel::import(new \App\Imports\EmployeeImport($updateMode), $file);
+            });
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Employee import failed: ' . $e->getMessage());
+            return redirect()->route('employees.index')->with('error', 'Import failed: ' . $e->getMessage());
         }
 
         AuditTrail::create([

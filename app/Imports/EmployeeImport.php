@@ -17,9 +17,23 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
 {
     protected $updateMode;
 
+    /**
+     * Mapping of Excel employee_id => DB employee_id.
+     * Populated during import so BankDetailImport/NextOfKinImport can translate IDs.
+     */
+    protected array $idMapping = [];
+
     public function __construct($updateMode = false)
     {
         $this->updateMode = $updateMode;
+    }
+
+    /**
+     * Get the mapping of Excel employee_id => DB employee_id.
+     */
+    public function getIdMapping(): array
+    {
+        return $this->idMapping;
     }
 
     public function model(array $row)
@@ -375,6 +389,11 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 }
             }
 
+            // Track the mapping: Excel employee_id => DB employee_id
+            if (isset($row['employee_id']) && !empty($row['employee_id'])) {
+                $this->idMapping[$row['employee_id']] = $existingEmployee->employee_id;
+            }
+
             return $existingEmployee;
         } else {
             // Create new employee
@@ -411,6 +430,11 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                 'amount' => $amount,
             ]);
             $employee->save();
+
+            // Track the mapping: Excel employee_id => DB employee_id
+            if (isset($row['employee_id']) && !empty($row['employee_id'])) {
+                $this->idMapping[$row['employee_id']] = $employee->employee_id;
+            }
 
             // Create next of kin if provided
             if ($nextOfKinData) {
