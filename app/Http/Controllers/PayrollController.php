@@ -309,25 +309,6 @@ class PayrollController extends Controller
                     ]
                 );
 
-                // Create Payment Transaction
-                // Check if transaction exists to avoid duplicates
-                $payrollRecord = PayrollRecord::where('employee_id', $pensioner->employee_id)
-                                ->where('payroll_month', $month . '-01')
-                                ->first();
-
-                if ($payrollRecord) {
-                    \App\Models\PaymentTransaction::updateOrCreate(
-                        ['payroll_id' => $payrollRecord->payroll_id],
-                        [
-                            'employee_id' => $pensioner->employee_id,
-                            'amount' => $netSalary,
-                            'payment_date' => null,
-                            'bank_code' => $pensioner->bank->bank_code ?? null,
-                            'account_name' => $pensioner->account_name ?? ($pensioner->first_name . ' ' . $pensioner->surname),
-                            'account_number' => $pensioner->account_number ?? '0000000000',
-                        ]
-                    );
-                }
                 $count++;
             }
 
@@ -411,19 +392,6 @@ class PayrollController extends Controller
                     'net_salary' => $netSalary,
                     'payment_date' => null,
                     'remarks' => $remarks,
-                ]);
-                
-                 \App\Models\PaymentTransaction::create([
-                        'payroll_id' => $payrollRecord->payroll_id,
-                        'employee_id' => $payrollRecord->employee_id,
-                        'amount' => $payrollRecord->net_salary,
-                        'transaction_type' => 'Bank Transfer',
-                        'transaction_date' => null,
-                        'status' => 'Pending',
-                        'bank_code' => $pensioner->bank->bank_code ?? null,
-                        'account_name' => $pensioner->account_name ?? ($pensioner->first_name . ' ' . $pensioner->surname),
-                        'account_number' => $pensioner->account_number ?? '0000000000',
-                        'reference_id' => 'GRAT-' . strtoupper(uniqid()),
                 ]);
 
                 $count++;
@@ -536,18 +504,6 @@ class PayrollController extends Controller
                     ]
                 );
 
-                // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::updateOrCreate(
-                    ['payroll_id' =>  $payroll->payroll_id],
-                    [
-                        'employee_id' => $employee->employee_id,
-                        'amount' => $calculation['net_salary'],
-                        'payment_date' => null,
-                        'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                        'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                        'account_number' => $employee->bank->account_no ?? '0000000000',
-                    ]
-                );
             } else {
                 // For active employees, use normal calculation
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, false);
@@ -575,18 +531,6 @@ class PayrollController extends Controller
                     ]
                 );
 
-                // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::updateOrCreate(
-                    ['payroll_id' =>  $payroll->payroll_id],
-                    [
-                        'employee_id' => $employee->employee_id,
-                        'amount' => $calculation['net_salary'],
-                        'payment_date' => null,
-                        'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                        'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                        'account_number' => $employee->bank->account_no ?? '0000000000',
-                    ]
-                );
             }
         }
 
@@ -2628,20 +2572,6 @@ class PayrollController extends Controller
                                     ]);
         }
 
-        // --- Payment Transaction Status Update Logic ---
-        // When payroll is Approved, the Payment Transaction should be marked as Successful (Paid)
-        // or at least 'Approved' if there is another step. 
-        // Assuming 'Approved' payroll implies payment is authorized and effectively done or queued.
-        // The user complained it shows 'Pending' in the report.
-        // Let's set it to 'Successful' and set payment_date to now().
-        
-        \App\Models\PaymentTransaction::whereIn('payroll_id', $payrollIds)
-            ->update([
-                'status' => 'successful', // Use lowercase as per other statuses likely, or check enum
-                'payment_date' => now(),
-                'updated_at' => now()
-            ]);
-        // ----------------------------------------------
 
         // --- Gratuity Paid Status Update Logic ---
         \Illuminate\Support\Facades\Log::info("Bulk Final Approve: checking IDs: " . implode(',', $payrollIds));

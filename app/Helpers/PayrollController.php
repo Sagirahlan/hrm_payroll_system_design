@@ -113,16 +113,6 @@ class PayrollController extends Controller
                     'remarks' => 'Generated for ' . $month . ' (Suspended - Special Calculation Applied)',
                 ]);
                 
-                // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::create([
-                    'payroll_id' =>  $payroll->payroll_id,
-                    'employee_id' => $employee->employee_id,
-                    'amount' => $calculation['net_salary'],
-                    'payment_date' => null,
-                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                    'account_number' => $employee->bank->account_no ?? '0000000000',
-                ]);
             } else {
                 // For active employees, use normal calculation
                 $calculation = $this->payrollCalculationService->calculatePayroll($employee, $month, false);
@@ -141,16 +131,6 @@ class PayrollController extends Controller
                     'remarks' => 'Generated for ' . $month,
                 ]);
                 
-                // ✅ Create a PaymentTransaction for this payroll record
-                \App\Models\PaymentTransaction::create([
-                    'payroll_id' =>  $payroll->payroll_id,
-                    'employee_id' => $employee->employee_id,
-                    'amount' => $calculation['net_salary'],
-                    'payment_date' => null,
-                    'bank_code' => $employee->bank->bank_code ?? null, // safe fallback
-                    'account_name' => $employee->bank->account_name ?? ($employee->first_name . ' ' . $employee->surname),
-                    'account_number' => $employee->bank->account_no ?? '0000000000',
-                ]);
             }
         }
 

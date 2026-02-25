@@ -32,9 +32,12 @@
                                     <label for="status">Status</label>
                                     <select name="status" id="status" class="form-control">
                                         <option value="">All Statuses</option>
-                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="successful" {{ request('status') == 'successful' ? 'selected' : '' }}>Successful</option>
-                                        <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
+                                        <option value="Pending Review" {{ request('status') == 'Pending Review' ? 'selected' : '' }}>Pending Review</option>
+                                        <option value="Under Review" {{ request('status') == 'Under Review' ? 'selected' : '' }}>Under Review</option>
+                                        <option value="Reviewed" {{ request('status') == 'Reviewed' ? 'selected' : '' }}>Reviewed</option>
+                                        <option value="Pending Final Approval" {{ request('status') == 'Pending Final Approval' ? 'selected' : '' }}>Pending Final Approval</option>
+                                        <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
+                                        <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
                                     </select>
                                 </div>
                             </div>
@@ -114,6 +117,7 @@
                         <h5 class="font-weight-bold text-uppercase" style="color: #000;">
                             @php
                                 $typeId = request('appointment_type_id');
+    
                                 if ($typeId === 'pensioner') {
                                     $typeName = 'PENSIONER';
                                 } else {
@@ -158,25 +162,31 @@
                                                 N/A
                                             @endif
                                         </td>
-                                        <td>₦{{ number_format($transaction->amount, 2) }}</td>
+                                        <td>NGN {{ number_format($transaction->amount, 2) }}</td>
                                         <td>{{ $transaction->bank_code }}</td>
                                         <td>{{ $transaction->account_name }}</td>
                                         <td>{{ $transaction->account_number }}</td>
                                         <td>
-                                            @if($transaction->status == 'successful')
-                                                <span class="badge badge-success">Successful</span>
-                                            @elseif($transaction->status == 'pending')
-                                                <span class="badge badge-warning">Pending</span>
-                                            @elseif($transaction->status == 'failed')
-                                                <span class="badge badge-danger">Failed</span>
+                                            @if($transaction->status == 'Approved')
+                                                <span class="badge badge-success">Approved</span>
+                                            @elseif($transaction->status == 'Pending Final Approval')
+                                                <span class="badge badge-info">Pending Final Approval</span>
+                                            @elseif($transaction->status == 'Under Review')
+                                                <span class="badge badge-warning text-dark">Under Review</span>
+                                            @elseif($transaction->status == 'Reviewed')
+                                                <span class="badge badge-info">Reviewed</span>
+                                            @elseif($transaction->status == 'Pending Review')
+                                                <span class="badge badge-secondary">Pending Review</span>
+                                            @elseif($transaction->status == 'Rejected')
+                                                <span class="badge badge-danger">Rejected</span>
                                             @else
-                                                <span class="badge badge-secondary">{{ ucfirst($transaction->status) }}</span>
+                                                <span class="badge badge-secondary">{{ $transaction->status ?? 'Pending Review' }}</span>
                                             @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center">No payment transactions found.</td>
+                                        <td colspan="9" class="text-center">No payment transactions found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

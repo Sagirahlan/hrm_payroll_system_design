@@ -300,20 +300,23 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
                     'ward_id' => $wardId ?? $existingEmployee->ward_id,
                     'pay_point' => $payPoint ?? $existingEmployee->pay_point,
                     
-                    // Career fields (Now moved to SAFE list per user request)
+                    // Career fields
                     'cadre_id' => $cadreId ?? $existingEmployee->cadre_id,
                     'grade_level_id' => $gradeLevelId ?? $existingEmployee->grade_level_id,
                     'step_id' => $stepId ?? $existingEmployee->step_id,
                     'rank_id' => $rankId ?? $existingEmployee->rank_id,
                     'department_id' => $departmentId ?? $existingEmployee->department_id,
                     
-                    // Casual/Contract fields (safe to update)
+                    // Status and Appointment Type (now included in update mode)
+                    'status' => $row['status'] ?? $existingEmployee->status,
+                    'appointment_type_id' => $appointmentTypeId ?? $existingEmployee->appointment_type_id,
+                    
+                    // Casual/Contract fields
                     'contract_start_date' => $contractStartDate ?? $existingEmployee->contract_start_date,
                     'contract_end_date' => $contractEndDate ?? $existingEmployee->contract_end_date,
                     'amount' => $amount ?? $existingEmployee->amount,
                     
-                    // SKIP: status, appointment_type_id, date_of_first_appointment, 
-                    // expected_retirement_date, expected_next_promotion, etc.
+                    // SKIP: date_of_first_appointment, expected_retirement_date, expected_next_promotion
                 ]);
             } else {
                 // NORMAL MODE: Update all fields as before

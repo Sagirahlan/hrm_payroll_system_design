@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Payment Transactions Report'); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -32,9 +30,12 @@
                                     <label for="status">Status</label>
                                     <select name="status" id="status" class="form-control">
                                         <option value="">All Statuses</option>
-                                        <option value="pending" <?php echo e(request('status') == 'pending' ? 'selected' : ''); ?>>Pending</option>
-                                        <option value="successful" <?php echo e(request('status') == 'successful' ? 'selected' : ''); ?>>Successful</option>
-                                        <option value="failed" <?php echo e(request('status') == 'failed' ? 'selected' : ''); ?>>Failed</option>
+                                        <option value="Pending Review" <?php echo e(request('status') == 'Pending Review' ? 'selected' : ''); ?>>Pending Review</option>
+                                        <option value="Under Review" <?php echo e(request('status') == 'Under Review' ? 'selected' : ''); ?>>Under Review</option>
+                                        <option value="Reviewed" <?php echo e(request('status') == 'Reviewed' ? 'selected' : ''); ?>>Reviewed</option>
+                                        <option value="Pending Final Approval" <?php echo e(request('status') == 'Pending Final Approval' ? 'selected' : ''); ?>>Pending Final Approval</option>
+                                        <option value="Approved" <?php echo e(request('status') == 'Approved' ? 'selected' : ''); ?>>Approved</option>
+                                        <option value="Rejected" <?php echo e(request('status') == 'Rejected' ? 'selected' : ''); ?>>Rejected</option>
                                     </select>
                                 </div>
                             </div>
@@ -117,6 +118,7 @@
                         <h5 class="font-weight-bold text-uppercase" style="color: #000;">
                             <?php
                                 $typeId = request('appointment_type_id');
+    
                                 if ($typeId === 'pensioner') {
                                     $typeName = 'PENSIONER';
                                 } else {
@@ -163,25 +165,31 @@
                                                 N/A
                                             <?php endif; ?>
                                         </td>
-                                        <td>₦<?php echo e(number_format($transaction->amount, 2)); ?></td>
+                                        <td>NGN <?php echo e(number_format($transaction->amount, 2)); ?></td>
                                         <td><?php echo e($transaction->bank_code); ?></td>
                                         <td><?php echo e($transaction->account_name); ?></td>
                                         <td><?php echo e($transaction->account_number); ?></td>
                                         <td>
-                                            <?php if($transaction->status == 'successful'): ?>
-                                                <span class="badge badge-success">Successful</span>
-                                            <?php elseif($transaction->status == 'pending'): ?>
-                                                <span class="badge badge-warning">Pending</span>
-                                            <?php elseif($transaction->status == 'failed'): ?>
-                                                <span class="badge badge-danger">Failed</span>
+                                            <?php if($transaction->status == 'Approved'): ?>
+                                                <span class="badge badge-success">Approved</span>
+                                            <?php elseif($transaction->status == 'Pending Final Approval'): ?>
+                                                <span class="badge badge-info">Pending Final Approval</span>
+                                            <?php elseif($transaction->status == 'Under Review'): ?>
+                                                <span class="badge badge-warning text-dark">Under Review</span>
+                                            <?php elseif($transaction->status == 'Reviewed'): ?>
+                                                <span class="badge badge-info">Reviewed</span>
+                                            <?php elseif($transaction->status == 'Pending Review'): ?>
+                                                <span class="badge badge-secondary">Pending Review</span>
+                                            <?php elseif($transaction->status == 'Rejected'): ?>
+                                                <span class="badge badge-danger">Rejected</span>
                                             <?php else: ?>
-                                                <span class="badge badge-secondary"><?php echo e(ucfirst($transaction->status)); ?></span>
+                                                <span class="badge badge-secondary"><?php echo e($transaction->status ?? 'Pending Review'); ?></span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
-                                        <td colspan="8" class="text-center">No payment transactions found.</td>
+                                        <td colspan="9" class="text-center">No payment transactions found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
