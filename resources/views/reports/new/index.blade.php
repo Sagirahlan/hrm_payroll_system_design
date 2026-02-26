@@ -55,7 +55,17 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <!-- Empty column to maintain layout -->
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">Employee Export</h5>
+                                    <p class="card-text text-muted">Full employee data export with next of kin & bank details</p>
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="employee_export"
+                                            data-title="Employee Export Report">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -199,6 +209,20 @@
                                     <button class="btn btn-primary generate-report-btn"
                                             data-report-type="pensioner"
                                             data-title="Pensioner Report with Bank Details">
+                                        Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">Pension Export</h5>
+                                    <p class="card-text text-muted">Pensioner data export with bank details</p>
+                                    <button class="btn btn-success generate-report-btn"
+                                            data-report-type="pension_export"
+                                            data-title="Pension Export Report">
                                         Generate Report
                                     </button>
                                 </div>
@@ -861,6 +885,65 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'duplicate_beneficiary':
                 // No additional filters needed for duplicate beneficiary report
                 filtersSection.innerHTML = '';
+                break;
+
+            case 'employee_export':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" id="department_filter" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->department_id }}">{{ $dept->department_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                                <option value="Retired">Retired</option>
+                                <option value="Deceased">Deceased</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" id="appointment_type_filter" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                @foreach($appointmentTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'pension_export':
+                filtersSection.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" id="department_filter" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->department_id }}">{{ $dept->department_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Terminated">Terminated</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
                 break;
 
             case 'audit_trail':

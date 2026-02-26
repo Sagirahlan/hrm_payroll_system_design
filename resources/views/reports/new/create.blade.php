@@ -27,6 +27,7 @@
                                         <option value="employee_master">Employee Master Report</option>
                                         <option value="employee_directory">Employee Directory Report</option>
                                         <option value="employee_status">Employee Status Report</option>
+                                        <option value="employee_export">Employee Export Report</option>
                                     </optgroup>
                                     <optgroup label="Compensation Reports">
                                         <option value="payroll_summary">Payroll Summary Report</option>
@@ -45,6 +46,7 @@
                                     </optgroup>
                                     <optgroup label="Pension Reports">
                                         <option value="pensioner">Pensioner Report with Bank Details</option>
+                                        <option value="pension_export">Pension Export Report</option>
                                     </optgroup>
                                     <optgroup label="Organizational Reports">
                                         <option value="department_summary">Department Summary Report</option>
@@ -135,6 +137,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
+                            <label for="appointment_type_filter" class="form-label">Appointment Type</label>
+                            <select class="form-select" name="filters[appointment_type_id]">
+                                <option value="">All Appointment Types</option>
+                                ${jsonData.appointmentTypes.map(type => `<option value="${type.id}">${type.name}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'employee_export':
+                filtersHtml = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                ${jsonData.departments.map(dept => `<option value="${dept.department_id}">${dept.department_name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                                <option value="Retired">Retired</option>
+                                <option value="Deceased">Deceased</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label for="appointment_type_filter" class="form-label">Appointment Type</label>
                             <select class="form-select" name="filters[appointment_type_id]">
                                 <option value="">All Appointment Types</option>
@@ -345,6 +378,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
 
             case 'pensioner':
+                filtersHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="department_filter" class="form-label">Department</label>
+                            <select class="form-select" name="filters[department_id]">
+                                <option value="">All Departments</option>
+                                ${jsonData.departments.map(dept => `<option value="${dept.department_id}">${dept.department_name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" name="filters[status]">
+                                <option value="">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Terminated">Terminated</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                break;
+
+            case 'pension_export':
                 filtersHtml = `
                     <div class="row">
                         <div class="col-md-6">

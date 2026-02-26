@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ComprehensiveReportController extends Controller
 {
@@ -253,6 +255,12 @@ class ComprehensiveReportController extends Controller
         case 'full_payroll':
             return $this->reportService->generateFullPayrollReport($filters);
 
+        case 'employee_export':
+            return $this->reportService->generateEmployeeExportReport($filters);
+
+        case 'pension_export':
+            return $this->reportService->generatePensionExportReport($filters);
+
         default:
             return ['error' => 'Invalid report type'];
         }
@@ -291,6 +299,12 @@ class ComprehensiveReportController extends Controller
 
     private function generateExcel($report, $reportData, $reportType)
     {
+        // Use PhpSpreadsheet for multi-sheet exports
+        if (in_array($reportType, ['employee_export', 'pension_export'])) {
+            $this->generateXlsx($report, $reportData, $reportType);
+            return;
+        }
+
         $fileName = str_replace('_', '-', $reportType) . "_report_" . now()->format('Y_m_d_H_i_s') . '.csv';
         $filePath = "reports/excel/{$fileName}";
 
@@ -312,6 +326,30 @@ class ComprehensiveReportController extends Controller
         Storage::put($filePath, $csvData);
 
         // Update report with file path
+        $report->update(['file_path' => $filePath]);
+    }
+
+    private function generateXlsx($report, $reportData, $reportType)
+    {
+        $spreadsheet = new Spreadsheet();
+
+        if ($reportType === 'employee_export') {
+            $this->writeEmployeeExportXlsx($spreadsheet, $reportData);
+        } elseif ($reportType === 'pension_export') {
+            $this->writePensionExportXlsx($spreadsheet, $reportData);
+        }
+
+        $fileName = str_replace('_', '-', $reportType) . "_report_" . now()->format('Y_m_d_H_i_s') . '.xlsx';
+        $filePath = "reports/excel/{$fileName}";
+
+        // Save to temp file, then move to storage
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        Storage::put($filePath, file_get_contents($tempFile));
+        unlink($tempFile);
+
         $report->update(['file_path' => $filePath]);
     }
 
@@ -376,6 +414,14 @@ class ComprehensiveReportController extends Controller
 
         case 'full_payroll_report':
             $this->writeFullPayrollExcel($file, $reportData);
+            break;
+
+        case 'employee_export':
+            $this->writeEmployeeExportExcel($file, $reportData);
+            break;
+
+        case 'pension_export':
+            $this->writePensionExportExcel($file, $reportData);
             break;
 
         default:
@@ -872,6 +918,8 @@ class ComprehensiveReportController extends Controller
         'duplicate_beneficiary' => 'Duplicate Beneficiary Report',
         'full_payroll' => 'Full Payroll Report',
         'full_payroll_report' => 'Full Payroll Report',
+        'employee_export' => 'Employee Export Report',
+        'pension_export' => 'Pension Export Report',
     ];
 
         return $reportNames[$reportType] ?? ucfirst(str_replace('_', ' ', $reportType)) . ' Report';
@@ -952,6 +1000,160 @@ class ComprehensiveReportController extends Controller
             $row[] = '₦' . number_format($record['net_salary'], 2);
 
             fputcsv($file, $row);
+        }
+    }
+
+    private function writeEmployeeExportExcel($file, $reportData)
+    {
+        // Fallback CSV - not used when xlsx is generated
+        fputcsv($file, ['Please generate this report in Excel format for multi-sheet support.']);
+    }
+
+    private function writePensionExportExcel($file, $reportData)
+    {
+        // Fallback CSV - not used when xlsx is generated
+        fputcsv($file, ['Please generate this report in Excel format for multi-sheet support.']);
+    }
+
+    private function writeEmployeeExportXlsx($spreadsheet, $reportData)
+    {
+        // === Sheet 1: employees ===
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('employees');
+
+        $headers = [
+            'employee_id', 'staff_no', 'first_name', 'surname', 'middle_name',
+            'gender', 'date_of_birth', 'state_id', 'lga_id', 'ward_id',
+            'nationality', 'nin', 'mobile_no', 'email', 'address',
+            'date_of_first_appointment', 'department_id', 'status',
+            'appointment_type_id', 'photo_path', 'pay_point',
+            'grade_level_id', 'step_id', 'rank_id', 'cadre_id',
+            'expected_next_promotion', 'expected_retirement_date',
+            'highest_certificate', 'amount', 'casual_Start_ Date ', 'casual_End_Date'
+        ];
+
+        $col = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($col++, 1, $header);
+        }
+
+        $row = 2;
+        foreach ($reportData['employees'] as $emp) {
+            $col = 1;
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['employee_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['staff_no']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['first_name']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['surname']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['middle_name']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['gender']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['date_of_birth']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['state_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['lga_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['ward_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['nationality']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['nin']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['mobile_no']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['email']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['address']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['date_of_first_appointment']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['department_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['status']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['appointment_type_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['photo_path']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['pay_point']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['grade_level_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['step_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['rank_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['cadre_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['expected_next_promotion']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['expected_retirement_date']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['highest_certificate']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['amount']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['casual_start_date']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $emp['casual_end_date']);
+            $row++;
+        }
+
+        // === Sheet 2: next_of_kin ===
+        $kinSheet = $spreadsheet->createSheet();
+        $kinSheet->setTitle('next_of_kin');
+
+        $kinHeaders = ['employee_id', 'name', 'relationship', 'mobile_no', 'address', 'occupation', 'place_of_work'];
+        $col = 1;
+        foreach ($kinHeaders as $header) {
+            $kinSheet->setCellValueByColumnAndRow($col++, 1, $header);
+        }
+
+        $row = 2;
+        foreach ($reportData['next_of_kin'] as $kin) {
+            $col = 1;
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['employee_id']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['name']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['relationship']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['mobile_no']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['address']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['occupation']);
+            $kinSheet->setCellValueByColumnAndRow($col++, $row, $kin['place_of_work']);
+            $row++;
+        }
+
+        // === Sheet 3: banks ===
+        $bankSheet = $spreadsheet->createSheet();
+        $bankSheet->setTitle('banks');
+
+        $bankHeaders = ['employee_id', 'bank_name', 'bank_code', 'account_name', 'account_no'];
+        $col = 1;
+        foreach ($bankHeaders as $header) {
+            $bankSheet->setCellValueByColumnAndRow($col++, 1, $header);
+        }
+
+        $row = 2;
+        foreach ($reportData['banks'] as $bank) {
+            $col = 1;
+            $bankSheet->setCellValueByColumnAndRow($col++, $row, $bank['employee_id']);
+            $bankSheet->setCellValueByColumnAndRow($col++, $row, $bank['bank_name']);
+            $bankSheet->setCellValueByColumnAndRow($col++, $row, $bank['bank_code']);
+            $bankSheet->setCellValueByColumnAndRow($col++, $row, $bank['account_name']);
+            $bankSheet->setCellValueByColumnAndRow($col++, $row, $bank['account_no']);
+            $row++;
+        }
+
+        // Set active sheet back to first
+        $spreadsheet->setActiveSheetIndex(0);
+    }
+
+    private function writePensionExportXlsx($spreadsheet, $reportData)
+    {
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Pensioners');
+
+        $headers = [
+            'employee_id', 'Staff Number', 'First Name', 'Middle Name', 'Surname',
+            'Department', 'Retired Grade Level', 'New Pension',
+            'Bank Name', 'Bank Code', 'Account Number', 'Account Name'
+        ];
+
+        $col = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($col++, 1, $header);
+        }
+
+        $row = 2;
+        foreach ($reportData['pensioners'] ?? [] as $p) {
+            $col = 1;
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['employee_id']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['staff_number']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['first_name']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['middle_name']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['surname']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['department']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['retired_grade_level']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['new_pension']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['bank_name']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['bank_code']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['account_number']);
+            $sheet->setCellValueByColumnAndRow($col++, $row, $p['account_name']);
+            $row++;
         }
     }
 

@@ -1619,4 +1619,138 @@ class ComprehensiveReportService
             'payroll_records' => $processedRecords
         ];
     }
+
+    public function generateEmployeeExportReport($filters = [])
+    {
+        $query = Employee::with([
+            'department', 'state', 'lga', 'ward', 'appointmentType',
+            'gradeLevel', 'step', 'rank', 'cadre', 'nextOfKin', 'bank'
+        ]);
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['appointment_type_id'])) {
+            $query->where('appointment_type_id', $filters['appointment_type_id']);
+        }
+
+        $employees = $query->orderBy('employee_id')->get();
+
+        $employeesData = [];
+        $nextOfKinData = [];
+        $banksData = [];
+
+        foreach ($employees as $emp) {
+            $employeesData[] = [
+                'employee_id' => $emp->employee_id,
+                'staff_no' => $emp->staff_no,
+                'first_name' => $emp->first_name,
+                'surname' => $emp->surname,
+                'middle_name' => $emp->middle_name,
+                'gender' => $emp->gender,
+                'date_of_birth' => $emp->date_of_birth,
+                'state_id' => $emp->state ? $emp->state->state_name : $emp->state_id,
+                'lga_id' => $emp->lga ? $emp->lga->lga_name : $emp->lga_id,
+                'ward_id' => $emp->ward ? $emp->ward->ward_name : $emp->ward_id,
+                'nationality' => $emp->nationality,
+                'nin' => $emp->nin,
+                'mobile_no' => $emp->mobile_no,
+                'email' => $emp->email,
+                'address' => $emp->address,
+                'date_of_first_appointment' => $emp->date_of_first_appointment,
+                'department_id' => $emp->department ? $emp->department->department_name : $emp->department_id,
+                'status' => $emp->status,
+                'appointment_type_id' => $emp->appointmentType ? $emp->appointmentType->name : $emp->appointment_type_id,
+                'photo_path' => $emp->photo_path,
+                'pay_point' => $emp->pay_point,
+                'grade_level_id' => $emp->gradeLevel ? $emp->gradeLevel->name : $emp->grade_level_id,
+                'step_id' => $emp->step ? $emp->step->name : $emp->step_id,
+                'rank_id' => $emp->rank ? $emp->rank->name : $emp->rank_id,
+                'cadre_id' => $emp->cadre ? $emp->cadre->name : $emp->cadre_id,
+                'expected_next_promotion' => $emp->expected_next_promotion,
+                'expected_retirement_date' => $emp->expected_retirement_date,
+                'highest_certificate' => $emp->highest_certificate,
+                'amount' => $emp->amount,
+                'casual_start_date' => $emp->contract_start_date,
+                'casual_end_date' => $emp->contract_end_date,
+            ];
+
+            if ($emp->nextOfKin) {
+                $nextOfKinData[] = [
+                    'employee_id' => $emp->employee_id,
+                    'name' => $emp->nextOfKin->name,
+                    'relationship' => $emp->nextOfKin->relationship,
+                    'mobile_no' => $emp->nextOfKin->mobile_no,
+                    'address' => $emp->nextOfKin->address,
+                    'occupation' => $emp->nextOfKin->occupation,
+                    'place_of_work' => $emp->nextOfKin->place_of_work,
+                ];
+            }
+
+            if ($emp->bank) {
+                $banksData[] = [
+                    'employee_id' => $emp->employee_id,
+                    'bank_name' => $emp->bank->bank_name,
+                    'bank_code' => $emp->bank->bank_code,
+                    'account_name' => $emp->bank->account_name,
+                    'account_no' => $emp->bank->account_no,
+                ];
+            }
+        }
+
+        return [
+            'report_title' => 'Employee Export Report',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'total_employees' => count($employeesData),
+            'employees' => $employeesData,
+            'next_of_kin' => $nextOfKinData,
+            'banks' => $banksData,
+        ];
+    }
+
+    public function generatePensionExportReport($filters = [])
+    {
+        $query = \App\Models\Pensioner::with(['bank', 'department', 'gradeLevel', 'employee']);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        $pensioners = $query->orderBy('full_name')->get();
+
+        $pensionersData = [];
+
+        foreach ($pensioners as $p) {
+            $pensionersData[] = [
+                'employee_id' => $p->employee_id,
+                'staff_number' => $p->employee ? $p->employee->staff_no : 'N/A',
+                'first_name' => $p->first_name,
+                'middle_name' => $p->middle_name,
+                'surname' => $p->surname,
+                'department' => $p->department->department_name ?? 'N/A',
+                'retired_grade_level' => $p->gradeLevel->name ?? 'N/A',
+                'new_pension' => (float) ($p->pension_amount ?? 0),
+                'bank_name' => $p->bank->bank_name ?? 'N/A',
+                'bank_code' => $p->bank->bank_code ?? 'N/A',
+                'account_number' => $p->account_number ?? 'N/A',
+                'account_name' => $p->account_name ?? 'N/A',
+            ];
+        }
+
+        return [
+            'report_title' => 'Pension Export Report',
+            'generated_date' => now()->format('Y-m-d H:i:s'),
+            'total_pensioners' => count($pensionersData),
+            'pensioners' => $pensionersData,
+        ];
+    }
 }
