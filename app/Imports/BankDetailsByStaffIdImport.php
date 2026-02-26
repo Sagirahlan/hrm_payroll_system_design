@@ -48,26 +48,31 @@ class BankDetailsByStaffIdImport implements ToModel, WithHeadingRow
         }
 
         // 4. Update or Create Bank Record
+        $updateData = [];
+        if (!empty($bankName)) $updateData['bank_name'] = $bankName;
+        if (!empty($bankCode)) $updateData['bank_code'] = $bankCode;
+        if (!empty($accountName)) $updateData['account_name'] = $accountName;
+        if (!empty($accountNo)) $updateData['account_no'] = $accountNo;
+
         // Check for existing bank records to avoid duplicates
         $existingBank = Bank::where('employee_id', $employee->employee_id)->first();
 
         if ($existingBank) {
-            $existingBank->update([
-                'bank_name' => $bankName,
-                'bank_code' => $bankCode,
-                'account_name' => $accountName,
-                'account_no' => $accountNo,
-            ]);
-            Log::info("Bank Update Import: Updated existing bank details for Employee ID: {$employee->employee_id}");
+            if (!empty($updateData)) {
+                $existingBank->update($updateData);
+                Log::info("Bank Update Import: Updated existing bank details for Employee ID: {$employee->employee_id}");
+            }
         } else {
-            Bank::create([
-                'employee_id' => $employee->employee_id,
-                'bank_name' => $bankName,
-                'bank_code' => $bankCode,
-                'account_name' => $accountName,
-                'account_no' => $accountNo,
-            ]);
-            Log::info("Bank Update Import: Created new bank details for Employee ID: {$employee->employee_id}");
+            if (!empty($updateData)) {
+                Bank::create(array_merge([
+                    'employee_id' => $employee->employee_id,
+                    'bank_name' => 'Unknown',
+                    'bank_code' => '000',
+                    'account_name' => 'Unknown',
+                    'account_no' => '0000000000',
+                ], $updateData));
+                Log::info("Bank Update Import: Created new bank details for Employee ID: {$employee->employee_id}");
+            }
         }
         
         return null;

@@ -110,6 +110,7 @@ class PayrollController extends Controller
                 ->where('retirement_reason', '!=', 'Death in Service')
                 ->where('status', '!=', 'Not Eligible') 
                 ->where('status', 'Active') // Explicitly ensure they are Active (double check)
+                ->with('employee.appointmentType')
                 ->get();
             $count = 0;
 
@@ -181,106 +182,119 @@ class PayrollController extends Controller
                 }
                 
                 // Calculate deductions for this pensioner
+                // BUT: If the pensioner also has an active staff record (Contract/Casual),
+                // deductions should only apply to the staff payroll, not the pension payroll.
                 $totalDeductions = 0;
-                $deductions = \App\Models\Deduction::where('employee_id', $pensioner->employee_id)
-                    ->where(function($query) use ($month) {
-                        $query->where(function($q) use ($month) {
-                            // Monthly or Perpetual deductions that are active in this month
-                            $q->whereIn('deduction_period', ['Monthly', 'Perpetual'])
-                              ->where('start_date', '<=', $month . '-01')
-                              ->where(function($dateQuery) use ($month) {
-                                  $dateQuery->whereNull('end_date')
-                                           ->orWhere('end_date', '>=', $month . '-01');
-                              });
-                        })->orWhere(function($q) use ($month) {
-                            // OneTime deductions for this specific month
-                            $q->where('deduction_period', 'OneTime')
-                              ->whereYear('start_date', '=', explode('-', $month)[0])
-                              ->whereMonth('start_date', '=', explode('-', $month)[1]);
-                        });
-                    })
-                    ->get();
                 
-                foreach ($deductions as $deduction) {
-                    $deductionAmount = $deduction->amount;
+                $employee = $pensioner->employee;
+                $employeeStatus = $employee ? strtolower($employee->status) : '';
+                $hasStaffPayroll = $employee 
+                    && in_array($employeeStatus, ['active', 'suspended', 'retired-active', 'retired'])
+                    && $employee->appointmentType
+                    && in_array($employee->appointmentType->name, ['Casual', 'Contract']);
+                
+                if (!$hasStaffPayroll) {
+                    // Only apply deductions to pension if the pensioner does NOT also have a contract/casual staff payroll
+                    $deductions = \App\Models\Deduction::where('employee_id', $pensioner->employee_id)
+                        ->where(function($query) use ($month) {
+                            $query->where(function($q) use ($month) {
+                                // Monthly or Perpetual deductions that are active in this month
+                                $q->whereIn('deduction_period', ['Monthly', 'Perpetual'])
+                                  ->where('start_date', '<=', $month . '-01')
+                                  ->where(function($dateQuery) use ($month) {
+                                      $dateQuery->whereNull('end_date')
+                                               ->orWhere('end_date', '>=', $month . '-01');
+                                  });
+                            })->orWhere(function($q) use ($month) {
+                                // OneTime deductions for this specific month
+                                $q->where('deduction_period', 'OneTime')
+                                  ->whereYear('start_date', '=', explode('-', $month)[0])
+                                  ->whereMonth('start_date', '=', explode('-', $month)[1]);
+                            });
+                        })
+                        ->get();
                     
-                    // Check if this is a loan deduction
-                    if ($deduction->loan_id) {
-                        $loan = \App\Models\Loan::find($deduction->loan_id);
-                        if ($loan && $loan->status === 'active') {
-                            // Check if loan deduction has already been processed for this payroll month
-                            $existingLoanDeduction = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)
-                                ->where('payroll_month', $month)
-                                ->first();
-                            
-                            if ($existingLoanDeduction) {
-                                // Already processed for this month, skip
-                                continue;
+                    foreach ($deductions as $deduction) {
+                        $deductionAmount = $deduction->amount;
+                        
+                        // Check if this is a loan deduction
+                        if ($deduction->loan_id) {
+                            $loan = \App\Models\Loan::find($deduction->loan_id);
+                            if ($loan && $loan->status === 'active') {
+                                // Check if loan deduction has already been processed for this payroll month
+                                $existingLoanDeduction = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)
+                                    ->where('payroll_month', $month)
+                                    ->first();
+                                
+                                if ($existingLoanDeduction) {
+                                    // Already processed for this month, skip
+                                    continue;
+                                }
+                                
+                                // Verify that the loan start date is on or before the end of the current payroll month
+                                $payrollMonthEnd = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
+                                $loanStartDate = \Carbon\Carbon::parse($loan->start_date);
+                                
+                                if ($loanStartDate->gt($payrollMonthEnd)) {
+                                    // Loan starts after this payroll month ends, skip
+                                    continue;
+                                }
+                                
+                                // Check if loan is fully repaid or completed
+                                if ($loan->remaining_balance <= 0 || $loan->status === 'completed') {
+                                    continue;
+                                }
+                                
+                                // Use the loan's monthly deduction amount
+                                $deductionAmount = $loan->monthly_deduction ?: $deduction->amount;
+                                
+                                // Ensure deduction doesn't exceed remaining balance
+                                $deductionAmount = min($deductionAmount, $loan->remaining_balance);
+                                
+                                // Update loan details
+                                $loan->total_repaid += $deductionAmount;
+                                $loan->remaining_balance -= $deductionAmount;
+                                
+                                // Check if loan is now fully repaid
+                                if ($loan->remaining_balance <= 0.01) {
+                                    $loan->remaining_balance = 0;
+                                    $loan->status = 'completed';
+                                    $loan->end_date = \Carbon\Carbon::now();
+                                }
+                                
+                                // Calculate months completed
+                                $loanStart = \Carbon\Carbon::parse($loan->start_date);
+                                $currentMonth = \Carbon\Carbon::parse($month . '-01');
+                                $monthsSinceStart = $loanStart->diffInMonths($currentMonth, false) + 1;
+                                
+                                // Update remaining months
+                                $existingDeductionsCount = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->count();
+                                $loan->remaining_months = max(0, $loan->total_months - ($existingDeductionsCount + 1));
+                                
+                                // Check if loan term has been reached
+                                if ($monthsSinceStart >= $loan->total_months) {
+                                    $loan->status = 'completed';
+                                    $loan->end_date = \Carbon\Carbon::now();
+                                }
+                                
+                                $loan->save();
+                                
+                                // Create loan deduction record for tracking
+                                \App\Models\LoanDeduction::create([
+                                    'loan_id' => $loan->loan_id,
+                                    'employee_id' => $pensioner->employee_id,
+                                    'amount_deducted' => $deductionAmount,
+                                    'remaining_balance' => $loan->remaining_balance,
+                                    'month_number' => min($monthsSinceStart, $loan->total_months),
+                                    'payroll_month' => $month,
+                                    'deduction_date' => \Carbon\Carbon::now(),
+                                    'status' => 'completed',
+                                ]);
                             }
-                            
-                            // Verify that the loan start date is on or before the end of the current payroll month
-                            $payrollMonthEnd = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
-                            $loanStartDate = \Carbon\Carbon::parse($loan->start_date);
-                            
-                            if ($loanStartDate->gt($payrollMonthEnd)) {
-                                // Loan starts after this payroll month ends, skip
-                                continue;
-                            }
-                            
-                            // Check if loan is fully repaid or completed
-                            if ($loan->remaining_balance <= 0 || $loan->status === 'completed') {
-                                continue;
-                            }
-                            
-                            // Use the loan's monthly deduction amount
-                            $deductionAmount = $loan->monthly_deduction ?: $deduction->amount;
-                            
-                            // Ensure deduction doesn't exceed remaining balance
-                            $deductionAmount = min($deductionAmount, $loan->remaining_balance);
-                            
-                            // Update loan details
-                            $loan->total_repaid += $deductionAmount;
-                            $loan->remaining_balance -= $deductionAmount;
-                            
-                            // Check if loan is now fully repaid
-                            if ($loan->remaining_balance <= 0.01) {
-                                $loan->remaining_balance = 0;
-                                $loan->status = 'completed';
-                                $loan->end_date = \Carbon\Carbon::now();
-                            }
-                            
-                            // Calculate months completed
-                            $loanStart = \Carbon\Carbon::parse($loan->start_date);
-                            $currentMonth = \Carbon\Carbon::parse($month . '-01');
-                            $monthsSinceStart = $loanStart->diffInMonths($currentMonth, false) + 1;
-                            
-                            // Update remaining months
-                            $existingDeductionsCount = \App\Models\LoanDeduction::where('loan_id', $loan->loan_id)->count();
-                            $loan->remaining_months = max(0, $loan->total_months - ($existingDeductionsCount + 1));
-                            
-                            // Check if loan term has been reached
-                            if ($monthsSinceStart >= $loan->total_months) {
-                                $loan->status = 'completed';
-                                $loan->end_date = \Carbon\Carbon::now();
-                            }
-                            
-                            $loan->save();
-                            
-                            // Create loan deduction record for tracking
-                            \App\Models\LoanDeduction::create([
-                                'loan_id' => $loan->loan_id,
-                                'employee_id' => $pensioner->employee_id,
-                                'amount_deducted' => $deductionAmount,
-                                'remaining_balance' => $loan->remaining_balance,
-                                'month_number' => min($monthsSinceStart, $loan->total_months),
-                                'payroll_month' => $month,
-                                'deduction_date' => \Carbon\Carbon::now(),
-                                'status' => 'completed',
-                            ]);
                         }
+                        
+                        $totalDeductions += $deductionAmount;
                     }
-                    
-                    $totalDeductions += $deductionAmount;
                 }
                 
                 // Calculate net salary

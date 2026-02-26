@@ -12,6 +12,26 @@ class PayrollRecordObserver
     {
         $employee = $payroll->employee;
         
+        // Determine bank data source based on payment type
+        $bankCode = $employee?->bank?->bank_code ?? null;
+        $accountName = $employee?->bank?->account_name ?? 
+            ($employee ? $employee->first_name . ' ' . $employee->surname : 'Unknown');
+        $accountNumber = $employee?->bank?->account_no ?? '0000000000';
+        
+        // For Pension payrolls, pull bank data from the Pensioner record
+        if ($payroll->payment_type === 'Pension' && $employee) {
+            $pensioner = \App\Models\Pensioner::where('employee_id', $employee->employee_id)->first();
+            if ($pensioner) {
+                $accountNumber = $pensioner->account_number ?? $accountNumber;
+                $accountName = $pensioner->account_name ?? $accountName;
+                // Get bank code from pensioner's bank relationship
+                if ($pensioner->bank_id) {
+                    $pensionerBank = $pensioner->bank;
+                    $bankCode = $pensionerBank?->bank_code ?? $bankCode;
+                }
+            }
+        }
+        
         PaymentTransaction::updateOrCreate(
             ['payroll_id' => $payroll->payroll_id],
             [
@@ -19,10 +39,9 @@ class PayrollRecordObserver
                 'amount' => $payroll->net_salary,
                 'status' => $payroll->status,
                 'payment_date' => $payroll->payment_date,
-                'bank_code' => $employee?->bank?->bank_code ?? null,
-                'account_name' => $employee?->bank?->account_name ?? 
-                    ($employee ? $employee->first_name . ' ' . $employee->surname : 'Unknown'),
-                'account_number' => $employee?->bank?->account_no ?? '0000000000',
+                'bank_code' => $bankCode,
+                'account_name' => $accountName,
+                'account_number' => $accountNumber,
             ]
         );
         

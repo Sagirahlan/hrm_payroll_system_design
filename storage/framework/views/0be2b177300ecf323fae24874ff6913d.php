@@ -481,7 +481,14 @@
                                                         $deductions = collect();
                                                         
                                                         // Show deductions for Active/Standard payroll and Pension - only exclude Gratuity
-                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Gratuity') {
+                                                        // Also: For Pension payrolls where the employee is Contract/Casual,
+                                                        // deductions should NOT be shown (they only apply to the staff/contract payroll)
+                                                        $skipDeductionsForPension = false;
+                                                        if ($payroll->payment_type === 'Pension' && $payroll->employee && $payroll->employee->appointmentType) {
+                                                            $skipDeductionsForPension = in_array($payroll->employee->appointmentType->name, ['Casual', 'Contract']);
+                                                        }
+                                                        
+                                                        if ($payroll->employee_id && $payroll->payment_type !== 'Gratuity' && !$skipDeductionsForPension) {
                                                             $deductions = \App\Models\Deduction::where('employee_id', $payroll->employee_id)
                                                                 ->where(function($query) use ($payrollMonth) {
                                                                     $query->where('start_date', '<=', $payrollMonth)
