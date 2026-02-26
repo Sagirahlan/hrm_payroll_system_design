@@ -101,7 +101,7 @@ class Pensioner extends Model
 
     public function localGovArea()
     {
-        return $this->belongsTo(\App\Models\Lga::class, 'local_gov_area_id');
+        return $this->belongsTo(\App\Models\LGA::class, 'local_gov_area_id');
     }
 
     public function bank()

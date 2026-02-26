@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Imports\PensionersImport;
 use Maatwebsite\Excel\Facades\Excel;
-use Carbon\Carbon; // Added Carbon import
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PensionerController extends Controller
 {
@@ -534,6 +535,83 @@ class PensionerController extends Controller
             $updateMode = $request->boolean('update_mode');
             $import = new PensionersImport($updateMode);
             Excel::import($import, $request->file('file'));
+
+            // Post-import cleanup: detect and merge duplicate employees
+            // Uses normalized name matching to handle apostrophes, special chars, reversed names
+            // Excludes casual employees (appointment_type_id=2) from matching to prevent false merges
+            $legacyEmployees = Employee::where('email', 'like', '%@legacy-processed.com')->get();
+            $realEmployees = Employee::where('email', 'not like', '%@legacy-processed.com')
+                ->where('appointment_type_id', '!=', 2)  // Exclude casual staff
+                ->get();
+            $mergedCount = 0;
+
+            $normalizeName = function(string $name): string {
+                $name = preg_replace("/['\-\.]/", '', $name);
+                $name = preg_replace('/\s+/', ' ', $name);
+                return strtolower(trim($name));
+            };
+
+            foreach ($legacyEmployees as $legacy) {
+                $lf = $normalizeName(trim($legacy->first_name));
+                $ls = $normalizeName(trim($legacy->surname));
+
+                $real = null;
+                foreach ($realEmployees as $emp) {
+                    $ef = $normalizeName(trim($emp->first_name));
+                    $es = $normalizeName(trim($emp->surname));
+
+                    // Direct or reversed match
+                    $directMatch = (str_contains($ef, $lf) || str_contains($lf, $ef))
+                                && (str_contains($es, $ls) || str_contains($ls, $es));
+                    $reversedMatch = (str_contains($ef, $ls) || str_contains($ls, $ef))
+                                  && (str_contains($es, $lf) || str_contains($lf, $es));
+
+                    if ($directMatch || $reversedMatch) {
+                        $real = $emp;
+                        break;
+                    }
+                }
+
+                if ($real) {
+                    // Move pensioner record from legacy to real if needed
+                    $realPen = \App\Models\Pensioner::where('employee_id', $real->employee_id)->first();
+                    $legacyPen = \App\Models\Pensioner::where('employee_id', $legacy->employee_id)->first();
+
+                    if (!$realPen && $legacyPen) {
+                        $legacyPen->update(['employee_id' => $real->employee_id]);
+                    } elseif ($legacyPen) {
+                        $legacyPen->delete();
+                    }
+
+                    // Delete legacy retirement and employee
+                    \App\Models\Retirement::where('employee_id', $legacy->employee_id)->delete();
+                    $legacy->delete();
+                    $mergedCount++;
+                }
+            }
+            if ($mergedCount > 0) {
+                Log::info("Pensioner Import: Merged {$mergedCount} duplicate employees into existing records.");
+            }
+
+            // Post-import: Set correct status for all employees with pensioner records
+            // Contract employees with pensioner → Retired-active
+            Employee::where('appointment_type_id', 3)
+                ->whereHas('pensioner')
+                ->where('status', '!=', 'Retired-active')
+                ->update(['status' => 'Retired-active']);
+
+            // Casual employees should NEVER have Retired status — fix any that were incorrectly set
+            Employee::where('appointment_type_id', 2)
+                ->whereIn('status', ['Retired', 'Retired-active'])
+                ->update(['status' => 'Active']);
+
+            // Any Retired-active employee without a pensioner record should be Active
+            $statusCorrected = Employee::where('status', 'Retired-active')
+                ->whereDoesntHave('pensioner')
+                ->update(['status' => 'Active']);
+            if ($statusCorrected > 0) {
+                Log::info("Pensioner Import: Set {$statusCorrected} Retired-active employees without pensioner records to Active status.");
+            }
 
             $rows = $import->getRowCount();
             $skipped = $import->getSkippedCount();

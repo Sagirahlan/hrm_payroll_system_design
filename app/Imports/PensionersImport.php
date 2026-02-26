@@ -38,15 +38,49 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
             return null; // Skip empty rows
         }
 
-        $employee = Employee::where('staff_no', $staffNo)
-            ->orWhere('employee_id', $staffNo)
-            ->first();
+        $rowFirstName = trim($row['first_name'] ?? '');
+        $rowSurname = trim($row['surname'] ?? '');
+        $rowMiddleName = trim($row['middle_name'] ?? '');
+
+        // Only match by staff_no — do NOT use orWhere('employee_id') as that can match
+        // the wrong employee when staff_no accidentally equals another employee's DB ID
+         $employee = Employee::where('staff_no', $staffNo)->first();
+
+        // Check if this is a different person sharing the same staff_no
+        if ($employee && !empty($rowFirstName) && !empty($rowSurname)) {
+            if (!$this->namesMatch($employee->first_name, $employee->surname, $rowFirstName, $rowSurname)) {
+                // Different person — try to find the real employee by name
+                $nameEmployee = $this->findEmployeeByName($rowFirstName, $rowSurname);
+
+                if ($nameEmployee) {
+                    $employee = $nameEmployee;
+                    Log::info("Legacy Pensioner Import: Staff {$staffNo} name mismatch — found {$rowFirstName} {$rowSurname} as employee ID {$nameEmployee->employee_id} (staff {$nameEmployee->staff_no})");
+                } else {
+                    // Not found by name — create with unique staff_no
+                    $suffix = 2;
+                    while (Employee::where('staff_no', $staffNo . '-' . $suffix)->exists()) {
+                        $suffix++;
+                    }
+                    $staffNo = $staffNo . '-' . $suffix;
+                    $employee = null;
+                    Log::info("Legacy Pensioner Import: Name mismatch on duplicate staff_no — creating {$rowFirstName} {$rowSurname} as new employee with staff_no {$staffNo}");
+                }
+            }
+        }
+
+        if (!$employee && !empty($rowFirstName) && !empty($rowSurname)) {
+            // staff_no not found — try to find existing employee by name before creating
+            $employee = $this->findEmployeeByName($rowFirstName, $rowSurname);
+            if ($employee) {
+                Log::info("Legacy Pensioner Import: Staff {$staffNo} not found — matched {$rowFirstName} {$rowSurname} to existing employee ID {$employee->employee_id} (staff {$employee->staff_no})");
+            }
+        }
 
         if (!$employee) {
-            // Standalone mode: Create Employee if missing
-            $firstName = $row['first_name'] ?? 'Unknown';
-            $surname = $row['surname'] ?? 'Unknown';
-            $middleName = $row['middle_name'] ?? null;
+            // Truly new — create Employee
+            $firstName = $rowFirstName ?: 'Unknown';
+            $surname = $rowSurname ?: 'Unknown';
+            $middleName = $rowMiddleName ?: null;
             $deptName = $row['department'] ?? null;
             $gradeLevelName = $row['retired_grade_level'] ?? null;
 
@@ -69,11 +103,6 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
 
             $employee = Employee::create([
                 'staff_no' => $staffNo,
-                'employee_id' => $staffNo, // Fallback if employee_id is not auto-increment (it seems to be, but checking model showed 'id' is unique, so maybe staff_no is just field)
-                // Actually, employee_id in database usually refers to 'staff_id' or similar, but let's check validation.
-                // Looking at other seeders/imports, 'employee_id' might be a separate field or just the staff_no. 
-                // The error logs showed "Employee with ID ... not found", referencing the staff_no.
-                // Let's assume 'staff_no' is the unique identifier needed.
                 'first_name' => $firstName,
                 'surname' => $surname,
                 'middle_name' => $middleName,
@@ -83,7 +112,7 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
                 'date_of_birth' => '1960-01-01', // Default
                 'date_of_first_appointment' => '1980-01-01', // Default
                 'gender' => 'Male', // Default placeholder
-                'email' => $staffNo . '@legacy-processed.com', // Dummy email to satisfy unique constraint
+                'email' => strtolower($staffNo . '.' . preg_replace('/[^a-zA-Z]/', '', $firstName)) . '@legacy-processed.com',
                 'nationality' => 'Nigeria',
                 'state_id' => 1, // Placeholder
                 'lga_id' => 1,   // Placeholder
@@ -112,7 +141,17 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
         );
 
         // Update employee status
-        if ($employee->status !== 'Pensioner' && $employee->status !== 'Retired') {
+        // Casual employees (appointment_type_id=2) NEVER get Retired status
+        // Contract employees (appointment_type_id=3) → "Retired-active"
+        // Permanent employees → "Retired"
+        if ($employee->appointment_type_id == 2) {
+            // Casual staff — do NOT change status
+            Log::info("Legacy Pensioner Import: Skipping status change for casual employee {$employee->staff_no}");
+        } elseif ($employee->appointment_type_id == 3) {
+            if ($employee->status !== 'Retired-active') {
+                $employee->update(['status' => 'Retired-active']);
+            }
+        } elseif ($employee->status !== 'Pensioner' && $employee->status !== 'Retired') {
             $employee->update(['status' => 'Retired']);
         }
 
@@ -286,5 +325,73 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     public function isUpdateMode()
     {
         return $this->updateMode;
+    }
+
+    /**
+     * Normalize a name by stripping special characters for comparison
+     */
+    private function normalizeName(string $name): string
+    {
+        // Remove apostrophes, hyphens, dots, extra spaces
+        $name = preg_replace("/['\-\.]/", '', $name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        return strtolower(trim($name));
+    }
+
+    /**
+     * Check if two sets of names match (fuzzy, handles reversed order and special chars)
+     */
+    private function namesMatch(string $empFirst, string $empSurname, string $rowFirst, string $rowSurname): bool
+    {
+        $ef = $this->normalizeName($empFirst);
+        $es = $this->normalizeName($empSurname);
+        $rf = $this->normalizeName($rowFirst);
+        $rs = $this->normalizeName($rowSurname);
+
+        // Direct match (partial)
+        if ((str_contains($ef, $rf) || str_contains($rf, $ef)) &&
+            (str_contains($es, $rs) || str_contains($rs, $es))) {
+            return true;
+        }
+
+        // Reversed match (first_name <-> surname)
+        if ((str_contains($ef, $rs) || str_contains($rs, $ef)) &&
+            (str_contains($es, $rf) || str_contains($rf, $es))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Find an employee by name, handling reversed names and special characters
+     */
+    private function findEmployeeByName(string $firstName, string $surname): ?Employee
+    {
+        $normFirst = $this->normalizeName($firstName);
+        $normSurname = $this->normalizeName($surname);
+
+        // Load non-casual, non-legacy employees and match by normalized name
+        // Excludes casual staff (appointment_type_id=2) to prevent false matches
+        $candidates = Employee::where('email', 'not like', '%@legacy-processed.com')
+            ->where('appointment_type_id', '!=', 2)
+            ->where(function($q) use ($firstName, $surname) {
+                // Broad SQL filter first to reduce candidates
+                $q->where(function($q2) use ($firstName, $surname) {
+                    $q2->where('first_name', 'like', '%' . substr($firstName, 0, 3) . '%')
+                       ->orWhere('surname', 'like', '%' . substr($firstName, 0, 3) . '%')
+                       ->orWhere('first_name', 'like', '%' . substr($surname, 0, 3) . '%')
+                       ->orWhere('surname', 'like', '%' . substr($surname, 0, 3) . '%');
+                });
+            })
+            ->get();
+
+        foreach ($candidates as $emp) {
+            if ($this->namesMatch($emp->first_name, $emp->surname, $firstName, $surname)) {
+                return $emp;
+            }
+        }
+
+        return null;
     }
 }
