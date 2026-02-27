@@ -56,7 +56,14 @@ class PensionerController extends Controller
             $query->where('retirement_type', $request->retirement_type);
         }
 
-        $pensioners = $query->orderBy('surname', 'asc')->paginate(10);
+        // Apply recently added filter/sort
+        if ($request->filled('recently_added') && $request->recently_added == '1') {
+            $query->orderBy('created_at', 'desc');
+        } else {
+            $query->orderBy('surname', 'asc');
+        }
+
+        $pensioners = $query->paginate(10);
 
         return view('pensioners.index', compact('pensioners'));
     }

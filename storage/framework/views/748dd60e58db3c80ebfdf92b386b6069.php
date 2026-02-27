@@ -46,6 +46,12 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
+                                <select name="recently_added" class="form-select">
+                                    <option value="">Sort: Name</option>
+                                    <option value="1" <?php echo e(request('recently_added') == '1' ? 'selected' : ''); ?>>Recently Added</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <div class="btn-group w-100" role="group">
                                     <button class="btn btn-primary" type="submit">
                                         <i class="fas fa-filter me-1"></i> Filter
@@ -57,7 +63,7 @@
                             </div>
                         </div>
                         
-                        <?php if(request()->hasAny(['search', 'status', 'retirement_type'])): ?>
+                        <?php if(request()->hasAny(['search', 'status', 'retirement_type', 'recently_added'])): ?>
                             <div class="mt-2">
                                 <small class="text-muted">Active filters:</small>
                                 <?php if(request('search')): ?>
@@ -68,6 +74,9 @@
                                 <?php endif; ?>
                                 <?php if(request('retirement_type')): ?>
                                     <span class="badge bg-success ms-1">Type: <?php echo e(request('retirement_type')); ?></span>
+                                <?php endif; ?>
+                                <?php if(request('recently_added') == '1'): ?>
+                                    <span class="badge bg-primary ms-1">Sort: Recently Added</span>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>

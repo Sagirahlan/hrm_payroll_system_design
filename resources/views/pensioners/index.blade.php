@@ -48,6 +48,12 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
+                                <select name="recently_added" class="form-select">
+                                    <option value="">Sort: Name</option>
+                                    <option value="1" {{ request('recently_added') == '1' ? 'selected' : '' }}>Recently Added</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <div class="btn-group w-100" role="group">
                                     <button class="btn btn-primary" type="submit">
                                         <i class="fas fa-filter me-1"></i> Filter
@@ -59,7 +65,7 @@
                             </div>
                         </div>
                         
-                        @if(request()->hasAny(['search', 'status', 'retirement_type']))
+                        @if(request()->hasAny(['search', 'status', 'retirement_type', 'recently_added']))
                             <div class="mt-2">
                                 <small class="text-muted">Active filters:</small>
                                 @if(request('search'))
@@ -70,6 +76,9 @@
                                 @endif
                                 @if(request('retirement_type'))
                                     <span class="badge bg-success ms-1">Type: {{ request('retirement_type') }}</span>
+                                @endif
+                                @if(request('recently_added') == '1')
+                                    <span class="badge bg-primary ms-1">Sort: Recently Added</span>
                                 @endif
                             </div>
                         @endif
