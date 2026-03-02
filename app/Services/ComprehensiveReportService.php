@@ -1205,6 +1205,8 @@ class ComprehensiveReportService
         $year = $filters['year'] ?? now()->year;
         $month = $filters['month'] ?? now()->month;
         $monthNumber = $this->convertMonthToNumber($month);
+        $monthString = str_pad($monthNumber, 2, '0', STR_PAD_LEFT);
+        $fullMonthStr = $year . '-' . $monthString;
 
         // Get all payroll records for the specified month/year
         $payrollRecords = PayrollRecord::whereYear('payroll_month', $year)
@@ -1221,17 +1223,27 @@ class ComprehensiveReportService
         }
 
         $employeeIds = $payrollRecords->pluck('employee_id');
-        $journalItems = collect();
+        
+        $additionsArray = collect();
+        $deductionsArray = collect();
 
-        // 1. Regular Deductions (Templates active in this month)
+        // 1. Regular Deductions
         $deductions = Deduction::whereIn('employee_id', $employeeIds)
-            ->where(function ($query) use ($year, $monthNumber) {
-                $date = Carbon::createFromDate($year, $monthNumber, 1);
-                $query->where('start_date', '<=', $date->endOfMonth())
-                      ->where(function ($q) use ($date) {
-                          $q->where('end_date', '>=', $date->startOfMonth())
-                            ->orWhereNull('end_date');
+            ->where(function($query) use ($fullMonthStr, $year, $monthString) {
+                $query->where(function($q) use ($fullMonthStr) {
+                    // Monthly or Perpetual
+                    $q->whereIn('deduction_period', ['Monthly', 'Perpetual'])
+                      ->where('start_date', '<=', $fullMonthStr . '-01')
+                      ->where(function($dateQuery) use ($fullMonthStr) {
+                          $dateQuery->whereNull('end_date')
+                                    ->orWhere('end_date', '>=', $fullMonthStr . '-01');
                       });
+                })->orWhere(function($q) use ($year, $monthString) {
+                    // OneTime for this month
+                    $q->where('deduction_period', 'OneTime')
+                      ->whereYear('start_date', '=', $year)
+                      ->whereMonth('start_date', '=', $monthString);
+                });
             })
             ->whereNull('loan_id') // Exclude loan deductions (handled separately)
             ->with('deductionType')
@@ -1241,7 +1253,7 @@ class ComprehensiveReportService
 
         foreach ($groupedDeductions as $typeId => $items) {
             $firstItem = $items->first();
-            $journalItems->push([
+            $deductionsArray->push([
                 'code' => $firstItem->deductionType->id ?? 'D-'.$typeId,
                 'description' => $firstItem->deductionType->name ?? 'Unknown Deduction',
                 'count' => $items->unique('employee_id')->count(),
@@ -1265,10 +1277,10 @@ class ComprehensiveReportService
             $firstItem = $items->first();
             $description = $firstItem->loan->deductionType->name ?? $firstItem->loan->loan_type ?? 'Loan Deduction';
             
-            $existingItem = $journalItems->firstWhere('description', $description);
+            $existingItem = $deductionsArray->firstWhere('description', $description);
             
             if ($existingItem) {
-                $journalItems = $journalItems->map(function ($item) use ($description, $items) {
+                $deductionsArray = $deductionsArray->map(function ($item) use ($description, $items) {
                     if ($item['description'] === $description) {
                         $item['count'] += $items->unique('employee_id')->count();
                         $item['amount'] += $items->sum('amount_deducted');
@@ -1276,7 +1288,7 @@ class ComprehensiveReportService
                     return $item;
                 });
             } else {
-                $journalItems->push([
+                $deductionsArray->push([
                     'code' => $firstItem->loan->deductionType->id ?? 'L-'.$key,
                     'description' => $description,
                     'count' => $items->unique('employee_id')->count(),
@@ -1288,13 +1300,21 @@ class ComprehensiveReportService
 
         // 3. Additions
         $additions = Addition::whereIn('employee_id', $employeeIds)
-            ->where(function ($query) use ($year, $monthNumber) {
-                $date = Carbon::createFromDate($year, $monthNumber, 1);
-                $query->where('start_date', '<=', $date->endOfMonth())
-                      ->where(function ($q) use ($date) {
-                          $q->where('end_date', '>=', $date->startOfMonth())
-                            ->orWhereNull('end_date');
+            ->where(function($query) use ($fullMonthStr, $year, $monthString) {
+                $query->where(function($q) use ($fullMonthStr) {
+                    // Monthly or Perpetual
+                    $q->whereIn('addition_period', ['Monthly', 'Perpetual'])
+                      ->where('start_date', '<=', $fullMonthStr . '-01')
+                      ->where(function($dateQuery) use ($fullMonthStr) {
+                          $dateQuery->whereNull('end_date')
+                                    ->orWhere('end_date', '>=', $fullMonthStr . '-01');
                       });
+                })->orWhere(function($q) use ($year, $monthString) {
+                    // OneTime for this month
+                    $q->where('addition_period', 'OneTime')
+                      ->whereYear('start_date', '=', $year)
+                      ->whereMonth('start_date', '=', $monthString);
+                });
             })
             ->with('additionType')
             ->get();
@@ -1303,7 +1323,7 @@ class ComprehensiveReportService
 
         foreach ($groupedAdditions as $typeId => $items) {
             $firstItem = $items->first();
-            $journalItems->push([
+            $additionsArray->push([
                 'code' => $firstItem->additionType->id ?? 'A-'.$typeId,
                 'description' => $firstItem->additionType->name ?? 'Unknown Addition',
                 'count' => $items->unique('employee_id')->count(),
@@ -1311,24 +1331,46 @@ class ComprehensiveReportService
                 'type' => 'Addition'
             ]);
         }
+        
+        // Push Basic Salary to Additions
+        $additionsArray->push([
+            'code' => 'BASIC',
+            'description' => 'Basic Salary',
+            'count' => $payrollRecords->where('basic_salary', '>', 0)->count(),
+            'amount' => $payrollRecords->sum('basic_salary'),
+            'type' => 'Addition'
+        ]);
 
-        // 4. Net Pay
+        $additionsArray = $additionsArray->sortBy('description')->values();
+        $deductionsArray = $deductionsArray->sortBy('description')->values();
+        
+        $totalAdditions = $additionsArray->sum('amount');
+        $totalDeductions = $deductionsArray->sum('amount');
+        $totalNetPay = $payrollRecords->sum('net_salary');
+        
+        // Merge to maintain array structure for the frontend if they iterate just over `journal_items`
+        // But we provide specific totals to make it make sense
+        $journalItems = $additionsArray->concat($deductionsArray)->values();
+        
         $journalItems->push([
             'code' => 'NET',
             'description' => 'Net Pay',
             'count' => $payrollRecords->count(),
-            'amount' => $payrollRecords->sum('net_salary'),
+            'amount' => $totalNetPay,
             'type' => 'Net Pay'
         ]);
-
-        $journalItems = $journalItems->sortBy('description')->values();
 
         return [
             'report_title' => 'Payroll Journal Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
             'period' => $year . '-' . $this->getMonthName($monthNumber),
             'journal_items' => $journalItems,
-            'grand_total' => $journalItems->sum('amount')
+            'additions' => $additionsArray,
+            'deductions' => $deductionsArray,
+            'grand_total' => $totalNetPay, // Just reporting NET pay as grand total now makes more sense
+            'total_additions' => $totalAdditions,
+            'total_deductions' => $totalDeductions,
+            'total_net_pay' => $totalNetPay
         ];
     }
 

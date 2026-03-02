@@ -819,22 +819,44 @@ class ComprehensiveReportController extends Controller
     private function writePayrollJournalExcel($file, $reportData)
     {
         fputcsv($file, ['Period', $reportData['period']]);
-        fputcsv($file, ['Grand Total', '₦' . number_format($reportData['grand_total'], 2)]);
+        fputcsv($file, ['Net Pay For Period', '₦' . number_format($reportData['total_net_pay'], 2)]);
         fputcsv($file, []);
 
+        // --- ADDITIONS ---
+        fputcsv($file, ['ADDITIONS']);
         fputcsv($file, [
-            'Code', 'Description', 'Count', 'Amount', 'Type'
+            'Code', 'Description', 'Count', 'Total Amount'
         ]);
 
-        foreach ($reportData['journal_items'] as $item) {
+        foreach ($reportData['additions'] ?? [] as $item) {
             fputcsv($file, [
                 $item['code'],
                 $item['description'],
                 $item['count'],
-                '₦' . number_format($item['amount'], 2),
-                $item['type']
+                '₦' . number_format($item['amount'], 2)
             ]);
         }
+        
+        fputcsv($file, ['Total Additions', '', '', '₦' . number_format($reportData['total_additions'] ?? 0, 2)]);
+        fputcsv($file, []);
+
+        // --- DEDUCTIONS ---
+        fputcsv($file, ['DEDUCTIONS']);
+        fputcsv($file, [
+            'Code', 'Description', 'Count', 'Total Amount'
+        ]);
+
+        foreach ($reportData['deductions'] ?? [] as $item) {
+            fputcsv($file, [
+                $item['code'],
+                $item['description'],
+                $item['count'],
+                '₦' . number_format($item['amount'], 2)
+            ]);
+        }
+        
+        fputcsv($file, ['Total Deductions', '', '', '₦' . number_format($reportData['total_deductions'] ?? 0, 2)]);
+        fputcsv($file, []);
     }
 
     private function writeDuplicateBeneficiaryExcel($file, $reportData)

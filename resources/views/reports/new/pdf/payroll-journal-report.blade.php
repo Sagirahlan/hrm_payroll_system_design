@@ -91,29 +91,64 @@
     <table>
         <thead>
             <tr>
+                <th colspan="4" style="text-align: left; background-color: #e0e7ff;">ADDITIONS</th>
+            </tr>
+            <tr>
                 <th>Code</th>
                 <th>Description</th>
                 <th class="text-center">Count</th>
-                <th class="text-right">Amount</th>
-                <th class="text-right">Total</th>
+                <th class="text-right">Total Amount (₦)</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($data['journal_items'] as $item)
+            @foreach($data['additions'] ?? [] as $item)
             <tr>
                 <td>{{ $item['code'] }}</td>
                 <td>{{ $item['description'] }}</td>
                 <td class="text-center">{{ $item['count'] }}</td>
-                <td class="text-right">0.00</td> <!-- The image shows 0 in one column and amount in another, or vice versa depending on credit/debit. For simplicity, I'll put 0 in one and Total in another if it's a summary -->
-                <!-- Actually, the image shows "304" (Count), "0" (Amount?), "2,358,726" (Total). 
-                     It seems "Amount" column might be unit amount or something, but here we only have totals. 
-                     I'll put 0 for now or remove the column if not needed, but to match image I'll keep it. -->
                 <td class="text-right">{{ number_format($item['amount'], 2) }}</td>
             </tr>
             @endforeach
-            <tr class="grand-total">
-                <td colspan="4" class="text-right">Grand Total:</td>
-                <td class="text-right">{{ number_format($data['grand_total'], 2) }}</td>
+            <tr style="font-weight: bold; background-color: #f8fafc;">
+                <td colspan="3" class="text-right">Total Additions:</td>
+                <td class="text-right">{{ number_format($data['total_additions'] ?? 0, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <th colspan="4" style="text-align: left; background-color: #fee2e2;">DEDUCTIONS</th>
+            </tr>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th class="text-center">Count</th>
+                <th class="text-right">Total Amount (₦)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($data['deductions'] ?? [] as $item)
+            <tr>
+                <td>{{ $item['code'] }}</td>
+                <td>{{ $item['description'] }}</td>
+                <td class="text-center">{{ $item['count'] }}</td>
+                <td class="text-right">{{ number_format($item['amount'], 2) }}</td>
+            </tr>
+            @endforeach
+            <tr style="font-weight: bold; background-color: #fef2f2;">
+                <td colspan="3" class="text-right">Total Deductions:</td>
+                <td class="text-right">{{ number_format($data['total_deductions'] ?? 0, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table style="width: 50%; margin-left: auto; border: 2px solid #333;">
+        <tbody>
+            <tr class="grand-total" style="background-color: #f1f5f9;">
+                <td class="text-right" style="padding: 12px;">NET PAY FOR PERIOD:</td>
+                <td class="text-right" style="padding: 12px; color: #166534;">₦ {{ number_format($data['total_net_pay'] ?? $data['grand_total'], 2) }}</td>
             </tr>
         </tbody>
     </table>
