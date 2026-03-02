@@ -746,4 +746,170 @@ class PensionerController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Show the legacy employee merge tool
+     */
+    public function legacyMerge()
+    {
+        $legacyEmployees = Employee::where('email', 'like', '%@legacy-processed.com')
+            ->with(['department', 'pensioner'])
+            ->get();
+
+        $realEmployees = Employee::where('email', 'not like', '%@legacy-processed.com')
+            ->where('appointment_type_id', '!=', 2) // Exclude casual
+            ->get();
+
+        $normalizeName = function(string $name): string {
+            $name = preg_replace("/['\-\.]/", '', $name);
+            $name = preg_replace('/\s+/', ' ', $name);
+            return strtolower(trim($name));
+        };
+
+        $pairs = [];
+        $unmatched = [];
+
+        foreach ($legacyEmployees as $legacy) {
+            $lf = $normalizeName(trim($legacy->first_name));
+            $ls = $normalizeName(trim($legacy->surname));
+
+            $bestMatch = null;
+            foreach ($realEmployees as $emp) {
+                $ef = $normalizeName(trim($emp->first_name));
+                $es = $normalizeName(trim($emp->surname));
+
+                // Require BOTH first name AND surname to match (not just partial)
+                $directMatch = ($ef === $lf && $es === $ls);
+                $reversedMatch = ($ef === $ls && $es === $lf);
+
+                // Also allow partial if both parts match substantially
+                if (!$directMatch && !$reversedMatch) {
+                    $directMatch = (strlen($lf) >= 3 && strlen($ls) >= 3)
+                        && (str_contains($ef, $lf) || str_contains($lf, $ef))
+                        && (str_contains($es, $ls) || str_contains($ls, $es));
+                    $reversedMatch = (strlen($lf) >= 3 && strlen($ls) >= 3)
+                        && (str_contains($ef, $ls) || str_contains($ls, $ef))
+                        && (str_contains($es, $lf) || str_contains($lf, $es));
+                }
+
+                if ($directMatch || $reversedMatch) {
+                    $bestMatch = $emp;
+                    break;
+                }
+            }
+
+            if ($bestMatch) {
+                $pairs[] = [
+                    'legacy' => $legacy,
+                    'real' => $bestMatch,
+                    'has_pensioner' => $legacy->pensioner ? true : false,
+                    'real_has_pensioner' => Pensioner::where('employee_id', $bestMatch->employee_id)->exists(),
+                ];
+            } else {
+                $unmatched[] = $legacy;
+            }
+        }
+
+        return view('pensioners.merge_legacy', compact('pairs', 'unmatched'));
+    }
+
+    /**
+     * Process a single legacy merge
+     */
+    public function processLegacyMerge(Request $request)
+    {
+        $request->validate([
+            'legacy_id' => 'required|integer',
+            'real_id' => 'required|integer',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $legacy = Employee::findOrFail($request->legacy_id);
+            $real = Employee::findOrFail($request->real_id);
+
+            // Move pensioner record from legacy to real
+            $legacyPensioner = Pensioner::where('employee_id', $legacy->employee_id)->first();
+            $realPensioner = Pensioner::where('employee_id', $real->employee_id)->first();
+
+            if ($legacyPensioner && !$realPensioner) {
+                // Move pensioner to real employee
+                $legacyPensioner->update(['employee_id' => $real->employee_id]);
+                Log::info("Legacy Merge: Moved pensioner from legacy {$legacy->staff_no} to real {$real->staff_no}");
+            } elseif ($legacyPensioner && $realPensioner) {
+                // Both have pensioner records — keep real's, delete legacy's
+                $legacyPensioner->delete();
+                Log::info("Legacy Merge: Deleted duplicate pensioner for legacy {$legacy->staff_no} (real {$real->staff_no} already has one)");
+            }
+
+            // Move retirement record
+            $legacyRetirement = Retirement::where('employee_id', $legacy->employee_id)->first();
+            $realRetirement = Retirement::where('employee_id', $real->employee_id)->first();
+
+            if ($legacyRetirement && !$realRetirement) {
+                $legacyRetirement->update(['employee_id' => $real->employee_id]);
+            } elseif ($legacyRetirement) {
+                $legacyRetirement->delete();
+            }
+
+            // Update real employee status to Retired (if permanent)
+            if ($real->appointment_type_id == 3) {
+                $real->update(['status' => 'Retired-active']);
+            } else {
+                $real->update(['status' => 'Retired']);
+            }
+
+            // Delete legacy employee
+            $legacy->delete();
+
+            DB::commit();
+
+            Log::info("Legacy Merge: Merged legacy {$request->legacy_id} into real {$request->real_id}");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Merged {$legacy->first_name} {$legacy->surname} into {$real->staff_no} successfully."
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Legacy Merge Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a legacy employee (no match found — keep as standalone or remove)
+     */
+    public function deleteLegacy(Request $request)
+    {
+        $request->validate(['legacy_id' => 'required|integer']);
+
+        try {
+            DB::beginTransaction();
+
+            $legacy = Employee::findOrFail($request->legacy_id);
+
+            // Delete associated records
+            Pensioner::where('employee_id', $legacy->employee_id)->delete();
+            Retirement::where('employee_id', $legacy->employee_id)->delete();
+            $legacy->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Deleted legacy employee {$legacy->first_name} {$legacy->surname}."
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

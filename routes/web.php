@@ -252,6 +252,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pensioners/legacy/import', [PensionerController::class, 'importLegacy'])->name('pensioners.legacy.import');
         Route::post('/pensioners/legacy/process', [PensionerController::class, 'processImportLegacy'])->name('pensioners.legacy.process');
         Route::get('/pensioners/legacy/template', [PensionerController::class, 'downloadTemplate'])->name('pensioners.legacy.template');
+        Route::get('/pensioners/legacy/merge', [PensionerController::class, 'legacyMerge'])->name('pensioners.legacy.merge');
+        Route::post('/pensioners/legacy/merge', [PensionerController::class, 'processLegacyMerge'])->name('pensioners.legacy.merge.process');
+        Route::post('/pensioners/legacy/delete', [PensionerController::class, 'deleteLegacy'])->name('pensioners.legacy.delete');
 
         Route::post('/pensioners/{pensioner}/mark-gratuity-paid', [PensionerController::class, 'markGratuityPaid'])->name('pensioners.mark-gratuity-paid');
         Route::post('/pensioners/{pensioner}/mark-deceased', [PensionerController::class, 'markDeceased'])->name('pensioners.mark-deceased');

@@ -11,6 +11,9 @@
                     <h4 class="card-title d-inline">Pensioners</h4>
                    
                      <div class="float-end">
+                        <a href="{{ route('pensioners.legacy.merge') }}" class="btn btn-warning btn-sm me-2">
+                            <i class="fas fa-code-merge me-1"></i> Merge Duplicates
+                        </a>
                         <a href="{{ route('pensioners.legacy.import') }}" class="btn btn-info btn-sm me-2">
                             <i class="fas fa-file-upload me-1"></i> Import Legacy
                         </a>
@@ -182,8 +185,13 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="d-flex justify-content-center">
-                        {{ $pensioners->appends(request()->query())->links() }}
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted small">
+                            Showing {{ $pensioners->firstItem() ?? 0 }} to {{ $pensioners->lastItem() ?? 0 }} of {{ $pensioners->total() }} results
+                        </div>
+                        <div>
+                            {{ $pensioners->appends(request()->query())->links() }}
+                        </div>
                     </div>
                 </div>
             </div>

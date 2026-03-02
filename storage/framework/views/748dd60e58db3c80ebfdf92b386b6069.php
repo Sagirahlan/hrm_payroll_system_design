@@ -9,6 +9,9 @@
                     <h4 class="card-title d-inline">Pensioners</h4>
                    
                      <div class="float-end">
+                        <a href="<?php echo e(route('pensioners.legacy.merge')); ?>" class="btn btn-warning btn-sm me-2">
+                            <i class="fas fa-code-merge me-1"></i> Merge Duplicates
+                        </a>
                         <a href="<?php echo e(route('pensioners.legacy.import')); ?>" class="btn btn-info btn-sm me-2">
                             <i class="fas fa-file-upload me-1"></i> Import Legacy
                         </a>

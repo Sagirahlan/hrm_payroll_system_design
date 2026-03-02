@@ -1,0 +1,670 @@
+"Duplicate Beneficiary Report"
+"Generated on: February 27, 2026"
+
+"DUPLICATE BANK ACCOUNTS"
+"Total Groups",41
+
+"Account Number",Bank,"Beneficiary Name",Type,"ID/Staff No",Department,Status
+2033525907,"FIRST BANK OF NIGERIA PLC","Adamu Rabiu Birchi",Permanent,800071,"Finance and Accounts",Retired
+2033525907,"Ecobank Nigeria","ADAMU RABIU BIRCHI",Pensioner,12,"Finance and Accounts",Active
+
+2672002200,"ECOBANK PLC","Aminu  Abdu",Permanent,800095,"Administration and Supply",Retired
+2672002200,"Unity Bank","AMINU  ABDU",Pensioner,19,"Administration and Supply",Active
+
+2018841264,"FIRST BANK OF NIGERIA PLC","LAWAL  DAHIRU",Permanent,800125,Operations,Retired
+2018841264,"First Bank of Nigeria","Dahiru  Lawal",Pensioner,26,Operations,Active
+
+2020953764,"FIRST BANK OF NIGERIA PLC","Yakubu  Abubakar",Permanent,800135,Operations,Retired
+2020953764,N/A,"Yakubu  Abubakar",Pensioner,29,Operations,Active
+
+2018863846,"FIRST BANK OF NIGERIA PLC","Hamid  Yusuf",Permanent,800165,Operations,Retired
+2018863846,"First Bank of Nigeria","ABDULHAMIDU  YUSUF",Pensioner,40,Operations,Active
+
+0181838048,"UNION BANK PLC","Dahiru  Sani",Permanent,800166,Operations,Retired
+0181838048,"Union Bank of Nigeria","Dahiru  Sani",Pensioner,41,Operations,Active
+
+2020954462,"FIRST BANK OF NIGERIA PLC","Ibrahim  Mohammad",Permanent,800347,"Finance and Accounts",Active
+2020954462,"First Bank of Nigeria","Ibrahim  Mohammed",Pensioner,616,"Finance and Accounts",Active
+
+0016629844,"JAIZ BANK","Muhammad  Sabiu",Permanent,800053,"Finance and Accounts",Retired
+0016629844,"Jaiz Bank","MUHAMMAD  SABIU",Pensioner,161,"Finance and Accounts",Active
+
+0022326013,"UNION BANK PLC","ABDULLAHI  YAHAYAY",Permanent,800009,Commercial,Hold
+0022326013,N/A,"Yahaya  Abdullahi",Pensioner,52,Operations,Active
+
+2020755487,"FIRST BANK OF NIGERIA PLC","Bala Mohammad Yusuf",Permanent,800022,Operations,Hold
+2020755487,"First Bank of Nigeria","BALA YUSUF MOHAMMED",Pensioner,579,Operations,Active
+
+2002626428,"FIRST BANK OF NIGERIA PLC","Idris  Danasabe",Contract,8000310,Commercial,Retired-active
+2002626428,"First Bank of Nigeria","Idris  Dan'asabe",Pensioner,166,Commercial,Active
+
+2019044598,"FIRST BANK OF NIGERIA PLC","Babangida  Dansale",Permanent,800045,Operations,Retired
+2019044598,"First Bank of Nigeria","Babangida Dan Sale",Pensioner,167,Operations,Active
+
+3027187112,"FIRST BANK OF NIGERIA PLC","Sani Bello Gangarawa",Permanent,800117,Operations,Hold
+3027187112,"First Bank of Nigeria","SANI  BELLO",Pensioner,89,Operations,Active
+
+2019022363,"FIRST BANK OF NIGERIA PLC","Muhammad K Dan Iyq",Permanent,800108,Operations,Hold
+2019022363,"First Bank of Nigeria","Dan iya Muhammad",Pensioner,587,Operations,Active
+
+0019704655,"UNION BANK PLC","Muntari  Yusuf",Permanent,800037,"Finance and Accounts",Retired
+0019704655,"Union Bank of Nigeria","YUSUF  MUNTARI",Pensioner,173,"Finance and Accounts",Active
+
+2003543085,"FIRST BANK OF NIGERIA PLC","Musbahu Falalu Matazu",Permanent,800043,"Finance and Accounts",Hold
+2003543085,"First Bank of Nigeria","Musbahu  Falalu",Pensioner,672,"Finance and Accounts",Active
+
+3114799343,"FIRST BANK OF NIGERIA PLC","Amadu  Abdu",Casual,900224,Operations,Active
+3114799343,"First Bank of Nigeria","Amadu  Abdu",Pensioner,567,Operations,Active
+
+2020954194,"FIRST BANK OF NIGERIA PLC","Lawal  Danayya",Casual,900232,"Administration and Supply",Active
+2020954194,"First Bank of Nigeria","Lawal  Danayya",Pensioner,643,Operations,Active
+
+2020954084,"FIRST BANK OF NIGERIA PLC","Salisu  Sulaiman",Casual,900228,Operations,Active
+2020954084,"First Bank of Nigeria","Salisu  Suleiman",Pensioner,694,Operations,Active
+
+1016336668,"UBA PLC","Zubairu  Rulwanu",Casual,900104,"Administration and Supply",Active
+1016336668,"United Bank For Africa","Zubairu  Darma",Pensioner,755,"Administration and Supply",Active
+
+1010941680,"UBA PLC","Abubakar  Abba",Casual,900167,Operations,Active
+1010941680,"United Bank For Africa","Abubakar  Abba",Pensioner,551,Operations,Active
+
+6020217350,"KEYSTONE BANK LIMITED","Mamman Shota Usman",Casual,900107,"Finance and Accounts",Active
+6020217350,"Keystone Bank","Usman Mamman Shota",Pensioner,739,"Administration and Supply",Active
+
+0016168507,"UNITY BANK PLC","Haruna  Muhammad",Casual,900325,Operations,Active
+0016168507,"Unity Bank","HARUNA  MUHAMMAD",Pensioner,606,Operations,Active
+
+0016168215,"UNITY BANK PLC","Nabi  Liman",Casual,900312,Operations,Hold
+0016168215,"Unity Bank","Nabi  Liman",Pensioner,674,"Administration and Supply",Active
+
+0019702493,"UNION BANK PLC","FATIMA  ABDULHAMMID",Casual,900355,Commercial,Active
+0019702493,"Union Bank of Nigeria","Fatima  Abdulhamid",Pensioner,590,"Administration and Supply",Active
+
+0016168459,"UNITY BANK PLC","Shehu Iro Kagara",Casual,900337,Operations,Active
+0016168459,"Unity Bank","Shehu  Iro",Pensioner,705,Operations,Active
+
+2020073778,"FIRST BANK OF NIGERIA PLC","Sani Abdu Kankara",Casual,900338,Operations,Active
+2020073778,"First Bank of Nigeria","Abdu Sani Kankara",Pensioner,540,"Finance and Accounts",Active
+
+0019697948,"UNION BANK PLC","Habi  Ali",Casual,900257,Operations,Active
+0019697948,"Union Bank of Nigeria","HABI  ALI",Pensioner,598,Operations,Active
+
+2672019828,"ECOBANK NIGERIA PLC","JIBRIN  MUSA",Casual,900244,Operations,Active
+2672019828,"ECOBANK PLC","Jibrin  Musa",Contract,800304,Operations,Retired-active
+2672019828,"Ecobank Nigeria","Jibrin  Musa",Pensioner,365,Operations,Active
+
+1011748226,"UNITED BANK FOR AFRICA PLC","Ummaru  Funtua",Contract,800301,Operations,Retired-active
+1011748226,"United Bank For Africa","Ummaru  Funtua",Pensioner,366,Operations,Active
+
+0061408062,"UNION BANK PLC","AMADU  SULEMANU",Casual,900008,"Administration and Supply",Active
+0061408062,"Union Bank of Nigeria","Sule  Amadu",Pensioner,707,"Administration and Supply",Active
+
+2349275602,"Uba Plc","Aminu  Salisu",Casual,900349,Operations,Active
+2349275602,"UBA PLC","Aminu  Salisu",Casual,9003490,"Mashi District",Hold
+
+1011990977,"UNITED BANK FOR AFRICA PLC","Sale  Ayuba",Contract,800353,Operations,Retired-active
+1011990977,"United Bank For Africa","SALEH  AYUBA",Pensioner,401,Operations,Active
+
+2018841752,"FIRST BANK OF NIGERIA PLC","Amadu  Garba",Contract,800351,Operations,Retired-active
+2018841752,"First Bank of Nigeria","Amadu  Garba",Pensioner,402,Operations,Active
+
+2018842302,"FIRST BANK OF NIGERIA PLC","Hussaini  Musa",Contract,800350,Operations,Retired-active
+2018842302,"First Bank of Nigeria","HUSSAINI  MUSA",Pensioner,403,Operations,Active
+
+3133586140,"FIRST BANK OF NIGERIA PLC","Gambo  Muhammad",Contract,800308,Operations,Active
+3133586140,"First Bank of Nigeria","Gambo  Mohammed",Pensioner,591,Operations,Active
+
+2031623043,"FIRST BANK OF NIGERIA PLC","Amadu  Ali",Casual,8,Operations,Active
+2031623043,"First Bank of Nigeria","Amadu  Ali",Pensioner,568,"Administration and Supply",Active
+
+2031636120,"FIRST BANK OF NIGERIA PLC","Ali  Bala",Casual,900064,"Administration and Supply",Active
+2031636120,"First Bank of Nigeria","ALI  BALA",Pensioner,561,"Administration and Supply",Active
+
+0105660973,"Access Bank Nigeria Plc","Abdullahi  Ibrahim",Casual,900136,Commercial,Hold
+0105660973,"ACCESS BANK NIGERIA PLC","Abdullahi  Ibrahim",Casual,9000136,Commercial,Hold
+
+2020953575,"First Bank of Nigeria","Lawal Abdu Alhaji",Pensioner,651,Operations,Active
+2020953575,"First Bank of Nigeria","Lawal Habu Daura",Pensioner,653,"Finance and Accounts",Active
+
+3085702973,"First Bank of Nigeria","Umaru  Sani",Pensioner,149,Operations,Active
+3085702973,"First Bank of Nigeria","Ummaru  Sani",Pensioner,734,"Administration and Supply",Active
+
+
+
+"DUPLICATE NINs"
+"Total Groups",1
+
+NIN,"Beneficiary Name",Type,"ID/Staff No",Department,Status
+10000000000,"Ibrahim  Yahaya",Permanent,1,Operations,Active
+10000000000,"Haruna  Sulaiman",Permanent,800054,"Finance and Accounts",Active
+10000000000,"Shehu Mati Saulawa",Permanent,800057,"Finance and Accounts",Active
+10000000000,"Salisu  Ahmed",Permanent,800059,Audit,Active
+10000000000,"Abdullahi  Shuaibu",Permanent,800061,"Finance and Accounts",Active
+10000000000,"Kabir  Ahmed",Permanent,800063,"Jibia District",Active
+10000000000,"Kamilu  Sulaiman",Permanent,800065,Operations,Active
+10000000000,"Muhammad Tanimu Mashi",Permanent,800067,Operations,Active
+10000000000,"Bishir  Ibrahim",Permanent,800068,"Finance and Accounts",Active
+10000000000,"Umar  Gambo",Permanent,800069,Operations,Active
+10000000000,"Alhassan  Dahatu",Permanent,800070,Operations,Active
+10000000000,"Adamu Rabiu Birchi",Permanent,800071,"Finance and Accounts",Retired
+10000000000,"Tukur  Ahmed",Permanent,800074,Operations,Active
+10000000000,"Hindatu Mohammad Ujudud",Permanent,800077,Operations,Active
+10000000000,"Tsoho  Lado",Permanent,800079,Operations,Active
+10000000000,"Abdullahi  Mati",Permanent,800083,Operations,Active
+10000000000,"ADO  ABDULKARIM",Permanent,800085,Commercial,Active
+10000000000,"MAMMAN  I",Permanent,800086,Operations,Retired
+10000000000,"Aminu  Abdu",Permanent,800095,"Administration and Supply",Retired
+10000000000,"IDRIS KABIR KURFI",Permanent,800097,"Finance and Accounts",Active
+10000000000,"Hamisu  Ibrahim",Permanent,800105,"Finance and Accounts",Active
+10000000000,"LAWAL KURFI DANKANE",Permanent,800107,"Administration and Supply",Active
+10000000000,"Hashimu Yakubu Gaiwa",Permanent,800113,Operations,Retired
+10000000000,"SANI AJIWA SAMINU",Permanent,800123,Operations,Active
+10000000000,"Rabe  Salisu",Permanent,800134,"Administration and Supply",Active
+10000000000,"LAWAL  DAHIRU",Permanent,800125,Operations,Retired
+10000000000,"Lawal  Abdulaziz",Permanent,800129,Operations,Retired
+10000000000,"Salisu Abdullahi Kafi",Permanent,800130,Operations,Active
+10000000000,"Yakubu  Abubakar",Permanent,800135,Operations,Retired
+10000000000,"Abdulrahman  Yakubu",Permanent,800132,"Finance and Accounts",Active
+10000000000,"Surajo Usman Mani",Permanent,800150,"Administration and Supply",Active
+10000000000,"Salisu  Gambo",Permanent,800140,Operations,Active
+10000000000,"Abdulsalam  Isah",Permanent,800210,Operations,Active
+10000000000,"Abdulaziz  Umar",Permanent,800211,Operations,Active
+10000000000,"Sadiya  Abubakar",Permanent,800152,"Administration and Supply",Active
+10000000000,"Aliyu  Galadima",Permanent,800154,"Administration and Supply",Active
+10000000000,"Dayabu  Salisu",Permanent,800156,Commercial,Active
+10000000000,"Abubakar  Atiku",Permanent,800160,Operations,Active
+10000000000,"Isah  Hamisu",Permanent,800162,Operations,Hold
+10000000000,"Hamid  Yusuf",Permanent,800165,Operations,Retired
+10000000000,"Dahiru  Sani",Permanent,800166,Operations,Retired
+10000000000,"Lurwanu  Sani",Permanent,800180,Commercial,Active
+10000000000,"Musbahu  Mamman",Permanent,800184,Operations,Active
+10000000000,"Isyaku  Jibrin",Permanent,800186,Operations,Active
+10000000000,"Sanusi  Abubakar",Permanent,800191,Operations,Active
+10000000000,"RABIU  FALALU",Permanent,800194,Operations,Active
+10000000000,"Muhammad  Sani",Permanent,800198,Operations,Active
+10000000000,"Abdu  Rabe",Permanent,800202,Others,Active
+10000000000,"Aminu  Ali",Permanent,800220,Commercial,Active
+10000000000,"IBRAHIM  DAHIRU",Permanent,800221,Operations,Active
+10000000000,"Amadu Yau Mashi",Permanent,800212,"Finance and Accounts",Active
+10000000000,"Yahaya  Abdullahi",Permanent,800213,Operations,Retired
+10000000000,"Tanimu  Samaila",Permanent,800214,Operations,Active
+10000000000,"Auwal Ibrahim Bello",Permanent,800215,Commercial,Active
+10000000000,"Ashiru  Usman",Permanent,800216,Operations,Active
+10000000000,"Aliyu  Haruna",Permanent,800218,"Administration and Supply",Active
+10000000000,"Abdullahi Ladan Ibrahim",Permanent,800224,Commercial,Active
+10000000000,"Musa  Adamu",Permanent,800225,"Finance and Accounts",Retired
+10000000000,"Sirajo  Umar",Permanent,800222,Operations,Active
+10000000000,"Usman  Isah",Permanent,800223,Operations,Active
+10000000000,"Babangida  Sada",Permanent,800226,Operations,Active
+10000000000,"Abubakar  Jibrin",Permanent,800227,Operations,Active
+10000000000,"Masa Udu Umaru",Permanent,800229,Operations,Active
+10000000000,"Saidu  Ibrahim",Permanent,800228,Operations,Active
+10000000000,"Hussaini Bello Rabiu",Permanent,800273,PRS,Active
+10000000000,"Mukhtar  Abdulaziz",Permanent,800275,Commercial,Active
+10000000000,"Aminu  Muhammed",Permanent,800231,Operations,Active
+10000000000,"Abubakar  Muhammad",Permanent,800232,Operations,Active
+10000000000,"Iliya  Mamman",Permanent,800234,Operations,Active
+10000000000,"Aminu  Haruna",Permanent,800235,Operations,Active
+10000000000,"Ibrahim  Sale",Permanent,800236,Audit,Retired
+10000000000,"Bishir  Mamman",Permanent,800237,Operations,Active
+10000000000,"Usman  Hassan",Permanent,800239,Operations,Active
+10000000000,"Hanafi  Salisu",Permanent,800240,Commercial,Active
+10000000000,"Kabir  Sani",Permanent,800241,Operations,Active
+10000000000,"Nuhu  Hassan",Permanent,800242,Operations,Active
+10000000000,"Zubairu  Garba",Permanent,800243,Commercial,Active
+10000000000,"Sanusi  Tukur",Permanent,800244,Operations,Active
+10000000000,"Muhammad Abdullahi Ajiwa",Permanent,800245,Commercial,Active
+10000000000,"Auwal  Isah",Permanent,800246,Commercial,Active
+10000000000,"Ibrahim  Mati",Permanent,800247,Commercial,Active
+10000000000,"Rabiu  Isah",Permanent,800248,"Funtua District",Active
+10000000000,"Musa  Wada",Permanent,800249,Commercial,Retired
+10000000000,"Abdulhafiz  Ahmad",Permanent,800250,"Finance and Accounts",Active
+10000000000,"Umar  Kabir",Permanent,800251,"Finance and Accounts",Active
+10000000000,"Abubakar Yusuf Ajiwa",Permanent,800252,Operations,Active
+10000000000,"Kasumu Musa Jakada",Permanent,800253,Operations,Active
+10000000000,"USMAN  SALISU",Permanent,800254,"Administration and Supply",Active
+10000000000,"Bello  Sani",Permanent,800256,Operations,Retired
+10000000000,"Ibrahim Ahmad Shinkafi",Permanent,800257,Operations,Active
+10000000000,"Abba  Mansur",Permanent,800259,Operations,Active
+10000000000,"Maikaita  Mamman",Contract,80026,Operations,Active
+10000000000,"ABDULLAHI MOHAMMED KAITA",Permanent,800262,Operations,Active
+10000000000,"Umar Abubakar Danja",Permanent,800267,Operations,Active
+10000000000,"Abubakar  Ibrahim",Permanent,800268,Operations,Active
+10000000000,"Abubakar Muhammad Tasiu",Permanent,800269,PPP,Active
+10000000000,"Mohammed  Abdullahi",Permanent,800291,Commercial,Retired
+10000000000,"Musa  Aliyu",Permanent,800292,Operations,Retired
+10000000000,"Lawal  Shehu",Permanent,800277,Operations,Active
+10000000000,"Magaji  Nuhu",Permanent,800278,Operations,Active
+10000000000,"Aisha Sa Idu",Permanent,800279,Operations,Active
+10000000000,"ILIYASU HASSAN WURMA",Permanent,800280,Commercial,Active
+10000000000,"Sani Umar Sani",Permanent,800281,"Finance and Accounts",Active
+10000000000,"Abdulrahman  Mannir",Permanent,800282,Operations,Active
+10000000000,"Aisha Ibrahim Saulawa",Permanent,800283,Operations,Active
+10000000000,"Dalhatu  Lawal",Permanent,800284,"Administration and Supply",Active
+10000000000,"Umar  Lawal",Permanent,800285,"Administration and Supply",Retired
+10000000000,"Bello  Usman",Permanent,800286,Operations,Active
+10000000000,"Mustapha  Ahmad",Permanent,800287,Operations,Active
+10000000000,"Mustapha  Maikano",Permanent,800288,Commercial,Active
+10000000000,"Yusuf  Idris",Permanent,800289,Operations,Active
+10000000000,"Basiru  Aliyu",Permanent,800290,Operations,Active
+10000000000,"Ibrahim  Sagir",Permanent,800316,Operations,Active
+10000000000,"Ibrahim  Haruna",Permanent,800317,Operations,Retired
+10000000000,"Ayatullahi Bala Kuki",Permanent,800294,Commercial,Active
+10000000000,"Lawal Bala Kuki",Permanent,800295,Commercial,Active
+10000000000,"Mukhtar  Abdullahi",Permanent,800296,Commercial,Active
+10000000000,"BATURE  RABE",Permanent,800297,Commercial,Active
+10000000000,"Sada Shafi, I",Permanent,800299,Operations,Retired
+10000000000,"MUHAMMAD SANI MUHAMMAD",Permanent,800300,WO/M&E,Active
+10000000000,"Abubakar Yakubu Ibrahim",Permanent,800360,Operations,Active
+10000000000,"Gidado  Sulaiman",Permanent,800362,Operations,Active
+10000000000,"Muntari  Alkasim",Permanent,800318,Operations,Active
+10000000000,"Abubakar Sani Muhammad",Permanent,800359,Operations,Active
+10000000000,"Abdulrazak  Nuraddeen",Permanent,800363,Operations,Active
+10000000000,"DAHIRU  KHALID",Permanent,800364,Others,Active
+10000000000,"Musa Khalid Mashkur",Permanent,800365,Headquarters,Active
+10000000000,"Yahaya  Ibrahim",Permanent,8003640,"Ajiwa Water Treatment Plant",Active
+10000000000,"Hadiza Aminu Bello",Permanent,800356,Operations,Active
+10000000000,"Bishir  Sani",Permanent,2,Operations,Active
+10000000000,"Saminu  Babangida",Permanent,800366,Headquarters,Active
+10000000000,"ILIYASU HAMISU WURMA",Permanent,80044,"Administration and Supply",Active
+10000000000,"Kasimu  Usman",Permanent,80075,Operations,Active
+10000000000,"Yau  Danmalan",Permanent,800319,Operations,Active
+10000000000,"Aminu  Saidu",Permanent,800320,Operations,Active
+10000000000,"Halliru  Bala",Permanent,800321,Operations,Active
+10000000000,"Gaddafi  Auwal",Permanent,800322,Operations,Active
+10000000000,"Abubakar  Balele",Permanent,800323,Operations,Active
+10000000000,"Bishir Usman Muhammad",Permanent,800324,Operations,Active
+10000000000,"Babangida  Ibrahim",Permanent,800325,Operations,Active
+10000000000,"ADO  SANUSI",Permanent,800326,Operations,Active
+10000000000,"Ibrahim  Abubakar",Permanent,800327,Operations,Active
+10000000000,"Buhari  Ibrahim",Permanent,800328,Operations,Active
+10000000000,"HASSAN  AUWALU",Permanent,800329,Operations,Active
+10000000000,"MUHAMMAD  IBRAHIM",Contract,800330,Operations,Active
+10000000000,"Ismail  Ahmed",Permanent,800331,Operations,Active
+10000000000,"Abubakar  Haruna",Permanent,800332,Operations,Active
+10000000000,"Sanusi  Dahiru",Permanent,800333,Operations,Active
+10000000000,"Sani  Umar",Permanent,800334,Operations,Retired
+10000000000,"Bello Sani Magaji",Permanent,800335,Operations,Active
+10000000000,"Sulaiman Sulaiman Lawal",Permanent,800336,"Administration and Supply",Active
+10000000000,"Abubakar Muhammad Sayaya",Permanent,800337,Operations,Active
+10000000000,"Muhammad  Amir",Permanent,800338,Operations,Active
+10000000000,"Abdullahi  Sani",Permanent,800339,Operations,Retired
+10000000000,"Zaharaddeen Bala Abdullahi",Permanent,800340,Operations,Active
+10000000000,"DANJUMA  ABDULLAHI",Permanent,800341,Operations,Hold
+10000000000,"Sani  Mansir",Permanent,800342,Operations,Active
+10000000000,"Ibrahim  Mohammad",Permanent,800347,"Finance and Accounts",Active
+10000000000,"Hassan  Tukur",Permanent,800349,Administration,Active
+10000000000,"Abdullahi  Sani",Permanent,800355,Operations,Active
+10000000000,"Muhammad  Sabiu",Permanent,800053,"Finance and Accounts",Retired
+10000000000,"Tasiu Ibrahim Garba",Permanent,800050,Commercial,Active
+10000000000,"Abdullahi Shehu Kafarda",Permanent,800020,"Administration and Supply",Active
+10000000000,"ABDULLAHI  YAHAYAY",Permanent,800009,Commercial,Hold
+10000000000,"Bala Mohammad Yusuf",Permanent,800022,Operations,Hold
+10000000000,"Idris  Danasabe",Contract,8000310,Commercial,Retired-active
+10000000000,"Babangida  Dansale",Permanent,800045,Operations,Retired
+10000000000,"Ahmed  Lawal",Permanent,800046,"Finance and Accounts",Active
+10000000000,"Sani Bello Gangarawa",Permanent,800117,Operations,Hold
+10000000000,"Muhammad K Dan Iyq",Permanent,800108,Operations,Hold
+10000000000,"Musa  Yahaya",Permanent,123,Audit,Hold
+10000000000,"Abdulrahman  Abubakar",Permanent,6714,"Administration and Supply",Hold
+10000000000,"Muntari  Yusuf",Permanent,800037,"Finance and Accounts",Retired
+10000000000,"Musbahu Falalu Matazu",Permanent,800043,"Finance and Accounts",Hold
+10000000000,"Auwal  Abdulkadir",Casual,900236,Operations,Active
+10000000000,"Abdulkarim  Adamu",Casual,900231,Operations,Active
+10000000000,"Saminu  Yusuf",Casual,900182,Operations,Active
+10000000000,"Bishir  Ibrahim",Casual,900181,Operations,Active
+10000000000,"Idris  Mohammad",Casual,900180,Operations,Active
+10000000000,"UMAR MUHAMMED SAMAILA",Casual,900179,Operations,Active
+10000000000,"Aminu  Safiyanu",Casual,900225,Operations,Active
+10000000000,"Amadu  Abdu",Casual,900224,Operations,Active
+10000000000,"Kamala  Ibrahim",Casual,900223,Operations,Active
+10000000000,"Sani  Mamman",Casual,900238,Operations,Active
+10000000000,"SUNUSI  IBRAHIM",Casual,900237,Operations,Active
+10000000000,"Lawal  Danayya",Casual,900232,"Administration and Supply",Active
+10000000000,"Rabiu  Isah",Casual,900235,Operations,Active
+10000000000,"Sada  Mamman",Casual,900234,"Administration and Supply",Active
+10000000000,"Ibrahim  Ado",Casual,900217,"Administration and Supply",Active
+10000000000,"Masud  Abdullahi",Casual,900215,Commercial,Active
+10000000000,"Mohammed  Haruna",Casual,900214,Operations,Active
+10000000000,"Yahaya  Zubairu",Casual,900230,Operations,Active
+10000000000,"Bala  Abdullahi",Casual,900229,Operations,Active
+10000000000,"Salisu  Sulaiman",Casual,900228,Operations,Active
+10000000000,"SANI  MURTALA",Casual,900227,Operations,Active
+10000000000,"Murtala  Lawal",Casual,900226,Operations,Active
+10000000000,"Mustapha  Sani",Casual,900261,Commercial,Active
+10000000000,"Yau  Bala",Casual,900271,Operations,Active
+10000000000,"ABDULRRASHID  SANI",Casual,900270,Operations,Active
+10000000000,"Muhammad  Umar",Casual,900269,Operations,Active
+10000000000,"Tukur  Isiyaku",Casual,900268,PPP,Active
+10000000000,"Abdulaziz  Bello",Casual,900267,Operations,Active
+10000000000,"SALISU  ABDULHAMID",Casual,900249,Operations,Active
+10000000000,"Abubakar  Mamman",Casual,900248,Operations,Active
+10000000000,"ABUBAKAR  ZAINAB",Casual,900247,Operations,Hold
+10000000000,"Sulaiman  Abdullahi",Casual,900263,Operations,Active
+10000000000,"Muttaka  Umar",Casual,900262,Operations,Hold
+10000000000,"Hashimu  Ibrahim",Casual,900140,Operations,Active
+10000000000,"Bishir  Umar",Casual,900260,Commercial,Active
+10000000000,"Idris  Aminu",Casual,900259,Operations,Active
+10000000000,"Imrana  Aliyu",Casual,900177,Operations,Active
+10000000000,"Umar  Samaila",Casual,900176,Operations,Active
+10000000000,"Sani  Ibrahim",Casual,900175,Operations,Active
+10000000000,"DALHATU  SULEIMAN",Casual,900189,"Funtua District",Active
+10000000000,"Samaila  Abubakar",Casual,900188,Operations,Active
+10000000000,"Nafiu  Adamu",Casual,9001870,"Funtua District",Active
+10000000000,"HABIBU ABUBAKAR BABANGIDA",Casual,900186,Operations,Active
+10000000000,"Gambo  Musa",Casual,900233,Operations,Active
+10000000000,"Mustapha  Dikko",Casual,900117,Commercial,Active
+10000000000,"Khalid  Ibrahim",Casual,900183,Operations,Active
+10000000000,"Alhassan  Shata",Casual,900198,"Administration and Supply",Hold
+10000000000,"Muhammad Shuaibu Isah",Casual,900197,"Administration and Supply",Active
+10000000000,"Abubakar  Adamu",Casual,900196,"Administration and Supply",Active
+10000000000,"Mustapha  Sani",Casual,900195,Operations,Active
+10000000000,"Sani  Isah",Casual,900194,Operations,Active
+10000000000,"Zubairu  Rulwanu",Casual,900104,"Administration and Supply",Active
+10000000000,"Ibrahim Yaro Abukur",Casual,900103,"Administration and Supply",Active
+10000000000,"ADAMU  BELLO",Casual,900102,Operations,Active
+10000000000,"ABDULLAHI BK MUHAMMAD",Casual,900118,Commercial,Active
+10000000000,"Sulaiman  Murtala",Casual,900184,Operations,Active
+10000000000,"Abdulhadi  Abdullahi",Casual,900116,Commercial,Active
+10000000000,"Zainab  Dahiru",Casual,900115,"Katsina District - West",Active
+10000000000,"BADAMASI ZURKALLAINI ABDULLAHI",Casual,900113,"Administration and Supply",Active
+10000000000,"ABUBAKAR  SUNUSI",Casual,900168,Operations,Active
+10000000000,"Abubakar  Abba",Casual,900167,Operations,Active
+10000000000,"Sabiu  Ibrahim",Casual,900166,Operations,Active
+10000000000,"Yusuf  Lawal",Casual,900023,"Finance and Accounts",Active
+10000000000,"Mamman Shota Usman",Casual,900107,"Finance and Accounts",Active
+10000000000,"Salisu  Abdulkarim",Casual,900106,Commercial,Active
+10000000000,"Yusuf  Hussaini",Casual,900105,"Administration and Supply",Active
+10000000000,"Sulaiman  Amadu",Casual,900143,Operations,Active
+10000000000,"Aliyu  Umar",Casual,90014,"Finance and Accounts",Active
+10000000000,"Adamu  Haruna",Casual,900139,Commercial,Active
+10000000000,"Aliyu Muhammad Bello",Casual,900157,Commercial,Active
+10000000000,"Abdullahi  Aminu",Casual,900156,Commercial,Active
+10000000000,"SULE  SALELE",Casual,900153,Commercial,Active
+10000000000,"Saminu  Makana",Casual,900151,Operations,Active
+10000000000,"Musa  Salihu",Casual,900200,"Administration and Supply",Active
+10000000000,"Muhammad  Habibu",Casual,900199,"Administration and Supply",Active
+10000000000,"Alhassan  Muhammad",Casual,9001980,"Funtua District",Active
+10000000000,"Dikko  Abubakar",Casual,900146,Commercial,Active
+10000000000,"Kamala  Sabiu",Casual,900255,Commercial,Active
+10000000000,"Usman  Iliyasu",Casual,900142,Commercial,Active
+10000000000,"Yahuza  Yusuf",Casual,900141,"Administration and Supply",Active
+10000000000,"Dahiru  Isah",Casual,900193,Operations,Active
+10000000000,"KAMALADDEN  YAU",Casual,900192,Operations,Active
+10000000000,"Usman  Haruna",Casual,900191,Operations,Active
+10000000000,"Garba  Isau",Casual,900205,Commercial,Active
+10000000000,"Yahaya  Isah",Casual,900204,"Funtua District",Active
+10000000000,"Magaji  Lawal",Casual,900202,Operations,Active
+10000000000,"Bishir  Gambo",Casual,900201,Commercial,Active
+10000000000,"Aliyu  Rufai",Casual,900185,Operations,Active
+10000000000,"Lawal  Abubakar",Casual,900313,Operations,Active
+10000000000,"Haruna  Muhammad",Casual,900325,Operations,Active
+10000000000,"Muhammad Ismail Umar",Casual,900323,"Administration and Supply",Active
+10000000000,"Abdulhadi  Bature",Casual,900322,Commercial,Active
+10000000000,"Shaaibu  Manager",Casual,900321,Operations,Active
+10000000000,"Hafizu  Muazu",Casual,900320,Commercial,Active
+10000000000,"Armayau  Mikailu",Casual,900319,Operations,Active
+10000000000,"Abdu  Toge",Casual,900317,Operations,Active
+10000000000,"MAAZU  AY",Casual,900316,Operations,Active
+10000000000,"Musa  Hamisu",Casual,900315,Operations,Active
+10000000000,"Abdullahi  Amadu",Casual,900314,Operations,Active
+10000000000,"Usman  Imam",Casual,900326,Commercial,Active
+10000000000,"Nabi  Liman",Casual,900312,Operations,Hold
+10000000000,"Umar  Haruna",Casual,900311,Commercial,Active
+10000000000,"Idris  Hashimu",Casual,900310,Operations,Active
+10000000000,"UMAR  SANI",Casual,90093,Operations,Active
+10000000000,"Hamza  Usman",Casual,900241,"Administration and Supply",Active
+10000000000,"LAWAL  YAWAE",Casual,900240,"Administration and Supply",Active
+10000000000,"Mansur  Sani",Casual,900239,Operations,Active
+10000000000,"Hamisu  Rabe",Casual,900254,Operations,Active
+10000000000,"Aliyu  Muhammad",Casual,900253,Operations,Active
+10000000000,"Aliyu  Musa",Casual,900252,Commercial,Hold
+10000000000,"Gambo  Hamisu",Casual,900339,Operations,Active
+10000000000,"Haruna  Ibrahim",Casual,900287,Operations,Active
+10000000000,"Abubakar Tukur Muhammad",Casual,900309,"Administration and Supply",Active
+10000000000,"FATIMA  ABDULHAMMID",Casual,900355,Commercial,Active
+10000000000,"Shehu Iro Kagara",Casual,900337,Operations,Active
+10000000000,"Lawal  Saidu",Casual,10,Operations,Active
+10000000000,"Abdulkarim  Amadu",Casual,900346,Operations,Active
+10000000000,"Saidu  Musa",Casual,900345,"Administration and Supply",Active
+10000000000,"Lukman  Abbas",Casual,900343,Operations,Hold
+10000000000,"Ahmad  Murtala",Casual,900341,Operations,Active
+10000000000,"Sule  Usman",Casual,900340,"Administration and Supply",Active
+10000000000,"Adam Umar Gatawa",Casual,900251,Operations,Active
+10000000000,"Sani Abdu Kankara",Casual,900338,Operations,Active
+10000000000,"Nasir Ibrahim Abubakar",Casual,900371,Headquarters,Active
+10000000000,"Nafiu  Hamza",Casual,900336,Commercial,Active
+10000000000,"DANLAMI  YUSHAU",Casual,900335,Commercial,Active
+10000000000,"Mohammed  Usman",Casual,900334,Operations,Active
+10000000000,"Idris  Sada",Casual,900331,Operations,Active
+10000000000,"Haruna  Adamu",Casual,900330,Commercial,Active
+10000000000,"Mohammad  Ado",Casual,900329,Commercial,Active
+10000000000,"Jamilu  Amiru",Casual,900328,Commercial,Active
+10000000000,"Lawal  Yunusa",Casual,900327,Commercial,Active
+10000000000,"Auwal  Ibrahim",Casual,900218,Operations,Active
+10000000000,"Sanusi  Rabo",Casual,900298,Operations,Active
+10000000000,"Tasiu  Muhammad",Casual,900297,Operations,Active
+10000000000,"Muhammad  Aminu",Casual,900296,"Administration and Supply",Active
+10000000000,"Hashimu  Abubakar",Casual,900208,"Funtua District",Active
+10000000000,"Sani  Abdullahi",Casual,900207,Commercial,Active
+10000000000,"Aliyu  Umar",Casual,900206,Operations,Active
+10000000000,"Audu  Sale",Casual,900222,"Administration and Supply",Active
+10000000000,"Inusa  Rabo",Casual,900221,Operations,Active
+10000000000,"Ado  Usman",Casual,900220,Operations,Active
+10000000000,"Tasiu  Sani",Casual,900219,Operations,Active
+10000000000,"Abdulmuddallib  Sani",Casual,900299,Operations,Active
+10000000000,"Lawal  Kabir",Casual,900266,Operations,Hold
+10000000000,"Aliyu Sani Kusa",Casual,900265,Operations,Active
+10000000000,"SABIU AMINA MUHAMMED",Casual,900264,Operations,Active
+10000000000,"Lawal  Sulaiman",Casual,900213,Operations,Active
+10000000000,"Musa Lawal Musa",Casual,900212,Commercial,Active
+10000000000,"Suliman  Garba",Casual,900211,Operations,Active
+10000000000,"ISAH  ABDULLAHI",Casual,900210,Operations,Active
+10000000000,"Abubakar  Umar",Casual,900209,Commercial,Active
+10000000000,"Habi  Ali",Casual,900257,Operations,Active
+10000000000,"Wada  Audu",Casual,900256,Operations,Active
+10000000000,"Abdurrashid  Umar",Casual,900294,Operations,Active
+10000000000,"ABUBAKAR  SALISU",Casual,900250,Operations,Active
+10000000000,"Ibrahim  Hassan",Casual,900303,"Administration and Supply",Active
+10000000000,"Zainab  Iliyasu",Casual,900302,"Finance and Accounts",Active
+10000000000,"Shehu  Sani",Casual,900301,Operations,Active
+10000000000,"Muttaka  Kasimu",Casual,900246,Commercial,Hold
+10000000000,"Saminu  Murtala",Casual,900245,"Administration and Supply",Active
+10000000000,"JIBRIN  MUSA",Casual,900244,Operations,Active
+10000000000,"Abdulrahaman  Usman",Casual,900243,"Administration and Supply",Active
+10000000000,"Yau  Ado",Casual,900242,Operations,Active
+10000000000,"Abdullahi  Halilu",Casual,900295,Operations,Active
+10000000000,"Zubairu  Yusuf",Casual,900108,"Administration and Supply",Active
+10000000000,"Shamsudden  Sani",Casual,900293,Operations,Active
+10000000000,"Gambo  Hussaini",Casual,900308,"Finance and Accounts",Active
+10000000000,"Lawal  Garba",Casual,900307,"Administration and Supply",Active
+10000000000,"Nura Musa Ibrahim",Casual,900306,"Administration and Supply",Active
+10000000000,"Muhammad  Bello",Casual,900305,"Administration and Supply",Active
+10000000000,"Shehu  Adamu",Casual,900304,"Administration and Supply",Active
+10000000000,"Ibrahim  Shuaibu",Casual,900286,Operations,Active
+10000000000,"Abubakar  Yusuf",Casual,900284,Operations,Active
+10000000000,"Abdullahi  Musa",Casual,900283,Operations,Active
+10000000000,"Nasir  Umar",Casual,900300,Operations,Active
+10000000000,"Lawal  Barau",Casual,900289,Headquarters,Active
+10000000000,"Fiddausi  Aliyu",Casual,900036,Commercial,Active
+10000000000,"Usman  Bala",Casual,900049,Commercial,Active
+10000000000,"Yakubu  Amadu",Casual,9000480,"Mashi District",Active
+10000000000,"Abdulmajid  Umar",Casual,9000470,"Mashi District",Active
+10000000000,"Abdurrauf  Bala",Casual,900276,Operations,Active
+10000000000,"Yahaya Abubakar Galadima",Casual,900275,Operations,Active
+10000000000,"Abdulhamid  Umar",Casual,900272,Operations,Active
+10000000000,"Yusuf  Salisu",Casual,900292,Operations,Active
+10000000000,"Saidu  Yakubu",Casual,900291,Operations,Active
+10000000000,"Abdulaziz Noma S",Casual,900290,Operations,Active
+10000000000,"Ahmad  Halilu",Casual,900037,Audit,Active
+10000000000,"Zaharaddeen  Ibrahim",Casual,99124,Commercial,Active
+10000000000,"Muhammad Boyi Lawal",Contract,800306,Operations,Retired-active
+10000000000,"Jibrin  Musa",Contract,800304,Operations,Retired-active
+10000000000,"Ummaru  Funtua",Contract,800301,Operations,Retired-active
+10000000000,"Lawal Ahmed Baba Sidi",Casual,900282,Operations,Active
+10000000000,"Rabiu Muhammad Rabiu",Casual,900281,Operations,Active
+10000000000,"Buhari  Abdulaziz",Casual,900280,Operations,Active
+10000000000,"Tukur  Sani",Casual,900279,Operations,Active
+10000000000,"Bishir  Kabir",Casual,900278,Operations,Active
+10000000000,"ALIYU  ABDU",Casual,900005,"Administration and Supply",Hold
+10000000000,"Shehu  Muhammad",Casual,900086,Operations,Active
+10000000000,"LAWAL  USAMA",Casual,9,Operations,Active
+10000000000,"Abdussamadu  Yakubu",Casual,900017,"Administration and Supply",Active
+10000000000,"SAHABI  ABUBAKAR",Casual,900016,"Administration and Supply",Hold
+10000000000,"Abdullahi  Sulaiman",Casual,900015,"Administration and Supply",Active
+10000000000,"Yahaya  Lawal",Casual,900014,"Administration and Supply",Active
+10000000000,"Sani  Abdu",Casual,900013,"Administration and Supply",Active
+10000000000,"Abubakar  Umar",Casual,900012,"Administration and Supply",Active
+10000000000,"Hamza  Zubairu",Casual,900054,"Administration and Supply",Active
+10000000000,"AMADU  SULEMANU",Casual,900008,"Administration and Supply",Active
+10000000000,"Umaru  Yahaya",Casual,900354,"Administration and Supply",Active
+10000000000,"Usman  Ahamed",Casual,900002,"Administration and Supply",Active
+10000000000,"Buhari  Samaila",Casual,900046,Operations,Active
+10000000000,"ISUHU  MUHAMMADU",Casual,900045,Operations,Active
+10000000000,"Muhammadu  Haruna",Casual,900044,Operations,Active
+10000000000,"Haladu  Usman",Casual,90006,Operations,Active
+10000000000,"Kabir  Ibrahim",Casual,900058,Operations,Active
+10000000000,"Jamilu  Isiyaku",Casual,900057,Operations,Active
+10000000000,"Basiru  Zayyana",Casual,900055,"Administration and Supply",Active
+10000000000,"Ibrahim  Salisu",Casual,900038,"Administration and Supply",Active
+10000000000,"Aminu  Muntari",Casual,16,Commercial,Active
+10000000000,"Aminu  Salisu",Casual,900349,Operations,Active
+10000000000,"Abubakar  Adamu",Casual,25,Operations,Active
+10000000000,"Abdullahi  Sani",Casual,23,Commercial,Active
+10000000000,"Mamman  Ado",Casual,21,Operations,Active
+10000000000,"Aliyu  Shehu",Casual,20,"Administration and Supply",Active
+10000000000,"MUHAMMAD ABDULLAHI YARADUA",Casual,900022,"Administration and Supply",Active
+10000000000,"Yakubu  Jume",Contract,800357,Commercial,Retired-active
+10000000000,"Sale  Ayuba",Contract,800353,Operations,Retired-active
+10000000000,"Amadu  Garba",Contract,800351,Operations,Retired-active
+10000000000,"Hussaini  Musa",Contract,800350,Operations,Retired-active
+10000000000,"Sulaiman  Umar",Casual,11,Operations,Active
+10000000000,"Aminu  Usman",Casual,15,Commercial,Active
+10000000000,"YAU SANUSI MOHAMMED",Casual,14,Commercial,Active
+10000000000,"ABDULLAHI  MAHMUD",Casual,900011,"Administration and Supply",Hold
+10000000000,"Asiya Aliyu Jari",Casual,900029,Operations,Active
+10000000000,"Nasiru  Shehu",Casual,900028,Operations,Active
+10000000000,"LAWAL  SHAMSU",Casual,900027,Operations,Active
+10000000000,"Sha Aibu Murnai",Casual,900026,Operations,Active
+10000000000,"Lawal  Jibril",Casual,900025,"Finance and Accounts",Active
+10000000000,"UMAR  HASSAN",Casual,900024,"Finance and Accounts",Active
+10000000000,"Sani  Ibrahim",Casual,900357,Operations,Active
+10000000000,"Aminu  Umar",Casual,900352,Operations,Active
+10000000000,"Shamsu  Nuhu",Casual,900351,Operations,Active
+10000000000,"Mustapha Ibrahim Bello",Casual,900350,Headquarters,Active
+10000000000,"Gambo  Muhammad",Contract,800308,Operations,Active
+10000000000,"Musa Ada Jankuki",Contract,800307,Operations,Active
+10000000000,"Masaudu  Habibu",Casual,900368,Headquarters,Active
+10000000000,"Ishaka  Abubakar",Casual,900366,"Batagarawa District",Active
+10000000000,"Mubarak  Surajo",Casual,900362,Operations,Active
+10000000000,"Bishir  Magaji",Casual,900359,Operations,Active
+10000000000,"Uzairu  Saidu",Casual,900358,Commercial,Active
+10000000000,"Mudassiru  Abdulmumini",Casual,900159,Operations,Active
+10000000000,"Ahmad  Muntari",Casual,900372,Headquarters,Active
+10000000000,"Bawale  Amadu",Casual,19,Operations,Active
+10000000000,"Naima  Nababa",Casual,17,Commercial,Active
+10000000000,"Amadu  Ali",Casual,8,Operations,Active
+10000000000,"Adamu  Amadu",Casual,7,Operations,Active
+10000000000,"Yahaya  Iliyasu",Casual,27,"Administration and Supply",Active
+10000000000,"Muhammad  Abubakar",Casual,90059,Operations,Active
+10000000000,"SANI  SHAMSU",Casual,13,Commercial,Active
+10000000000,"Sulaiman  Umar",Casual,12,Operations,Active
+10000000000,"Muhammadu  Aliyu",Casual,900119,Commercial,Hold
+10000000000,"ABDULKADIR  USMAN",Casual,900079,Operations,Active
+10000000000,"Abubakar  Yakubu",Casual,900077,Operations,Active
+10000000000,"Sabiu  Idris",Casual,900133,Commercial,Active
+10000000000,"SANI  LAWAL",Casual,900130,Commercial,Active
+10000000000,"SHAFII  HALLIRU",Casual,900073,Operations,Active
+10000000000,"ADAMU  ABDULLAHI",Casual,900072,Operations,Active
+10000000000,"Ibrahim Mai Kaita",Casual,900068,"Administration and Supply",Active
+10000000000,"Ali  Bala",Casual,900064,"Administration and Supply",Active
+10000000000,"Kamaladini  Yau",Casual,900121,Commercial,Active
+10000000000,"Hamisu  Muhammad",Casual,900120,Operations,Active
+10000000000,"Aminu  Shehu",Casual,900080,Commercial,Active
+10000000000,"Aliyu  Yunusa",Casual,900138,Commercial,Active
+10000000000,"Mubarak  Haruna",Casual,900137,Commercial,Active
+10000000000,"Abdullahi  Ibrahim",Casual,900136,Commercial,Hold
+10000000000,"ABUBAKAR  NURA",Casual,900135,Commercial,Active
+10000000000,"RABE  BUHARI",Casual,900087,Operations,Active
+10000000000,"ADO  NABAWA",Casual,900111,"Administration and Supply",Active
+10000000000,"Yunusa  Yusuf",Casual,900110,"Administration and Supply",Active
+10000000000,"Hassan  Hamisu",Casual,9001090,"Katsina District - West",Active
+10000000000,"ABUBAKAR  SALIHU",Casual,900129,Commercial,Active
+10000000000,"MUSA RUKAYYA YAKUBU",Casual,900128,"Administration and Supply",Active
+10000000000,"Tukur  Ishaka",Casual,900165,Operations,Active
+10000000000,"AMADU AHMED KORAU",Casual,900160,Commercial,Active
+10000000000,"HASSAN  AHMED",Casual,900158,Operations,Active
+10000000000,"Hamisu  Amadu",Casual,900174,Operations,Active
+10000000000,"Kabir Muhammad Tsoho",Casual,900173,Operations,Active
+10000000000,"Tajuddeen  Salisu",Casual,900172,Operations,Active
+10000000000,"Maimunatu Yusuf Maikaka",Casual,900171,Commercial,Active
+10000000000,"Ibrahim  Aminu",Casual,900169,Commercial,Active
+10000000000,"Murja  Abdulaziz",Casual,900150,Commercial,Active
+10000000000,"Muhammad  Abdullahi",Casual,900148,Commercial,Active
+10000000000,"Hayatu  Sabiu",Casual,900147,Commercial,Active
+10000000000,"Abubakar  Alhasan",Casual,900134,Commercial,Active
+10000000000,"Anas  Haruna",Casual,900164,Operations,Active
+10000000000,"Abdulmajid  Garba",Casual,900163,Commercial,Active
+10000000000,"Surajo  Umar",Casual,900162,Operations,Active
+10000000000,"Hamisu  Isah",Casual,900161,Operations,Active
+10000000000,"Muhammad  Ibrahim",Casual,900063,"Finance and Accounts",Active
+10000000000,"Abubakar  Abdullahi",Casual,900062,"Administration and Supply",Active
+10000000000,"Haruna  Yakubu",Casual,9000610,"Mashi District",Active
+10000000000,"ABDULLAHI  SHAMSU",Casual,900082,Operations,Active
+10000000000,"Salisu  Auwalu",Casual,900081,Operations,Hold
+10000000000,"Hamza  Salisu",Casual,900076,Operations,Active
+10000000000,"Kabir  Rabiu",Casual,900100,"Administration and Supply",Active
+10000000000,"LAWAL  HAMZA",Casual,900101,Commercial,Active
+10000000000,"Nura  Umar",Casual,900083,Operations,Active
+10000000000,"Danjuma  Usman",Casual,900084,Operations,Active
+10000000000,"Shamsu  Yahaya",Casual,900085,Operations,Active
+10000000000,"Madani  Ibrahim",Casual,900032,Operations,Active
+10000000000,"Musa  Zayyana",Casual,900033,"Administration and Supply",Active
+10000000000,"Sagir  Ibrahim",Casual,900034,Others,Active
+10000000000,"Yahaya  Isya",Casual,900098,Operations,Hold
+10000000000,"Abdullahi  Muhammadu",Casual,900097,Operations,Hold
+10000000000,"ALIYU  ABDU",Casual,9000356,"Administration and Supply",Active
+10000000000,"Kabir  Saleh",Casual,900094,Commercial,Active
+10000000000,"Yusuf  Sani",Casual,900096,Commercial,Active
+10000000000,"MASAUDU  SABIU",Casual,900075,Operations,Active
+10000000000,"ABDULRAHAMAN  BILYA",Casual,900074,Operations,Active
+10000000000,"ABDU  LAWAL",Casual,900039,Operations,Active
+10000000000,"Shamsuddeen Kabir Ruma",Casual,900126,Operations,Active
+10000000000,"Imrana  Ibrahim",Casual,900122,Commercial,Active
+10000000000,"SAADU MURTALA M",Casual,900031,"Administration and Supply",Active
+10000000000,"Buhari Masa Udu",Casual,900030,"Administration and Supply",Active
+10000000000,"Maharazu Ibrahim Abubakar",Casual,90003,"Administration and Supply",Active
+10000000000,"Samaila  Muhammad",Casual,900043,Operations,Active
+10000000000,"SULEIMAN  USMAN",Casual,900127,Commercial,Active
+10000000000,"IBRAHIM  HASSAN",Casual,900042,Operations,Active
+10000000000,"WAZIRI  SAIDU",Casual,900041,Operations,Active
+10000000000,"JIBRAHIM  ABDULLAHI",Casual,900040,Operations,Active
+10000000000,"Muhammadu  Bishir",Casual,900090,Operations,Active
+10000000000,"Hashimu  Aliyu",Casual,18,Operations,Hold
+10000000000,"Auwal  Abdussalam",Casual,900099,Operations,Hold
+10000000000,"SAMINU  MASAUDU",Casual,900053,Operations,Hold
+10000000000,"Umar  Yau",Casual,900050,Operations,Hold
+10000000000,"Murtala  Hamisu",Casual,900010,"Administration and Supply",Hold
+10000000000,"Abdullahi  Ibrahim",Casual,9000136,Commercial,Hold
+10000000000,"Abdul  Abu",Casual,2585,"Administration and Supply",Hold
+10000000000,"Suleiman Adamu Salisu",Casual,900088,Commercial,Hold
+10000000000,"Aliyu  Ibrahim",Casual,900091,Commercial,Hold
+10000000000,"Nura  Halilu",Casual,900009,"Administration and Supply",Hold
+10000000000,"Abubakar  Hamisu",Casual,900109,"Administration and Supply",Hold
+10000000000,"Isaq  Rabiu",Casual,900187,Operations,Hold
+10000000000,"Hakilu  Danlami",Casual,900061,Operations,Hold
+10000000000,"Abubakar  Adamu",Casual,26,Operations,Hold
+10000000000,"Musa  Ibrahim",Casual,900203,Commercial,Hold
+10000000000,"Kabir  Abdulkadir",Casual,900132,Commercial,Hold
+10000000000,"Yunusa  Aminu",Casual,900035,Commercial,Hold
+10000000000,"Muazu  Salisu",Casual,900178,Operations,Hold
+10000000000,"Haruna  Abdullahi",Casual,900070,"Administration and Supply",Hold
+10000000000,"Abubakar  Sani",Casual,900095,Commercial,Hold
+10000000000,"Rabiu  Sulaiman",Casual,900363,Operations,Hold
+10000000000,"Usman  Ayuba",Casual,900144,Commercial,Hold
+10000000000,"Badaru  Samaila",Casual,900048,Operations,Hold
+10000000000,"Nura  Samaila",Casual,900047,Operations,Hold
+10000000000,"Abdu  Adamu",Contract,800276,Operations,Retired-active
+10000000000,"Aminu  Salisu",Casual,9003490,"Mashi District",Hold
+10000000000,"Shamsudden Rabi U",Casual,900155,Commercial,Hold
+

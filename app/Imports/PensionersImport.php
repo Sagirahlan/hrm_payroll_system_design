@@ -18,6 +18,8 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     private $skipped = 0;
     private $updated = 0;
     private $updateMode = false;
+    private $totalRowsSeen = 0;
+    private $headersLogged = false;
 
     public function __construct(bool $updateMode = false)
     {
@@ -31,10 +33,24 @@ class PensionersImport implements ToModel, WithHeadingRow, WithValidation
     */
     public function model(array $row)
     {
-        // Update import logic to map new columns
-        $staffNo = $row['staff_number'] ?? $row['staff_no'] ?? null;
+        $this->totalRowsSeen++;
+
+        // Log headers once on first row for debugging
+        if (!$this->headersLogged) {
+            Log::info("Legacy Pensioner Import: Column headers detected: " . implode(', ', array_keys($row)));
+            $this->headersLogged = true;
+        }
+
+        // Support multiple possible column names for staff number
+        $staffNo = $row['staff_number'] ?? $row['staff_no'] ?? $row['staff_id'] ?? $row['id_no'] ?? null;
         
         if (!$staffNo) {
+            $this->skipped++;
+            // Log skipped rows with available data for debugging
+            $name = trim(($row['first_name'] ?? $row['firstname'] ?? '') . ' ' . ($row['surname'] ?? ''));
+            if (!empty(trim($name))) {
+                Log::warning("Legacy Pensioner Import: Row {$this->totalRowsSeen} skipped — no staff number found. Name: {$name}");
+            }
             return null; // Skip empty rows
         }
 

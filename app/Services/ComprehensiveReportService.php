@@ -1388,7 +1388,7 @@ class ComprehensiveReportService
     public function generateDuplicateBeneficiaryReport()
     {
         // Fetch all active/suspended/retired employees with their bank details and biometric data
-        $employees = Employee::with(['bank', 'biometricData', 'department'])
+        $employees = Employee::with(['bank', 'biometricData', 'department', 'appointmentType'])
             ->get();
 
         // Fetch all pensioners with their bank details
@@ -1404,7 +1404,7 @@ class ComprehensiveReportService
             
             if ($accountNo || $nin) {
                 $beneficiaries->push([
-                    'type' => 'Employee',
+                    'type' => $employee->appointmentType->name ?? 'Employee',
                     'id' => $employee->staff_no ?? $employee->employee_id,
                     'name' => $employee->full_name,
                     'department' => $employee->department->department_name ?? 'N/A',
