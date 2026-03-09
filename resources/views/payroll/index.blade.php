@@ -302,8 +302,8 @@
 
             <!-- Results Summary -->
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">
+                <div class="col-md-5">
+                    <p class="text-muted mb-0 mt-2">
                         <i class="fas fa-list me-1"></i>
                         Showing {{ $payrolls->firstItem() ?? 0 }} to {{ $payrolls->lastItem() ?? 0 }} 
                         of {{ $payrolls->total() }} results
@@ -312,12 +312,40 @@
                         @endif
                     </p>
                 </div>
-                <div class="col-md-6 text-end">
+                <div class="col-md-7 text-end">
                     @if($payrolls->count() > 0)
-                        <p class="mb-0">
-                            <i class="fas fa-calculator text-success me-1"></i>
-                            <strong>Total Net Salary: ₦{{ number_format($payrolls->sum('net_salary'), 2) }}</strong>
-                        </p>
+                        <div class="bg-light p-3 rounded border shadow-sm">
+                            <p class="mb-1 text-muted">
+                                Gross Total Net Salary (Filtered): <strong>₦{{ number_format($totalNetSalary, 2) }}</strong>
+                            </p>
+                            @if(isset($appointmentTypeTotals) && count($appointmentTypeTotals) > 0)
+                                <div class="mb-2 ms-3 small text-muted border-start border-2 ps-2">
+                                    @foreach($appointmentTypeTotals as $typeName => $typeTotal)
+                                        <div class="d-flex flex-column mb-2" style="max-width: 300px;">
+                                            <div class="d-flex justify-content-between">
+                                                <span>{{ in_array($typeName, ['Pension', 'Gratuity']) ? $typeName : $typeName . ' Staff' }}:</span>
+                                                <strong>₦{{ number_format($typeTotal, 2) }}</strong>
+                                            </div>
+                                            @if($typeName === 'Permanent' && $itfAmount > 0)
+                                                <div class="d-flex justify-content-between text-danger ps-3 mt-1">
+                                                    <span><i class="fas fa-minus ms-1 me-1"></i> ITF ({{ floatval($itfPercentage) }}%):</span>
+                                                    <strong>- ₦{{ number_format($itfAmount, 2) }}</strong>
+                                                </div>
+                                                <div class="d-flex justify-content-between text-success ps-3 mt-1 pt-1 border-top" style="border-color: #e0e0e0 !important;">
+                                                    <span><i class="fas fa-equals ms-1 me-1"></i> Final Permanent Net:</span>
+                                                    <strong>₦{{ number_format($typeTotal - $itfAmount, 2) }}</strong>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            <hr class="my-2">
+                            <p class="mb-0 fs-5">
+                                <i class="fas fa-calculator text-success me-1"></i>
+                                <strong>Final Disbursable Total: <span class="text-success">₦{{ number_format($finalTotalNetSalary, 2) }}</span></strong>
+                            </p>
+                        </div>
                     @endif
                 </div>
             </div>

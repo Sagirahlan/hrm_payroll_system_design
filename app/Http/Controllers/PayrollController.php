@@ -663,8 +663,55 @@ class PayrollController extends Controller
 
         // Pagination
         $perPage = $request->get('per_page', 20);
-        $payrolls = $query->paginate($perPage);
         $appointmentTypes = \App\Models\AppointmentType::all();
+
+        // --- Added for ITF Deduction & Summaries ---
+        // Clone the query to calculate totals across all filtered pages
+        $summaryQuery = clone $query;
+        $totalNetSalary = $summaryQuery->sum('net_salary');
+
+        // Calculate net salary for all appointment types dynamically
+        $appointmentTypeTotals = [];
+        foreach ($appointmentTypes as $type) {
+            // Use payment_type condition to prevent Pension/Gratuity records from 
+            // artificially inflating the totals for active staff types like 'Permanent'.
+            $typeQuery = clone $query;
+            $typeSum = $typeQuery->whereNotIn('payment_type', ['Pension', 'Gratuity'])
+                                 ->whereHas('employee', function($q) use ($type) {
+                $q->where('appointment_type_id', $type->id);
+            })->sum('net_salary');
+            
+            if ($typeSum > 0) {
+                $appointmentTypeTotals[$type->name] = $typeSum;
+            }
+        }
+
+        // Add Pension and Gratuity to the breakdown
+        $pensionQuery = clone $query;
+        $pensionSum = $pensionQuery->where('payment_type', 'Pension')->sum('net_salary');
+        if ($pensionSum > 0) {
+            $appointmentTypeTotals['Pension'] = $pensionSum;
+        }
+
+        $gratuityQuery = clone $query;
+        $gratuitySum = $gratuityQuery->where('payment_type', 'Gratuity')->sum('net_salary');
+        if ($gratuitySum > 0) {
+            $appointmentTypeTotals['Gratuity'] = $gratuitySum;
+        }
+
+        // Calculate permanent staff net salary specifically for ITF
+        $permanentStaffNetSalary = $appointmentTypeTotals['Permanent'] ?? 0;
+
+        // Fetch ITF deduction percentage
+        $itfDeduction = \App\Models\DeductionType::where('code', 'ITF')->first();
+        $itfPercentage = $itfDeduction ? ($itfDeduction->rate_or_amount ?? 1.0) : 1.0;
+
+        // Calculate ITF Amount and Final Total Net Salary
+        $itfAmount = ($permanentStaffNetSalary * $itfPercentage) / 100;
+        $finalTotalNetSalary = $totalNetSalary - $itfAmount;
+        // ---------------------------------------------
+
+        $payrolls = $query->paginate($perPage);
 
         // Build a summary of existing payroll months for the regeneration button
         $payrollStatusMap = PayrollRecord::select('payroll_month', 'payment_type', 'status')
@@ -693,7 +740,17 @@ class PayrollController extends Controller
                 ];
             });
 
-        return view('payroll.index', compact('payrolls', 'appointmentTypes', 'payrollStatusMap'));
+        return view('payroll.index', compact(
+            'payrolls', 
+            'appointmentTypes', 
+            'payrollStatusMap',
+            'totalNetSalary',
+            'permanentStaffNetSalary',
+            'itfAmount',
+            'itfPercentage',
+            'finalTotalNetSalary',
+            'appointmentTypeTotals'
+        ));
     }
 
     // Generate pay slip

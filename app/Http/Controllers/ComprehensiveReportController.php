@@ -822,24 +822,6 @@ class ComprehensiveReportController extends Controller
         fputcsv($file, ['Net Pay For Period', '₦' . number_format($reportData['total_net_pay'], 2)]);
         fputcsv($file, []);
 
-        // --- ADDITIONS ---
-        fputcsv($file, ['ADDITIONS']);
-        fputcsv($file, [
-            'Code', 'Description', 'Count', 'Total Amount'
-        ]);
-
-        foreach ($reportData['additions'] ?? [] as $item) {
-            fputcsv($file, [
-                $item['code'],
-                $item['description'],
-                $item['count'],
-                '₦' . number_format($item['amount'], 2)
-            ]);
-        }
-        
-        fputcsv($file, ['Total Additions', '', '', '₦' . number_format($reportData['total_additions'] ?? 0, 2)]);
-        fputcsv($file, []);
-
         // --- DEDUCTIONS ---
         fputcsv($file, ['DEDUCTIONS']);
         fputcsv($file, [

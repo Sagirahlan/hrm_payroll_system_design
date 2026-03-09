@@ -1224,7 +1224,6 @@ class ComprehensiveReportService
 
         $employeeIds = $payrollRecords->pluck('employee_id');
         
-        $additionsArray = collect();
         $deductionsArray = collect();
 
         // 1. Regular Deductions
@@ -1298,77 +1297,48 @@ class ComprehensiveReportService
             }
         }
 
-        // 3. Additions
-        $additions = Addition::whereIn('employee_id', $employeeIds)
-            ->where(function($query) use ($fullMonthStr, $year, $monthString) {
-                $query->where(function($q) use ($fullMonthStr) {
-                    // Monthly or Perpetual
-                    $q->whereIn('addition_period', ['Monthly', 'Perpetual'])
-                      ->where('start_date', '<=', $fullMonthStr . '-01')
-                      ->where(function($dateQuery) use ($fullMonthStr) {
-                          $dateQuery->whereNull('end_date')
-                                    ->orWhere('end_date', '>=', $fullMonthStr . '-01');
-                      });
-                })->orWhere(function($q) use ($year, $monthString) {
-                    // OneTime for this month
-                    $q->where('addition_period', 'OneTime')
-                      ->whereYear('start_date', '=', $year)
-                      ->whereMonth('start_date', '=', $monthString);
-                });
-            })
-            ->with('additionType')
-            ->get();
-
-        $groupedAdditions = $additions->groupBy('addition_type_id');
-
-        foreach ($groupedAdditions as $typeId => $items) {
-            $firstItem = $items->first();
-            $additionsArray->push([
-                'code' => $firstItem->additionType->id ?? 'A-'.$typeId,
-                'description' => $firstItem->additionType->name ?? 'Unknown Addition',
-                'count' => $items->unique('employee_id')->count(),
-                'amount' => $items->sum('amount'),
-                'type' => 'Addition'
-            ]);
-        }
-        
-        // Push Basic Salary to Additions
-        $additionsArray->push([
-            'code' => 'BASIC',
-            'description' => 'Basic Salary',
-            'count' => $payrollRecords->where('basic_salary', '>', 0)->count(),
-            'amount' => $payrollRecords->sum('basic_salary'),
-            'type' => 'Addition'
-        ]);
-
-        $additionsArray = $additionsArray->sortBy('description')->values();
         $deductionsArray = $deductionsArray->sortBy('description')->values();
         
-        $totalAdditions = $additionsArray->sum('amount');
+        // --- Added for ITF Deduction ---
+        // Calculate permanent staff net salary to determine ITF
+        // This mirrors the logic in PayrollController@index
+        $permanentStaffNetSalary = PayrollRecord::whereYear('payroll_month', $year)
+            ->whereMonth('payroll_month', $monthNumber)
+            ->whereNotIn('payment_type', ['Pension', 'Gratuity'])
+            ->whereHas('employee.appointmentType', function($q) {
+                $q->where('name', 'Permanent');
+            })->sum('net_salary');
+
+        // Fetch ITF deduction percentage
+        $itfDeductionModel = \App\Models\DeductionType::where('code', 'ITF')->first();
+        $itfPercentage = $itfDeductionModel ? ($itfDeductionModel->rate_or_amount ?? 1.0) : 1.0;
+
+        // Calculate ITF Amount
+        $itfAmount = ($permanentStaffNetSalary * $itfPercentage) / 100;
+
+        if ($itfAmount > 0) {
+            // Unshift places it at the top, or you can push it based on preference
+            $deductionsArray->push([
+                'code' => $itfDeductionModel->id ?? 'ITF',
+                'description' => 'ITF Deduction (' . floatval($itfPercentage) . '% of Permanent Staff Net)',
+                'count' => '-', // Representing an aggregate rather than individual employee tally
+                'amount' => $itfAmount,
+                'type' => 'Deduction'
+            ]);
+        }
+        // -------------------------------
+
         $totalDeductions = $deductionsArray->sum('amount');
-        $totalNetPay = $payrollRecords->sum('net_salary');
         
-        // Merge to maintain array structure for the frontend if they iterate just over `journal_items`
-        // But we provide specific totals to make it make sense
-        $journalItems = $additionsArray->concat($deductionsArray)->values();
-        
-        $journalItems->push([
-            'code' => 'NET',
-            'description' => 'Net Pay',
-            'count' => $payrollRecords->count(),
-            'amount' => $totalNetPay,
-            'type' => 'Net Pay'
-        ]);
+        // The total net pay must be adjusted downwards by the ITF to reflect the true disbursable amount
+        $totalNetPay = $payrollRecords->sum('net_salary') - $itfAmount;
 
         return [
             'report_title' => 'Payroll Journal Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
             'period' => $year . '-' . $this->getMonthName($monthNumber),
-            'journal_items' => $journalItems,
-            'additions' => $additionsArray,
             'deductions' => $deductionsArray,
-            'grand_total' => $totalNetPay, // Just reporting NET pay as grand total now makes more sense
-            'total_additions' => $totalAdditions,
+            'grand_total' => $totalNetPay,
             'total_deductions' => $totalDeductions,
             'total_net_pay' => $totalNetPay
         ];

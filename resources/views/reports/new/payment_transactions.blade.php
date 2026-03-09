@@ -101,6 +101,9 @@
                                 <a href="{{ route('reports.payment-transactions.export', request()->all()) }}" class="btn btn-success">
                                     <i class="fas fa-file-csv"></i> Export CSV
                                 </a>
+                                <a href="{{ route('reports.payment-transactions.pdf', request()->all()) }}" class="btn btn-danger">
+                                    <i class="fas fa-file-pdf"></i> Export PDF
+                                </a>
                                 <button type="button" class="btn btn-info" onclick="window.print()">
                                     <i class="fas fa-print"></i> Print
                                 </button>
@@ -138,7 +141,7 @@
                                     <th>Payroll Month</th>
                                     <th>Amount</th>
                                     <th>Bank</th>
-                                    <th>Account Name</th>
+
                                     <th>Account Number</th>
                                     <th>Status</th>
                                 </tr>
@@ -164,7 +167,7 @@
                                         </td>
                                         <td>NGN {{ number_format($transaction->amount, 2) }}</td>
                                         <td>{{ $transaction->bank_code }}</td>
-                                        <td>{{ $transaction->account_name }}</td>
+
                                         <td>{{ $transaction->account_number }}</td>
                                         <td>
                                             @if($transaction->status == 'Approved')
@@ -186,7 +189,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">No payment transactions found.</td>
+                                        <td colspan="8" class="text-center">No payment transactions found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

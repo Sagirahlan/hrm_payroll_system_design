@@ -71,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/reports/payment-transactions/export', [ReportController::class, 'exportPaymentTransactions'])->name('reports.payment-transactions.export');
+    Route::get('/reports/payment-transactions/pdf', [ReportController::class, 'exportPaymentTransactionsPdf'])->name('reports.payment-transactions.pdf');
     Route::get('/reports/payment-transactions', [ReportController::class, 'paymentTransactions'])->name('reports.payment-transactions');
     Route::resource('reports', ReportController::class);
     Route::post('/reports/generate', [ReportController::class, 'generateEmployeeReport'])->name('reports.generate');

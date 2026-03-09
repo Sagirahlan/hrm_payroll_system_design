@@ -1798,7 +1798,6 @@ class ReportController extends Controller
                 'Payroll Month', 
                 'Amount', 
                 'Bank', 
-                'Account Name',
                 'Account Number', 
                 'Status'
             ]);
@@ -1813,7 +1812,6 @@ class ReportController extends Controller
                         : 'N/A',
                     $transaction->amount,
                     $transaction->bank_code,
-                    $transaction->account_name,
                     $transaction->account_number,
                     ucfirst($transaction->status)
                 ]);
@@ -1822,5 +1820,87 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportPaymentTransactionsPdf(Request $request)
+    {
+        $query = PaymentTransaction::with(['employee', 'payroll']);
+
+        // Apply filters (same as CSV export)
+        if ($request->filled('payment_month')) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month);
+            $query->whereHas('payroll', function($q) use ($date) {
+                $q->whereYear('payroll_month', $date->year)
+                  ->whereMonth('payroll_month', $date->month);
+            });
+        } else {
+             $query->whereHas('payroll', function($q) {
+                $q->whereYear('payroll_month', now()->year)
+                  ->whereMonth('payroll_month', now()->month);
+             });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('staff_no', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('bank_code')) {
+            $query->where('bank_code', $request->bank_code);
+        }
+        if ($request->filled('department_id')) {
+            $departmentId = $request->department_id;
+            $query->whereHas('employee', function($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+        if ($request->filled('appointment_type_id')) {
+            $appointmentTypeId = $request->appointment_type_id;
+            if ($appointmentTypeId === 'pensioner') {
+                $query->whereHas('payroll', function($q) {
+                    $q->whereIn('payment_type', ['Pension', 'Gratuity']);
+                });
+            } else {
+                $query->whereHas('employee', function($q) use ($appointmentTypeId) {
+                    $q->where('appointment_type_id', $appointmentTypeId);
+                });
+            }
+        }
+
+        $transactions = $query->latest('payment_date')->get();
+
+        $appointmentTypeId = $request->appointment_type_id;
+        if ($appointmentTypeId === 'pensioner') {
+            $appointmentTypeName = 'PENSIONER';
+        } else {
+            $appointmentTypeName = $appointmentTypeId ? AppointmentType::find($appointmentTypeId)->name : 'ALL STAFF';
+        }
+
+        $month = $request->payment_month ? \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month) : now();
+        $monthStr = $month->format('F Y');
+
+        $html = view('reports.new.pdf.payment-transactions-report', [
+            'transactions' => $transactions,
+            'monthStr' => $monthStr,
+            'appointmentTypeName' => $appointmentTypeName,
+        ])->render();
+
+        $pdf = PDF::loadHTML($html)
+            ->setOption('orientation', 'Landscape')
+            ->setOption('page-size', 'A4')
+            ->setOption('lowquality', true)
+            ->setOption('enable-javascript', true)
+            ->setOption('javascript-delay', 1000)
+            ->setOption('enable-local-file-access', true)
+            ->setOption('no-stop-slow-scripts', true);
+
+        $filename = 'payment_transactions_' . date('Y-m-d_H-i-s') . '.pdf';
+
+        return $pdf->inline($filename);
     }
 }

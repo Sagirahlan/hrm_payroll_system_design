@@ -91,34 +91,6 @@
     <table>
         <thead>
             <tr>
-                <th colspan="4" style="text-align: left; background-color: #e0e7ff;">ADDITIONS</th>
-            </tr>
-            <tr>
-                <th>Code</th>
-                <th>Description</th>
-                <th class="text-center">Count</th>
-                <th class="text-right">Total Amount (₦)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($data['additions'] ?? [] as $item)
-            <tr>
-                <td>{{ $item['code'] }}</td>
-                <td>{{ $item['description'] }}</td>
-                <td class="text-center">{{ $item['count'] }}</td>
-                <td class="text-right">{{ number_format($item['amount'], 2) }}</td>
-            </tr>
-            @endforeach
-            <tr style="font-weight: bold; background-color: #f8fafc;">
-                <td colspan="3" class="text-right">Total Additions:</td>
-                <td class="text-right">{{ number_format($data['total_additions'] ?? 0, 2) }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <table>
-        <thead>
-            <tr>
                 <th colspan="4" style="text-align: left; background-color: #fee2e2;">DEDUCTIONS</th>
             </tr>
             <tr>
