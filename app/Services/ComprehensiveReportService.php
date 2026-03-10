@@ -304,9 +304,15 @@ class ComprehensiveReportService
         }
 
         if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
-            $query->whereHas('employee', function($q) use ($filters) {
-                $q->where('appointment_type_id', $filters['appointment_type_id']);
-            });
+            if ($filters['appointment_type_id'] === 'pensioner') {
+                $query->whereHas('employee', function($q) {
+                    $q->where('status', 'Retired');
+                });
+            } else {
+                $query->whereHas('employee', function($q) use ($filters) {
+                    $q->where('appointment_type_id', $filters['appointment_type_id']);
+                });
+            }
         }
 
         // Apply year and month filters if provided (Active During logic)
@@ -403,9 +409,15 @@ class ComprehensiveReportService
         }
 
         if (isset($filters['appointment_type_id']) && $filters['appointment_type_id']) {
-            $query->whereHas('employee', function($q) use ($filters) {
-                $q->where('appointment_type_id', $filters['appointment_type_id']);
-            });
+            if ($filters['appointment_type_id'] === 'pensioner') {
+                $query->whereHas('employee', function($q) {
+                    $q->where('status', 'Retired');
+                });
+            } else {
+                $query->whereHas('employee', function($q) use ($filters) {
+                    $q->where('appointment_type_id', $filters['appointment_type_id']);
+                });
+            }
         }
 
         // Apply year and month filters if provided (Active During logic)

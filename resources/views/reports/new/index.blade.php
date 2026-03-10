@@ -622,6 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @foreach($appointmentTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
+                                <option value="pensioner">Pensioners</option>
                             </select>
                         </div>
                     </div>
@@ -672,6 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @foreach($appointmentTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
+                                <option value="pensioner">Pensioners</option>
                             </select>
                         </div>
                     </div>
