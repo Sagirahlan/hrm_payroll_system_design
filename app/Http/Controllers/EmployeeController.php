@@ -780,11 +780,6 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        // Check if the employee is retired and prevent editing
-        if ($employee->status === 'Retired' || ($employee->retirement && $employee->retirement->status === 'confirmed')) {
-            return redirect()->route('employees.index')
-                ->with('error', 'Editing is not allowed for retired employees.');
-        }
 
         // Load relationships for the employee
         $employee->load(['state', 'lga', 'ward', 'bank']);
@@ -813,11 +808,6 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
-        // Check if the employee is retired and prevent editing
-        if ($employee->status === 'Retired' || ($employee->retirement && $employee->retirement->status === 'confirmed')) {
-            return redirect()->route('employees.index')
-                ->with('error', 'Editing is not allowed for retired employees.');
-        }
 
         try {
             $employee->load(['nextOfKin', 'bank']);
@@ -927,13 +917,6 @@ class EmployeeController extends Controller
             $previousData = [];
 
             foreach ($validated as $key => $value) {
-                // Special handling for status field - don't change from 'Hold' to any other value during regular updates
-                // EXCEPTION: Allow changing to 'Retired-Active' for contract staff
-                if ($key === 'status' && $employee->status === 'Hold' && $value !== 'Retired-Active') {
-                    // If employee is on 'Hold' status, don't allow the status to be changed as part of other updates
-                    continue; // Skip updating status field
-                }
-
                 if (array_key_exists($key, $currentData) && $currentData[$key] != $value) {
                     $changedData[$key] = $value;
                     $previousData[$key] = $currentData[$key];
@@ -1049,9 +1032,12 @@ class EmployeeController extends Controller
 
         $file = $request->file('import_file');
         $updateMode = $request->has('update_mode');
+        $accountNameOnly = $request->has('account_name_only');
+
+        $affectedCount = 0;
 
         try {
-            DB::transaction(function () use ($file, $updateMode) {
+            DB::transaction(function () use ($file, $updateMode, $accountNameOnly, &$affectedCount) {
                 // Determine the number of sheets in the Excel file
                 $fileExtension = $file->getClientOriginalExtension();
 
@@ -1065,22 +1051,40 @@ class EmployeeController extends Controller
                     unset($spreadsheet);
 
                     // Phase 1: Import employees first to build the ID mapping
-                    $employeeImport = new \App\Imports\EmployeeImport($updateMode);
+                    $employeeImport = new \App\Imports\EmployeeImport($updateMode, $accountNameOnly);
                     \Maatwebsite\Excel\Facades\Excel::import(
-                        new class($employeeImport) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                        new class($employeeImport, $accountNameOnly, $sheetCount) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
                             private $employeeImport;
-                            public function __construct($employeeImport) { $this->employeeImport = $employeeImport; }
-                            public function sheets(): array { return [0 => $this->employeeImport]; }
+                            private $accountNameOnly;
+                            private $sheetCount;
+                            public function __construct($employeeImport, $accountNameOnly, $sheetCount) { 
+                                $this->employeeImport = $employeeImport; 
+                                $this->accountNameOnly = $accountNameOnly;
+                                $this->sheetCount = $sheetCount;
+                            }
+                            public function sheets(): array { 
+                                if ($this->accountNameOnly) {
+                                    // In Account Name Only mode, scan all sheets to find bank columns
+                                    $allSheets = [];
+                                    for ($i = 0; $i < $this->sheetCount; $i++) {
+                                        $allSheets[$i] = $this->employeeImport;
+                                    }
+                                    return $allSheets;
+                                }
+                                return [0 => $this->employeeImport]; 
+                            }
                         },
                         $file
                     );
+
+                    $affectedCount = $employeeImport->affectedCount;
 
                     // Get the ID mapping (Excel employee_id => DB employee_id)
                     $idMapping = $employeeImport->getIdMapping();
                     \Illuminate\Support\Facades\Log::info('EmployeeImport ID mapping built: ' . count($idMapping) . ' entries');
 
                     // Phase 2: Import next-of-kin and bank details with the ID mapping
-                    if ($sheetCount >= 2) {
+                    if ($sheetCount >= 2 && !$accountNameOnly) {
                         $additionalSheets = [];
 
                         if ($sheetCount >= 2) {
@@ -1100,7 +1104,9 @@ class EmployeeController extends Controller
                     }
                 } else {
                     // For CSV files, use single sheet import
-                    \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\EmployeeImport($updateMode), $file);
+                    $employeeImport = new \App\Imports\EmployeeImport($updateMode, $accountNameOnly);
+                    \Maatwebsite\Excel\Facades\Excel::import($employeeImport, $file);
+                    $affectedCount = $employeeImport->affectedCount;
                 }
             });
         } catch (\Exception $e) {
@@ -1113,10 +1119,15 @@ class EmployeeController extends Controller
             'action' => 'imported',
             'description' => 'Imported employee data from Excel',
             'action_timestamp' => now(),
-            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName()]),
+            'log_data' => json_encode(['entity_type' => 'Employee', 'entity_id' => null, 'file_name' => $file->getClientOriginalName(), 'affected_count' => $affectedCount]),
         ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employees imported successfully.');
+        $message = 'Employees imported successfully.';
+        if ($accountNameOnly) {
+            $message = "Account names updated successfully for {$affectedCount} staff records.";
+        }
+
+        return redirect()->route('employees.index')->with('success', $message);
     }
 
     public function getLgasByState(Request $request)

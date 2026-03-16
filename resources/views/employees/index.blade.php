@@ -53,6 +53,15 @@
                                         </label>
                                     </div>
                                 </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="account_name_only" id="accountNameOnly">
+                                        <label class="form-check-label fw-bold text-info" for="accountNameOnly">
+                                            <i class="fas fa-university me-1"></i>Account Name Only
+                                            <small class="text-muted d-block" style="font-size: 0.7rem;">Update ONLY bank account names</small>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="col-12 col-md-auto">
                                     <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm w-100">
                                         <i class="fas fa-cloud-upload-alt me-1"></i>Import

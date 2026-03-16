@@ -571,15 +571,38 @@
                 casualAppointmentFields.classList.remove('d-none');
                 regularAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
                 if (sectionTitle) sectionTitle.textContent = 'Casual Appointment Details';
+                
+                // Enable status field for Casual staff (so status can be changed)
+                if (statusSelect) {
+                    statusSelect.disabled = false;
+                    let hiddenStatus = document.getElementById('hidden_status');
+                    if (hiddenStatus) hiddenStatus.remove();
+                }
             } else if (appointmentTypeName === 'Contract') {
                 // Contract: show BOTH permanent fields (optional) and contract fields
                 regularAppointmentFields.classList.remove('d-none');
                 casualAppointmentFields.classList.remove('d-none');
                 // Permanent fields are visible but not disabled (optional for contract)
                 if (sectionTitle) sectionTitle.textContent = 'Contract Details';
+                
+                // Enable status field for non-casual
+                if (statusSelect) {
+                    statusSelect.disabled = false;
+                    let hiddenStatus = document.getElementById('hidden_status');
+                    if (hiddenStatus) hiddenStatus.remove();
+                }
+            } else {
+                // Permanent: show permanent fields, hide contract fields
                 regularAppointmentFields.classList.remove('d-none');
                 casualAppointmentFields.classList.add('d-none');
                 casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+                
+                // Enable status field for non-casual
+                if (statusSelect) {
+                    statusSelect.disabled = false;
+                    let hiddenStatus = document.getElementById('hidden_status');
+                    if (hiddenStatus) hiddenStatus.remove();
+                }
             }
 
             if (retiredActiveOption) {

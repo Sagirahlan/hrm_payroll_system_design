@@ -648,7 +648,18 @@
                                                                 </a>
                                                             </li>
                                                         @endif
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a class="dropdown-item text-danger" href="#"
+                                                               onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this payroll record? This action cannot be undone.')) { document.getElementById('delete-payroll-form-{{ $payroll->payroll_id }}').submit(); }">
+                                                                <i class="fas fa-trash-alt me-2 text-danger"></i> Delete Record
+                                                            </a>
+                                                        </li>
                                                     </ul>
+                                                    <form id="delete-payroll-form-{{ $payroll->payroll_id }}" action="{{ route('payroll.destroy', $payroll->payroll_id) }}" method="POST" style="display: none;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>

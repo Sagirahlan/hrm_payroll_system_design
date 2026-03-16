@@ -1799,6 +1799,7 @@ class ReportController extends Controller
                 'Amount', 
                 'Bank', 
                 'Account Number', 
+                'Account Name',
                 'Status'
             ]);
 
@@ -1813,6 +1814,7 @@ class ReportController extends Controller
                     $transaction->amount,
                     $transaction->bank_code,
                     $transaction->account_number,
+                    $transaction->account_name ?? 'N/A',
                     ucfirst($transaction->status)
                 ]);
             }
@@ -1893,14 +1895,17 @@ class ReportController extends Controller
         $pdf = PDF::loadHTML($html)
             ->setOption('orientation', 'Landscape')
             ->setOption('page-size', 'A4')
-            ->setOption('lowquality', true)
+            ->setOption('margin-top', 10)
+            ->setOption('margin-right', 10)
+            ->setOption('margin-bottom', 10)
+            ->setOption('margin-left', 10)
             ->setOption('enable-javascript', true)
-            ->setOption('javascript-delay', 1000)
+            ->setOption('javascript-delay', 500)
             ->setOption('enable-local-file-access', true)
             ->setOption('no-stop-slow-scripts', true);
 
         $filename = 'payment_transactions_' . date('Y-m-d_H-i-s') . '.pdf';
 
-        return $pdf->inline($filename);
+        return $pdf->download($filename);
     }
 }

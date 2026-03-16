@@ -4,10 +4,16 @@
     <meta charset="utf-8">
     <title>Payment Transactions Report</title>
     <style>
+        @page {
+            margin: 10mm;
+            size: landscape;
+        }
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'DejaVu Sans', sans-serif;
+            margin: 0;
+            padding: 0;
             font-size: 10px;
+            background-color: white;
         }
         .header {
             text-align: center;
@@ -47,11 +53,15 @@
         }
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-top: 1px solid #ddd;
+            border-left: 1px solid #ddd;
             margin-bottom: 20px;
         }
         th, td {
-            border: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
             padding: 5px 6px;
             text-align: left;
         }
@@ -62,6 +72,7 @@
         }
         td {
             font-size: 9px;
+            vertical-align: top;
         }
         .text-right {
             text-align: right;
@@ -75,6 +86,7 @@
             font-size: 8px;
             font-weight: bold;
             color: #fff;
+            display: inline-block;
         }
         .badge-success { background-color: #28a745; }
         .badge-info { background-color: #17a2b8; }
@@ -92,6 +104,24 @@
             color: #666;
         }
         .sn-col { width: 30px; }
+        
+        /* Page break handling for wkhtmltopdf */
+        tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
+        }
+        .avoid-break {
+            page-break-inside: avoid !important;
+        }
+        .page-break-before {
+            page-break-before: always !important;
+        }
+        thead {
+            display: table-header-group !important;
+        }
+        tfoot {
+            display: table-footer-group !important;
+        }
     </style>
 </head>
 <body>
@@ -105,7 +135,14 @@
         <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 
-    <table>
+    @php 
+        $sn = 1; 
+        $totalAmount = 0; 
+        $recordsPerPage = 20; // Force a split every 20 records
+    @endphp
+
+    @foreach($transactions->chunk($recordsPerPage) as $chunkIndex => $chunk)
+    <table class="{{ $chunkIndex > 0 ? 'page-break-before' : '' }}">
         <thead>
             <tr>
                 <th class="sn-col">S/N</th>
@@ -116,12 +153,12 @@
                 <th class="text-right">Amount (₦)</th>
                 <th>Bank</th>
                 <th>Account Number</th>
+                <th>Account Name</th>
                 <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            @php $sn = 1; $totalAmount = 0; @endphp
-            @foreach($transactions as $transaction)
+            @foreach($chunk as $transaction)
                 @php $totalAmount += $transaction->amount; @endphp
                 <tr>
                     <td class="text-center">{{ $sn++ }}</td>
@@ -144,6 +181,7 @@
                     <td class="text-right">{{ number_format($transaction->amount, 2) }}</td>
                     <td>{{ $transaction->bank_code }}</td>
                     <td>{{ $transaction->account_number }}</td>
+                    <td>{{ $transaction->account_name ?? 'N/A' }}</td>
                     <td>
                         <span class="badge
                             @if($transaction->status == 'Approved') badge-success
@@ -158,13 +196,18 @@
                     </td>
                 </tr>
             @endforeach
+        </tbody>
+        @if($loop->last)
+        <tfoot>
             <tr class="summary-row">
                 <td colspan="5" class="text-right">Total ({{ count($transactions) }} records):</td>
                 <td class="text-right">₦ {{ number_format($totalAmount, 2) }}</td>
-                <td colspan="3"></td>
+                <td colspan="4"></td>
             </tr>
-        </tbody>
+        </tfoot>
+        @endif
     </table>
+    @endforeach
 
     <div class="footer">
         Generated on: {{ now()->format('F j, Y g:i A') }}

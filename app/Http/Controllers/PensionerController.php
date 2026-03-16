@@ -540,6 +540,43 @@ class PensionerController extends Controller
 
         try {
             $updateMode = $request->boolean('update_mode');
+            $accountNameOnly = $request->boolean('account_name_only');
+
+            if ($accountNameOnly) {
+                // Multi-sheet scanning for Account Name Only mode
+                $path = $request->file('file')->getRealPath();
+                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($path);
+                $reader->setReadDataOnly(true);
+                $spreadsheet = $reader->load($path);
+                $sheetNames = $spreadsheet->getSheetNames();
+
+                $import = new PensionersImport($updateMode, true);
+                
+                // For Account Name Only, we scan all sheets to be robust
+                Excel::import(new class($import) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                    private $import;
+                    public function __construct($import) { $this->import = $import; }
+                    public function sheets(): array {
+                        return [0 => $this->import]; // Maatwebsite\Excel handles this with a special syntax or we can just return an array of the same object for each sheet index
+                    }
+                }, $request->file('file'));
+
+                // The above anonymous class for multiple sheets is tricky. 
+                // Let's use the same pattern as EmployeeController for consistency.
+                $sheetsToImport = [];
+                foreach ($spreadsheet->getAllSheets() as $index => $sheet) {
+                    $sheetsToImport[$index] = $import;
+                }
+
+                Excel::import(new class($sheetsToImport) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+                    private $sheets;
+                    public function __construct($sheets) { $this->sheets = $sheets; }
+                    public function sheets(): array { return $this->sheets; }
+                }, $request->file('file'));
+
+                return redirect()->route('pensioners.legacy.import')->with('success', "Account names update processed. {$import->affectedCount} staff records affected.");
+            }
+
             $import = new PensionersImport($updateMode);
             Excel::import($import, $request->file('file'));
 

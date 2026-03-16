@@ -1345,6 +1345,14 @@ class ComprehensiveReportService
         // The total net pay must be adjusted downwards by the ITF to reflect the true disbursable amount
         $totalNetPay = $payrollRecords->sum('net_salary') - $itfAmount;
 
+        $deductionsArray->push([
+            'code' => 'NET',
+            'description' => 'Net Pay',
+            'count' => $payrollRecords->unique('employee_id')->count(),
+            'amount' => $totalNetPay,
+            'type' => 'Net Pay'
+        ]);
+
         return [
             'report_title' => 'Payroll Journal Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),

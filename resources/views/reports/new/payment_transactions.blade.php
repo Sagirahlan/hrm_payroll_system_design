@@ -143,6 +143,7 @@
                                     <th>Bank</th>
 
                                     <th>Account Number</th>
+                                    <th>Account Name</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -169,6 +170,7 @@
                                         <td>{{ $transaction->bank_code }}</td>
 
                                         <td>{{ $transaction->account_number }}</td>
+                                        <td>{{ $transaction->account_name ?? 'N/A' }}</td>
                                         <td>
                                             @if($transaction->status == 'Approved')
                                                 <span class="badge badge-success">Approved</span>
@@ -189,7 +191,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center">No payment transactions found.</td>
+                                        <td colspan="9" class="text-center">No payment transactions found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

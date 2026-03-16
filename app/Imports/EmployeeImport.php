@@ -16,6 +16,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
 {
     protected $updateMode;
+    protected $accountNameOnly;
 
     /**
      * Mapping of Excel employee_id => DB employee_id.
@@ -23,9 +24,15 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
      */
     protected array $idMapping = [];
 
-    public function __construct($updateMode = false)
+    /**
+     * Number of staff records affected (updated) during account name only mode.
+     */
+    public $affectedCount = 0;
+
+    public function __construct($updateMode = false, $accountNameOnly = false)
     {
         $this->updateMode = $updateMode;
+        $this->accountNameOnly = $accountNameOnly;
     }
 
     /**
@@ -40,15 +47,69 @@ class EmployeeImport implements ToModel, WithValidation, WithHeadingRow
     {
         \Illuminate\Support\Facades\Log::info('Import Row Data:', $row);
 
-        // Skip empty rows
-        if (!isset($row['first_name']) || trim($row['first_name']) === '') {
-            return null;
+        // Skip empty rows - if accountNameOnly is true, we might not have first_name
+        if (!$this->accountNameOnly) {
+            if (!isset($row['first_name']) || trim($row['first_name']) === '') {
+                return null;
+            }
+        } else {
+            // In accountNameOnly mode, we need at least staff_no or employee_id to identify the staff
+            if (empty($row['staff_no']) && empty($row['employee_id']) && empty($row['id'])) {
+                return null;
+            }
         }
 
-        // Check if employee with same staff_no already exists
+        // Check if employee with same staff_no or employee_id already exists
         $existingEmployee = null;
-        if (!empty($row['staff_no'])) {
-            $existingEmployee = Employee::where('staff_no', $row['staff_no'])->first();
+        
+        $staffNoVal = $row['staff_no'] ?? $row['staff_n'] ?? $row['staffno'] ?? $row['staff_number'] ?? null;
+        $employeeIdVal = $row['employee_id'] ?? $row['id'] ?? $row['employee_'] ?? $row['employeeid'] ?? $row['emp_id'] ?? $row['loyee_'] ?? null;
+
+        if (!empty($staffNoVal)) {
+            $existingEmployee = Employee::where('staff_no', $staffNoVal)->first();
+        }
+        
+        if (!$existingEmployee && !empty($employeeIdVal)) {
+            $existingEmployee = Employee::find($employeeIdVal);
+        }
+
+        // ACCOUNT NAME ONLY MODE
+        if ($this->accountNameOnly) {
+            $bankName = $row['bank_name'] ?? $row['bank'] ?? $row['bankname'] ?? $row['bank_name_display'] ?? $row['bank_nam'] ?? $row['bank_nam_'] ?? null;
+            $accountName = $row['account_name'] ?? $row['accountname'] ?? $row['acc_name'] ?? $row['account_n'] ?? $row['account_n_'] ?? $row['acc_name_'] ?? null;
+            $accountNumber = $row['account_no'] ?? $row['account_number'] ?? $row['accountno'] ?? $row['acc_no'] ?? $row['account_num'] ?? $row['acc_no_'] ?? null;
+
+            if ($existingEmployee) {
+                if ($accountName) {
+                    $bankData = ['account_name' => $accountName];
+                    
+                    // If bank name is provided, try to normalize it
+                    if ($bankName) {
+                        $bankList = BankList::whereRaw('LOWER(bank_name) LIKE ?', ['%' . strtolower(trim($bankName)) . '%'])->first();
+                        $bankData['bank_name'] = $bankList ? $bankList->bank_name : $bankName;
+                        if ($bankList && $bankList->bank_code) {
+                            $bankData['bank_code'] = $bankList->bank_code;
+                        }
+                    }
+
+                    if ($accountNumber) {
+                        $bankData['account_no'] = $accountNumber;
+                    }
+
+                    Bank::updateOrCreate(
+                        ['employee_id' => $existingEmployee->employee_id],
+                        $bankData
+                    );
+
+                    $this->affectedCount++;
+                    \Illuminate\Support\Facades\Log::info("AccountNameOnly: Updated bank details for staff " . ($staffNoVal ?? $existingEmployee->staff_no ?? $existingEmployee->employee_id), $bankData);
+                } else {
+                    \Illuminate\Support\Facades\Log::warning("AccountNameOnly: Found staff " . ($existingEmployee->staff_no ?? $existingEmployee->employee_id) . " but NO account name found in row. Row keys: " . implode(', ', array_keys($row)));
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::warning("AccountNameOnly: Staff not found. Matching failed for: staff_no=" . ($staffNoVal ?? 'N/A') . ", employee_id=" . ($employeeIdVal ?? 'N/A') . ". Row keys: " . implode(', ', array_keys($row)));
+            }
+            return null; // Don't process anything else for this employee record
         }
 
         // Handle state/lga/ward mapping to IDs for both create and update

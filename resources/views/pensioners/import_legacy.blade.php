@@ -43,25 +43,39 @@
                             @enderror
                         </div>
 
-                        {{-- Update Mode Toggle --}}
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="update_mode" name="update_mode" value="1">
-                                <label class="form-check-label fw-bold" for="update_mode">
-                                    <i class="fas fa-shield-alt me-1"></i> Update existing staff only (preserve pension amounts & history)
-                                </label>
+                        <div class="row mb-3">
+                            {{-- Update Mode Toggle --}}
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="update_mode" name="update_mode" value="1">
+                                    <label class="form-check-label fw-bold" for="update_mode">
+                                        <i class="fas fa-shield-alt me-1"></i> Update Mode
+                                    </label>
+                                </div>
+                                <div class="form-text text-muted" id="update_mode_help">
+                                    <span id="update_mode_off_text">
+                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                        <strong>Normal:</strong> Overwrite all fields.
+                                    </span>
+                                    <span id="update_mode_on_text" style="display: none;">
+                                        <i class="fas fa-check-circle text-success me-1"></i>
+                                        <strong>Update:</strong> Safe fields only.
+                                    </span>
+                                </div>
                             </div>
-                            <div class="form-text text-muted mt-1" id="update_mode_help">
-                                <span id="update_mode_off_text">
-                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                                    <strong>Normal Mode:</strong> All fields will be overwritten for existing pensioners, including pension amounts and status.
-                                </span>
-                                <span id="update_mode_on_text" style="display: none;">
-                                    <i class="fas fa-check-circle text-success me-1"></i>
-                                    <strong>Update Mode:</strong> Only bank details, account number, account name, and names will be updated. 
-                                    Pension amounts, status, and gratuity fields will <strong>not</strong> be changed.
-                                    New pensioners will still be created normally.
-                                </span>
+
+                            {{-- Account Name Only Toggle --}}
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="account_name_only" name="account_name_only" value="1">
+                                    <label class="form-check-label fw-bold text-primary" for="account_name_only">
+                                        <i class="fas fa-university me-1"></i> Account Name Only
+                                    </label>
+                                </div>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Updates <strong>ONLY</strong> bank account names. Preserves everything else.
+                                </div>
                             </div>
                         </div>
 
