@@ -104,6 +104,9 @@
                                 <a href="{{ route('reports.payment-transactions.pdf', request()->all()) }}" class="btn btn-danger">
                                     <i class="fas fa-file-pdf"></i> Export PDF
                                 </a>
+                                <a href="{{ route('reports.payment-transactions.duplicates', request()->all()) }}" class="btn btn-warning text-dark">
+                                    <i class="fas fa-copy"></i> Show Duplicates
+                                </a>
                                 <button type="button" class="btn btn-info" onclick="window.print()">
                                     <i class="fas fa-print"></i> Print
                                 </button>

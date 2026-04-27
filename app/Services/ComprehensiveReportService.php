@@ -353,9 +353,20 @@ class ComprehensiveReportService
 
         $deductions = $query->get();
 
+        // Calculate period for report header
+        $period = 'All Periods';
+        if (isset($filters['year']) && $filters['year']) {
+            $period = $filters['year'];
+            if (isset($filters['month']) && $filters['month']) {
+                $monthName = $this->getMonthName($filters['month']);
+                $period = $monthName . ' ' . $filters['year'];
+            }
+        }
+
         $reportData = [
             'report_title' => 'Deduction Summary Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
+            'period' => $period,
             'total_deductions' => $deductions->count(),
             'total_amount' => $deductions->sum('amount'),
             'deduction_types' => [],
@@ -457,9 +468,20 @@ class ComprehensiveReportService
 
         $additions = $query->get();
 
+        // Calculate period for report header
+        $period = 'All Periods';
+        if (isset($filters['year']) && $filters['year']) {
+            $period = $filters['year'];
+            if (isset($filters['month']) && $filters['month']) {
+                $monthName = $this->getMonthName($filters['month']);
+                $period = $monthName . ' ' . $filters['year'];
+            }
+        }
+
         $reportData = [
             'report_title' => 'Addition Summary Report',
             'generated_date' => now()->format('Y-m-d H:i:s'),
+            'period' => $period,
             'total_additions' => $additions->count(),
             'total_amount' => $additions->sum('amount'),
             'addition_types' => [],

@@ -171,6 +171,16 @@
                                                         </form>
                                                     </li>
                                                 @endif
+
+                                                @can('manage_pensioners')
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <button type="button" class="dropdown-item text-danger" 
+                                                                onclick="requestPensionerDeletion('{{ $pensioner->id }}', '{{ addslashes($pensioner->full_name) }}')">
+                                                            <i class="fas fa-trash-alt me-1"></i> Delete Record
+                                                        </button>
+                                                    </li>
+                                                @endcan
                                             </ul>
                                         </div>
                                     </td>
@@ -183,6 +193,13 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Delete Request Form -->
+                    <form id="delete-pensioner-form" method="POST" style="display: none;">
+                        @csrf
+                        @method('DELETE')
+                        <input type="hidden" name="reason" id="delete-reason-input">
+                    </form>
 
                     <!-- Pagination -->
                     <div class="d-flex justify-content-between align-items-center mt-3">
@@ -233,5 +250,23 @@ document.getElementById('move-retired-btn').addEventListener('click', function(e
         btn.disabled = false;
     });
 });
+
+// Delete Pensioner handling
+function requestPensionerDeletion(id, name) {
+    const reason = prompt(`Are you sure you want to request deletion for ${name}?\n\nPlease enter a reason for deletion:`, "Incorrect entry / Already in permanent payroll");
+    
+    if (reason !== null) {
+        if (reason.trim() === '') {
+            alert('A reason is required to submit a deletion request.');
+            return;
+        }
+        
+        const form = document.getElementById('delete-pensioner-form');
+        // Use url() instead of route() to avoid "Missing required parameter" error in Blade
+        form.action = "{{ url('pensioners') }}/" + id;
+        document.getElementById('delete-reason-input').value = reason;
+        form.submit();
+    }
+}
 </script>
 @endsection

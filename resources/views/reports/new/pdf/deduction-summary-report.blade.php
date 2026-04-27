@@ -51,6 +51,13 @@
             font-size: 10px;
             color: #dc2626;
             font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .generated-date {
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 4px;
         }
 
         table {
@@ -87,7 +94,8 @@
         @endif
         <div class="org-name">KATSINA STATE WATER BOARD</div>
         <div class="report-title">DEDUCTION SUMMARY REPORT</div>
-        <div class="report-subtitle">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
+        <div class="report-subtitle">Report Period: {{ $data['period'] }}</div>
+        <div class="generated-date">Generated on: {{ now()->format('F j, Y g:i A') }}</div>
         <div>Total Deductions: ₦{{ number_format($data['total_amount'], 2) }}</div>
     </div>
 

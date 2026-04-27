@@ -30,6 +30,14 @@ class PendingPensionerChangeController extends Controller
             $query->where('change_type', $request->change_type);
         }
 
+        // Filter by date range
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
         // Search by pensioner name
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -92,7 +100,88 @@ class PendingPensionerChangeController extends Controller
 
             // Apply the changes to the pensioner
             $pensioner = $pendingChange->pensioner;
-            $pensioner->update($pendingChange->data);
+            
+            if ($pendingChange->change_type === 'delete') {
+                $pensioner->delete();
+            } else {
+                $pensioner->update($pendingChange->data);
+            }
+
+            // Update linked Employee staff_no if updated in pensioner
+            if (isset($pendingChange->data['staff_no'])) {
+                $unlink = isset($pendingChange->data['unlink_employee']) && $pendingChange->data['unlink_employee'];
+                
+                if ($unlink) {
+                    // Create NEW employee record as they are different people
+                    $oldEmployee = \App\Models\Employee::where('employee_id', $pensioner->employee_id)->first();
+                    $employeeData = $oldEmployee ? $oldEmployee->toArray() : [];
+                    unset($employeeData['employee_id'], $employeeData['created_at'], $employeeData['updated_at']);
+                    
+                    // Fetch "Pensioners" appointment type ID
+                    $pensionerTypeId = \Illuminate\Support\Facades\DB::table('appointment_types')
+                        ->where('name', 'Pensioners')
+                        ->value('id') ?? 4; // Fallback to 4 if not found
+
+                    // Populate from pensioner and pending change
+                    $employeeData['first_name'] = $pensioner->first_name;
+                    $employeeData['surname'] = $pensioner->surname;
+                    $employeeData['middle_name'] = $pensioner->middle_name;
+                    $safeEmail = str_replace('@', '.', ($pensioner->email ?? 'pensioner.' . $pensioner->id));
+                    $employeeData['email'] = $safeEmail . '.unlinked.' . time() . '@example.com';
+                    $employeeData['mobile_no'] = $pensioner->phone_number;
+                    $employeeData['date_of_birth'] = $pensioner->date_of_birth;
+                    $employeeData['status'] = 'Retired';
+                    $employeeData['staff_no'] = $pendingChange->data['staff_no'];
+                    $employeeData['appointment_type_id'] = $pensionerTypeId;
+                    $employeeData['address'] = $pensioner->address ?? ($oldEmployee->address ?? 'Unknown');
+
+                    $newEmployee = \App\Models\Employee::create($employeeData);
+                    $pensioner->update(['employee_id' => $newEmployee->employee_id]);
+                    
+                    // Use pensioner's own bank details if available
+                    if ($pensioner->account_number) {
+                        $bankInfo = \Illuminate\Support\Facades\DB::table('bank_list')->find($pensioner->bank_id);
+                        \App\Models\Bank::create([
+                            'employee_id' => $newEmployee->employee_id,
+                            'bank_name' => $bankInfo->bank_name ?? 'Unknown Bank',
+                            'bank_code' => $bankInfo->bank_code ?? '000',
+                            'account_name' => $pensioner->account_name,
+                            'account_no' => $pensioner->account_number,
+                        ]);
+                    } elseif ($oldEmployee) {
+                        // Fallback to old employee's bank record if pensioner has none (unlikely but safe)
+                        $oldBank = \App\Models\Bank::where('employee_id', $oldEmployee->employee_id)->first();
+                        if ($oldBank) {
+                            \App\Models\Bank::create([
+                                'employee_id' => $newEmployee->employee_id,
+                                'bank_name' => $oldBank->bank_name,
+                                'bank_code' => $oldBank->bank_code,
+                                'account_name' => $oldBank->account_name,
+                                'account_no' => $oldBank->account_no,
+                            ]);
+                        }
+                    }
+                } else {
+                    // Just update existing employee's staff_no
+                    $employee = \App\Models\Employee::where('employee_id', $pensioner->employee_id)->first();
+                    if ($employee) {
+                        $employee->update(['staff_no' => $pendingChange->data['staff_no']]);
+                    } else {
+                        // Create employee if missing
+                        \App\Models\Employee::create([
+                            'first_name' => $pensioner->first_name,
+                            'surname' => $pensioner->surname,
+                            'middle_name' => $pensioner->middle_name,
+                            'email' => $pensioner->email,
+                            'mobile_no' => $pensioner->phone_number,
+                            'date_of_birth' => $pensioner->date_of_birth,
+                            'date_of_first_appointment' => $pensioner->date_of_first_appointment,
+                            'status' => 'Retired',
+                            'staff_no' => $pendingChange->data['staff_no'],
+                        ]);
+                    }
+                }
+            }
 
             // Add audit trail for approval
             AuditTrail::create([

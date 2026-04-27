@@ -112,6 +112,14 @@
                                             <dd class="col-sm-8">{{ $value ?: 'N/A' }}</dd>
                                         @endforeach
                                     </dl>
+                                @elseif($pendingChange->change_type === 'delete')
+                                    <p class="text-danger fw-bold">This is a request to PERMANENTLY delete the following pensioner record:</p>
+                                    <dl class="row">
+                                        @foreach($displayableOldData as $key => $value)
+                                            <dt class="col-sm-4">{{ ucfirst(str_replace('_', ' ', $key)) }}:</dt>
+                                            <dd class="col-sm-8">{{ $value ?: 'N/A' }}</dd>
+                                        @endforeach
+                                    </dl>
                                 @endif
                             </div>
                         </div>

@@ -452,19 +452,18 @@
 
             inputs.forEach(input => {
                 let errorMessage = '';
-                if (!input.value) {
+                const value = input.value.trim();
+                
+                if (!value) {
                     errorMessage = 'This field is required.';
                     isValid = false;
-                } else if (input.name === 'mobile_no' && !phoneRegex.test(input.value)) {
+                } else if ((input.name === 'mobile_no' || input.name === 'kin_mobile_no') && !/^(\+234|0)?\d{10,11}$/.test(value)) {
                     errorMessage = 'Invalid phone number format.';
                     isValid = false;
-                } else if (input.name === 'kin_mobile_no' && !phoneRegex.test(input.value)) {
-                    errorMessage = 'Invalid phone number format.';
-                    isValid = false;
-                } else if (input.name === 'email' && input.value && !emailRegex.test(input.value)) {
+                } else if (input.name === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                     errorMessage = 'Invalid email format.';
                     isValid = false;
-                } else if (input.name === 'account_no' && !/^\d{10}$/.test(input.value)) {
+                } else if (input.name === 'account_no' && !/^\d{10}$/.test(value)) {
                     errorMessage = 'Account number must be 10 digits.';
                     isValid = false;
                 }
@@ -505,8 +504,8 @@
 
             if (step === 3) {
                 const appointmentTypeName = appointmentTypeSelect.options[appointmentTypeSelect.selectedIndex].dataset.name;
-                // Grade level/step only required for Permanent (not Casual or Contract)
-                if (appointmentTypeName !== 'Casual' && appointmentTypeName !== 'Contract') {
+                // Grade level/step only required for Permanent (not Casual, Contract, or Pensioners)
+                if (appointmentTypeName !== 'Casual' && appointmentTypeName !== 'Contract' && appointmentTypeName !== 'Pensioners') {
                     const gradeLevelIdInput = document.getElementById('grade_level_id');
                     const stepIdInput = document.getElementById('step_id');
                     if (!gradeLevelIdInput.value) {
@@ -578,6 +577,18 @@
                     let hiddenStatus = document.getElementById('hidden_status');
                     if (hiddenStatus) hiddenStatus.remove();
                 }
+            } else if (appointmentTypeName === 'Pensioners') {
+                // Pensioners: hide special contract fields, show permanent fields (but they will be optional in validation)
+                regularAppointmentFields.classList.remove('d-none');
+                casualAppointmentFields.classList.add('d-none');
+                casualAppointmentFields.querySelectorAll('input, select').forEach(field => field.disabled = true);
+                
+                // Enable status field
+                if (statusSelect) {
+                    statusSelect.disabled = false;
+                    let hiddenStatus = document.getElementById('hidden_status');
+                    if (hiddenStatus) hiddenStatus.remove();
+                }
             } else if (appointmentTypeName === 'Contract') {
                 // Contract: show BOTH permanent fields (optional) and contract fields
                 regularAppointmentFields.classList.remove('d-none');
@@ -606,7 +617,7 @@
             }
 
             if (retiredActiveOption) {
-                if (appointmentTypeName === 'Contract') {
+                if (appointmentTypeName === 'Contract' || appointmentTypeName === 'Pensioners') {
                     retiredActiveOption.hidden = false;
                     retiredActiveOption.disabled = false;
                 } else {
@@ -640,8 +651,17 @@
                 e.preventDefault();
                 console.log('Form submission prevented due to validation errors in step ' + firstInvalidStep);
                 showStep(firstInvalidStep);
+
+                // Find precisely which field failed in that step to give a better alert
+                const stepCard = document.getElementById('step' + firstInvalidStep);
+                const firstErrorField = stepCard.querySelector('.text-danger');
+                let fieldLabel = '';
+                if (firstErrorField && firstErrorField.previousElementSibling) {
+                    fieldLabel = firstErrorField.previousElementSibling.textContent.replace('*', '').trim();
+                }
+
                 const stepName = document.querySelector(`#stepNav li:nth-child(${firstInvalidStep}) .nav-link`).textContent;
-                alert(`Please fill in all required fields. The first error is in the "${stepName}" section.`);
+                alert(`Please fix the errors in the "${stepName}" section${fieldLabel ? ' (near ' + fieldLabel + ')' : ''}.`);
             } else {
                 console.log('Form is valid, proceeding with submission');
             }

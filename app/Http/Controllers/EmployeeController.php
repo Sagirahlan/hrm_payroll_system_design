@@ -631,8 +631,7 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:' . implode(',', $appointmentType && $appointmentType->name === 'Contract' ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
+                'status' => 'required|in:' . implode(',', ($appointmentType && ($appointmentType->name === 'Contract' || $appointmentType->name === 'Pensioners')) ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -669,6 +668,15 @@ class EmployeeController extends Controller
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'nullable|date';
                 $validationRules['rank_id'] = 'nullable|exists:ranks,id';
+            } elseif ($appointmentType && $appointmentType->name === 'Pensioners') {
+                // Pensioners: permanent fields are optional
+                $validationRules['cadre_id'] = 'nullable|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'nullable|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'nullable|exists:grade_levels,id';
+                $validationRules['step_id'] = 'nullable|exists:steps,id';
+                $validationRules['step_level'] = 'nullable|string|max:50';
+                $validationRules['expected_retirement_date'] = 'nullable|date';
+                $validationRules['rank_id'] = 'nullable|exists:ranks,id';
             } else {
                 // Permanent: only permanent fields
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
@@ -692,7 +700,7 @@ class EmployeeController extends Controller
 
             // Enforce max age (45) only for Permanent staff
             // Enforce max age (45) only for Permanent staff
-            if (!($appointmentType && $appointmentType->name === 'Casual') && $appointmentType && $appointmentType->name === 'Permanent') {
+            if (!($appointmentType && ($appointmentType->name === 'Casual' || $appointmentType->name === 'Pensioners')) && $appointmentType && $appointmentType->name === 'Permanent') {
                 if ($ageAtAppointment > 45) {
                     throw ValidationException::withMessages([
                         'date_of_birth' => 'Permanent staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'
@@ -830,8 +838,7 @@ class EmployeeController extends Controller
                 'address' => 'required|string',
                 'date_of_first_appointment' => 'required|date',
                 'appointment_type_id' => 'required|exists:appointment_types,id',
-                'appointment_type_id' => 'required|exists:appointment_types,id',
-                'status' => 'required|in:' . implode(',', $appointmentType && $appointmentType->name === 'Contract' ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
+                'status' => 'required|in:' . implode(',', ($appointmentType && ($appointmentType->name === 'Contract' || $appointmentType->name === 'Pensioners')) ? ['Active', 'Suspended', 'Retired', 'Retired-Active', 'Deceased', 'Hold'] : ['Active', 'Suspended', 'Retired', 'Deceased', 'Hold']),
                 'highest_certificate' => 'nullable|string|max:100',
                 'photo' => 'nullable|image|max:2048',
                 'kin_name' => 'required|string|max:100',
@@ -867,6 +874,15 @@ class EmployeeController extends Controller
                 $validationRules['expected_next_promotion'] = 'nullable|date';
                 $validationRules['expected_retirement_date'] = 'nullable|date';
                 $validationRules['rank_id'] = 'nullable|exists:ranks,id';
+            } elseif ($appointmentType && $appointmentType->name === 'Pensioners') {
+                // Pensioners: permanent fields are optional
+                $validationRules['cadre_id'] = 'nullable|exists:cadres,cadre_id';
+                $validationRules['salary_scale_id'] = 'nullable|exists:salary_scales,id';
+                $validationRules['grade_level_id'] = 'nullable|exists:grade_levels,id';
+                $validationRules['step_id'] = 'nullable|exists:steps,id';
+                $validationRules['step_level'] = 'nullable|string|max:50';
+                $validationRules['expected_retirement_date'] = 'nullable|date';
+                $validationRules['rank_id'] = 'nullable|exists:ranks,id';
             } else {
                 // Permanent: only permanent fields
                 $validationRules['cadre_id'] = 'required|exists:cadres,cadre_id';
@@ -889,8 +905,7 @@ class EmployeeController extends Controller
 
 
             // Enforce max age (45) only for Permanent staff
-            // Enforce max age (45) only for Permanent staff
-            if (!($appointmentType && $appointmentType->name === 'Casual') && $appointmentType && $appointmentType->name === 'Permanent') {
+            if (!($appointmentType && ($appointmentType->name === 'Casual' || $appointmentType->name === 'Pensioners')) && $appointmentType && $appointmentType->name === 'Permanent') {
                 if ($ageAtAppointment > 45) {
                     throw ValidationException::withMessages([
                         'date_of_birth' => 'Permanent staff cannot be older than 45 years at the time of first appointment (Standard Entry Age Rule). Current age at appointment: ' . $ageAtAppointment . ' years.'

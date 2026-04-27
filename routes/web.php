@@ -72,6 +72,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/reports/payment-transactions/export', [ReportController::class, 'exportPaymentTransactions'])->name('reports.payment-transactions.export');
     Route::get('/reports/payment-transactions/pdf', [ReportController::class, 'exportPaymentTransactionsPdf'])->name('reports.payment-transactions.pdf');
+    Route::get('/reports/payment-transactions/duplicates', [ReportController::class, 'showPaymentDuplicates'])->name('reports.payment-transactions.duplicates');
     Route::get('/reports/payment-transactions', [ReportController::class, 'paymentTransactions'])->name('reports.payment-transactions');
     Route::resource('reports', ReportController::class);
     Route::post('/reports/generate', [ReportController::class, 'generateEmployeeReport'])->name('reports.generate');
@@ -100,6 +101,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/{employeeId}/export', [EmployeeController::class, 'exportSingle'])->name('employee.export');
         Route::post('/employees/import', [EmployeeController::class, 'importEmployees'])->name('employees.import');
         Route::get('/employees/export/filtered', [EmployeeController::class, 'exportFiltered'])->name('employees.export.filtered');
+        Route::get('/payroll/check-duplicates', [PayrollController::class, 'checkDuplicatesBeforeReview'])->name('payroll.check-duplicates');
+        Route::delete('/payroll/{id}/ajax', [PayrollController::class, 'destroyAjax'])->name('payroll.destroy-ajax');
+        Route::resource('payroll', PayrollController::class);
         Route::resource('roles', RoleController::class);
 
     });

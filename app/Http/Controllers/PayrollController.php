@@ -54,7 +54,7 @@ class PayrollController extends Controller
         $appointmentTypeId = $request->input('appointment_type_id');
 
         // Check for existing payroll records for this month and category
-        $existingQuery = PayrollRecord::where('payroll_month', $month);
+        $existingQuery = PayrollRecord::where('payroll_month', Carbon::parse($month)->format('Y-m-01'));
         
         if ($category === 'pensioners') {
             $existingQuery->where('payment_type', 'Pension');
@@ -344,6 +344,7 @@ class PayrollController extends Controller
                 ->where('is_gratuity_paid', false)
                 ->where('gratuity_amount', '>', 0)
                 ->where('status', '!=', 'Not Eligible') // Explicit exclusion
+                ->where('status', '!=', 'Hold') // Exclude Hold status
                 ->get();
 
             $count = 0;
@@ -1690,6 +1691,11 @@ class PayrollController extends Controller
                 ->with('error', 'Cannot recalculate: Employee or grade level not found.');
         }
 
+        if ($payroll->employee->status === 'Hold') {
+            return redirect()->back()
+                ->with('error', 'Cannot recalculate: Employee status is on Hold.');
+        }
+
         // Get the payroll month
         $month = Carbon::parse($payroll->payroll_month)->format('Y-m');
 
@@ -1794,7 +1800,7 @@ class PayrollController extends Controller
         $month = $request->input('month');
         $category = $request->input('category');
         
-        $query = PayrollRecord::where('payroll_month', $month);
+        $query = PayrollRecord::where('payroll_month', Carbon::parse($month)->format('Y-m-01'));
 
         if ($category === 'pensioners') {
             $query->where('payment_type', 'Pension');
@@ -2679,6 +2685,108 @@ class PayrollController extends Controller
 
         return redirect()->back()
             ->with('success', "Successfully finally approved {$updated} payroll records.");
+    }
+
+    /**
+     * Check for duplicates before sending for review
+     */
+    public function checkDuplicatesBeforeReview(Request $request)
+    {
+        $payrollIds = $request->input('payroll_ids', []);
+        
+        $query = PaymentTransaction::query()
+            ->join('payroll_records', 'payment_transactions.payroll_id', '=', 'payroll_records.payroll_id')
+            ->join('employees', 'payroll_records.employee_id', '=', 'employees.employee_id')
+            ->leftJoin('appointment_types', 'employees.appointment_type_id', '=', 'appointment_types.id')
+            ->where('payroll_records.status', 'Pending Review');
+            
+        if (!empty($payrollIds)) {
+            if (is_string($payrollIds)) {
+                $payrollIds = explode(',', $payrollIds);
+            }
+            $query->whereIn('payroll_records.payroll_id', $payrollIds);
+        }
+        
+        if ($request->filled('month')) {
+            $month = Carbon::parse($request->month)->format('Y-m-01');
+            $query->where('payroll_records.payroll_month', $month);
+        }
+
+        $duplicates = $query->select(
+                'employees.first_name',
+                'employees.surname',
+                'employees.staff_no',
+                'employees.appointment_type_id',
+                'appointment_types.name as appointment_type_name',
+                'payment_transactions.account_number',
+                'payment_transactions.account_name',
+                DB::raw('COUNT(*) as duplicate_count')
+            )
+            ->groupBy(
+                'employees.first_name',
+                'employees.surname',
+                'employees.staff_no',
+                'employees.appointment_type_id',
+                'appointment_types.name',
+                'payment_transactions.account_number',
+                'payment_transactions.account_name'
+            )
+            ->having('duplicate_count', '>', 1)
+            ->get();
+            
+        $results = [];
+        foreach ($duplicates as $duplicate) {
+            $recordsQuery = PaymentTransaction::query()
+                ->join('payroll_records', 'payment_transactions.payroll_id', '=', 'payroll_records.payroll_id')
+                ->join('employees', 'payroll_records.employee_id', '=', 'employees.employee_id')
+                ->leftJoin('appointment_types', 'employees.appointment_type_id', '=', 'appointment_types.id')
+                ->where('employees.first_name', $duplicate->first_name)
+                ->where('employees.surname', $duplicate->surname)
+                ->where('employees.staff_no', $duplicate->staff_no)
+                ->where('payment_transactions.account_number', $duplicate->account_number)
+                ->where('payment_transactions.account_name', $duplicate->account_name)
+                ->where('payroll_records.status', 'Pending Review');
+
+            if (!empty($payrollIds)) {
+                $recordsQuery->whereIn('payroll_records.payroll_id', $payrollIds);
+            }
+
+            if ($request->filled('month')) {
+                $month = Carbon::parse($request->month)->format('Y-m-01');
+                $recordsQuery->where('payroll_records.payroll_month', $month);
+            }
+
+            $records = $recordsQuery->select(
+                    'payroll_records.payroll_id', 
+                    'employees.first_name', 
+                    'employees.surname', 
+                    'payment_transactions.amount', 
+                    'payment_transactions.account_number',
+                    'appointment_types.name as appointment_type_name'
+                )
+                ->get();
+                
+            $results[] = [
+                'group_info' => $duplicate,
+                'records' => $records
+            ];
+        }
+
+        return response()->json($results);
+    }
+
+    /**
+     * AJAX deletion of a payroll record
+     */
+    public function destroyAjax($id)
+    {
+        try {
+            $payroll = PayrollRecord::findOrFail($id);
+            $payroll->delete();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     // Individual send payroll for review

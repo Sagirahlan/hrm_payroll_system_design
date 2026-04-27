@@ -1700,6 +1700,86 @@ class ReportController extends Controller
         return view('reports.new.payment_transactions', compact('transactions', 'banks', 'departments', 'appointmentTypes'));
     }
 
+    public function showPaymentDuplicates(Request $request)
+    {
+        $query = PaymentTransaction::query()
+            ->join('employees', 'payment_transactions.employee_id', '=', 'employees.employee_id')
+            ->leftJoin('appointment_types', 'employees.appointment_type_id', '=', 'appointment_types.id')
+            ->select(
+                'employees.first_name',
+                'employees.surname',
+                'employees.staff_no',
+                'employees.appointment_type_id',
+                'appointment_types.name as appointment_type_name',
+                'payment_transactions.account_number',
+                'payment_transactions.account_name',
+                DB::raw('COUNT(*) as duplicate_count'),
+                DB::raw('SUM(payment_transactions.amount) as total_amount'),
+                DB::raw('GROUP_CONCAT(payment_transactions.transaction_id) as transaction_ids')
+            );
+
+        // Apply same filters as paymentTransactions
+        if ($request->filled('payment_month')) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m', $request->payment_month);
+            $query->whereHas('payroll', function($q) use ($date) {
+                $q->whereYear('payroll_month', $date->year)
+                  ->whereMonth('payroll_month', $date->month);
+            });
+        } else {
+             $query->whereHas('payroll', function($q) {
+                $q->whereYear('payroll_month', now()->year)
+                  ->whereMonth('payroll_month', now()->month);
+             });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('payment_transactions.status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('employees.first_name', 'like', "%{$search}%")
+                  ->orWhere('employees.surname', 'like', "%{$search}%")
+                  ->orWhere('employees.staff_no', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('bank_code')) {
+            $query->where('payment_transactions.bank_code', $request->bank_code);
+        }
+
+        if ($request->filled('department_id')) {
+            $departmentId = $request->department_id;
+            $query->where('employees.department_id', $departmentId);
+        }
+
+        if ($request->filled('appointment_type_id')) {
+            $appointmentTypeId = $request->appointment_type_id;
+            if ($appointmentTypeId === 'pensioner') {
+                $query->whereHas('payroll', function($q) {
+                    $q->whereIn('payment_type', ['Pension', 'Gratuity']);
+                });
+            } else {
+                $query->where('employees.appointment_type_id', $appointmentTypeId);
+            }
+        }
+
+        $duplicates = $query->groupBy(
+                'employees.first_name',
+                'employees.surname',
+                'employees.staff_no',
+                'employees.appointment_type_id',
+                'appointment_types.name',
+                'payment_transactions.account_number',
+                'payment_transactions.account_name'
+            )
+            ->having('duplicate_count', '>', 1)
+            ->get();
+
+        return view('reports.new.payment_duplicates', compact('duplicates'));
+    }
+
     public function exportPaymentTransactions(Request $request)
     {
         $query = PaymentTransaction::with(['employee', 'payroll']);

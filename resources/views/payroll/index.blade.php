@@ -803,6 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAutoSubmitFilters();
     initializeBulkActions();
     initializeBulkButtons();
+    initializeDuplicatePrevention();
     
     /* Auto-submit filters when changed */
     function initializeAutoSubmitFilters() {
@@ -955,7 +956,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            form.submit();
+            if (action === 'send-for-review') {
+                const payrollIds = [];
+                document.querySelectorAll('input[name="payroll_ids[]"]:checked').forEach(cb => {
+                    payrollIds.push(cb.value);
+                });
+                window.checkDuplicatesForForm(payrollIds, form);
+            } else {
+                form.submit();
+            }
         }
     }
     
@@ -1002,6 +1011,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return null;
         }
     }
+    
+    
     
     // Initialize bulk operation buttons
     function initializeBulkButtons() {
@@ -1072,6 +1083,237 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    }
+
+    /* Duplicate Prevention Logic (Vanilla JS) */
+    function initializeDuplicatePrevention() {
+        const duplicatesModalEl = document.getElementById('duplicatesModal');
+        if (!duplicatesModalEl) return;
+
+        const duplicatesModal = new bootstrap.Modal(duplicatesModalEl);
+        const duplicatesContainer = document.getElementById('duplicates-container');
+        const confirmCheckbox = document.getElementById('confirm-duplicates-checkbox');
+        const proceedBtn = document.getElementById('proceed-send-review-btn');
+        let currentFormToSubmit = null;
+
+        confirmCheckbox.addEventListener('change', function() {
+            proceedBtn.disabled = !this.checked;
+        });
+
+        proceedBtn.addEventListener('click', function() {
+            if (currentFormToSubmit) {
+                currentFormToSubmit.submit();
+            }
+        });
+
+        // Intercept individual send-for-review links
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href*="send-for-review"]');
+            if (link && link.getAttribute('onclick')) {
+                const originalOnClick = link.getAttribute('onclick');
+                if (originalOnClick.includes('submit()')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const formIdMatch = originalOnClick.match(/'([^']+)'/);
+                    if (formIdMatch) {
+                        const formId = formIdMatch[1];
+                        const form = document.getElementById(formId);
+                        const payrollId = formId.replace('send-review-form-', '');
+                        
+                        checkDuplicates([payrollId], form);
+                    }
+                }
+            }
+        });
+
+        function checkDuplicates(payrollIds, form) {
+            const month = document.getElementById('month_filter')?.value;
+            
+            // Collect other filters to ensure we check the right records
+            const filters = {};
+            ['search', 'status', 'employee_status', 'appointment_type', 'salary_range', 'date_from', 'date_to'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value) filters[id] = el.value;
+            });
+
+            const params = new URLSearchParams({
+                month: month || '',
+                ...filters
+            });
+            
+            // Handle array of IDs
+            if (payrollIds && payrollIds.length > 0) {
+                params.append('payroll_ids', payrollIds.join(','));
+            }
+
+            const originalBtn = document.activeElement;
+            const originalBtnHtml = originalBtn ? originalBtn.innerHTML : '';
+            if (originalBtn && originalBtn.tagName === 'BUTTON') {
+                originalBtn.disabled = true;
+                originalBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Checking...';
+            }
+
+            fetch('{{ route("payroll.check-duplicates") }}?' + params.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (originalBtn && originalBtn.tagName === 'BUTTON') {
+                    originalBtn.disabled = false;
+                    originalBtn.innerHTML = originalBtnHtml;
+                }
+
+                if (response && response.length > 0) {
+                    currentFormToSubmit = form;
+                    renderDuplicates(response);
+                    confirmCheckbox.checked = false;
+                    proceedBtn.disabled = true;
+                    duplicatesModal.show();
+                } else {
+                    form.submit();
+                }
+            })
+            .catch(error => {
+                console.error('Duplicate check failed:', error);
+                if (originalBtn && originalBtn.tagName === 'BUTTON') {
+                    originalBtn.disabled = false;
+                    originalBtn.innerHTML = originalBtnHtml;
+                }
+                form.submit(); // Proceed anyway on error
+            });
+        }
+
+        function renderDuplicates(groups) {
+            duplicatesContainer.innerHTML = '';
+            groups.forEach((group, index) => {
+                const groupHtml = `
+                    <div class="card mb-3 border-danger shadow-sm">
+                        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-users me-2"></i>Group ${index + 1}: ${group.group_info.first_name} ${group.group_info.surname}
+                            </h6>
+                            <span class="badge bg-light text-danger">${group.records.length} Potential Duplicates</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Employee Info</th>
+                                        <th>Payment Account</th>
+                                        <th>Amount</th>
+                                        <th class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${group.records.map(record => `
+                                        <tr id="duplicate-row-${record.payroll_id}">
+                                            <td class="ps-3">
+                                                <strong>${record.first_name} ${record.surname}</strong><br>
+                                                <small class="text-muted">${record.appointment_type_name || 'N/A'}</small>
+                                            </td>
+                                            <td>
+                                                <span class="font-monospace">${record.account_number}</span><br>
+                                                <small class="text-muted">${record.account_name || 'N/A'}</small>
+                                            </td>
+                                            <td class="fw-bold text-primary">₦${new Intl.NumberFormat().format(record.amount)}</td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-duplicate-btn" 
+                                                        data-id="${record.payroll_id}" title="Delete this record">
+                                                    <i class="fas fa-trash-alt"></i> Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer bg-light py-2 px-3 small">
+                            <i class="fas fa-info-circle me-1 text-info"></i> Matches found for Staff No: <strong>${group.group_info.staff_no || 'N/A'}</strong> and Account: <strong>${group.group_info.account_number}</strong>
+                        </div>
+                    </div>
+                `;
+                duplicatesContainer.insertAdjacentHTML('beforeend', groupHtml);
+            });
+
+            // Add event listeners for delete buttons in the modal
+            document.querySelectorAll('.delete-duplicate-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const payrollId = this.dataset.id;
+                    const row = document.getElementById(`duplicate-row-${payrollId}`);
+                    
+                    if (confirm('Are you sure you want to DELETE this payroll record? This action is permanent.')) {
+                        const originalContent = this.innerHTML;
+                        this.disabled = true;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                        
+                        fetch(`/payroll/${payrollId}/ajax`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.success) {
+                                const card = this.closest('.card');
+                                row.style.transition = 'opacity 0.3s ease';
+                                row.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    row.remove();
+                                    
+                                    // Update group count badge
+                                    const remainingRows = card.querySelectorAll('tbody tr').length;
+                                    const badge = card.querySelector('.badge');
+                                    if (badge) badge.textContent = `${remainingRows} Potential Duplicates`;
+
+                                    // If card has 0 or 1 record left, it might not be a duplicate anymore
+                                    if (remainingRows <= 1) {
+                                        card.style.transition = 'opacity 0.3s ease';
+                                        card.style.opacity = '0';
+                                        setTimeout(() => {
+                                            card.remove();
+                                            checkRemainingGroups();
+                                        }, 300);
+                                    }
+                                }, 300);
+                                
+                                // Also remove from the main table if visible
+                                const mainTableRow = document.querySelector(`input[value="${payrollId}"]`)?.closest('tr');
+                                if (mainTableRow) {
+                                    mainTableRow.style.backgroundColor = '#fee2e2';
+                                    mainTableRow.style.transition = 'opacity 0.5s ease';
+                                    mainTableRow.style.opacity = '0';
+                                    setTimeout(() => mainTableRow.remove(), 500);
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.disabled = false;
+                            this.innerHTML = originalContent;
+                            alert('Failed to delete record. Please try again.');
+                        });
+                    }
+                });
+            });
+        }
+
+        function checkRemainingGroups() {
+            if (duplicatesContainer.children.length === 0) {
+                duplicatesModal.hide();
+                alert('All duplicates resolved. You can now proceed to send for review.');
+            }
+        }
+        
+        // Export to window for access in other functions
+        window.checkDuplicatesForForm = checkDuplicates;
     }
     
 });
@@ -1183,5 +1425,52 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 0.375rem;
 }
 </style>
+
+<!-- Duplicates Modal -->
+<div class="modal fade" id="duplicatesModal" tabindex="-1" aria-labelledby="duplicatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="duplicatesModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Duplicate Payroll Records Preview
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning shadow-sm border-warning">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                        <div>
+                            <strong>Attention:</strong> Several potential duplicate records have been identified. 
+                            Duplicate detection is based on Name, Staff No, Account Number, Account Name, and Appointment Type.
+                            Please delete the records you don't want before proceeding.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="duplicates-container" class="mt-4">
+                    <!-- Duplicates will be rendered here via JS -->
+                </div>
+
+                <div class="agreement-section mt-4 p-3 bg-light border rounded">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirm-duplicates-checkbox" style="transform: scale(1.3); margin-top: 0.3rem;">
+                        <label class="form-check-label ms-2 fw-bold" for="confirm-duplicates-checkbox">
+                            I have carefully reviewed the listed duplicates and I am certain that the remaining records are correct and should be sent for review.
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="proceed-send-review-btn" disabled>
+                    <i class="fas fa-paper-plane me-1"></i> Confirm & Send for Review
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 

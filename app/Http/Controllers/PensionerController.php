@@ -73,10 +73,30 @@ class PensionerController extends Controller
      */
     public function create()
     {
-        $retirements = Retirement::with('employee')->whereDoesntHave('pensioner')->get();
+        $retirements = Retirement::with('employee')
+            ->whereDoesntHave('pensioner')
+            ->whereHas('employee', function($q) {
+                // IMPORTANT: Only show retirements for employees who don't already have an active pensioner record
+                $q->whereDoesntHave('pensioner');
+            })
+            ->get();
+            
         $pensioners = Pensioner::all();
         
-        return view('pensioners.create', compact('retirements', 'pensioners'));
+        // Get employees with status=Retired and appointment_type=Pensioners (who don't have pensioner records yet)
+        $pensionerEmployees = Employee::with('bank')
+            ->where(function($q) {
+                $q->where('status', 'Retired')
+                  ->whereHas('appointmentType', function($q2) {
+                      $q2->where('name', 'like', '%Pensioner%');
+                  });
+            })
+            ->whereDoesntHave('pensioner')
+            ->get();
+        
+        $banks = DB::table('bank_list')->where('is_active', 1)->orderBy('bank_name')->get(['id', 'bank_name as name']);
+        
+        return view('pensioners.create', compact('retirements', 'pensioners', 'pensionerEmployees', 'banks'));
     }
 
     /**
@@ -85,21 +105,43 @@ class PensionerController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
-                'retirement_id' => 'required|exists:retirements,id|unique:pensioners,retirement_id',
+            // Allow either retirement_id or employee_id
+            $request->validate([
+                'retirement_id' => 'nullable|exists:retirements,id|unique:pensioners,retirement_id',
+                'employee_id' => 'nullable|exists:employees,employee_id',
                 'pension_amount' => 'required|numeric|min:0',
                 'gratuity_amount' => 'required|numeric|min:0',
-                'bank_id' => 'nullable|exists:bank_list,id',
+                'bank_id' => 'nullable',
                 'account_number' => 'nullable|string|max:255',
                 'account_name' => 'nullable|string|max:255',
                 'status' => 'nullable|string|max:255',
             ]);
 
+            // Must provide either retirement_id or employee_id
+            if (!$request->retirement_id && !$request->employee_id) {
+                return redirect()->back()->with('error', 'Please select either a retired employee or an employee with pensioner status.');
+            }
+
             DB::beginTransaction();
 
-            // Get the retirement record with employee details
-            $retirement = Retirement::with('employee.department', 'employee.rank', 'employee.step', 'employee.gradeLevel', 'employee.salaryScale')->findOrFail($validated['retirement_id']);
-            $employee = $retirement->employee;
+            $employee = null;
+            $retirement = null;
+
+            if ($request->retirement_id) {
+                // Get from retirement record
+                $retirement = Retirement::with(['employee.department', 'employee.rank', 'employee.step', 'employee.gradeLevel.salaryScale'])->findOrFail($request->retirement_id);
+                $employee = $retirement->employee;
+            } elseif ($request->employee_id) {
+                // Get directly from employee
+                $employee = Employee::with(['department', 'rank', 'step', 'gradeLevel.salaryScale', 'bank'])->findOrFail($request->employee_id);
+            }
+
+            // EXTRA VALIDATION: Ensure this employee doesn't already have a pensioner record
+            // This prevents duplicate entry errors if the UI list was outdated or contains unlinked retirements
+            $existingPensioner = Pensioner::where('employee_id', $employee->employee_id)->first();
+            if ($existingPensioner) {
+                return redirect()->back()->with('error', "Employee {$employee->full_name} is already in the pensioners table (Pensioner ID: {$existingPensioner->id}).");
+            }
 
             // Get the beneficiary computation record if it exists
             $beneficiaryComputation = ComputeBeneficiary::where('id_no', $employee->employee_id)->orWhere('id_no', $employee->staff_id)->first();
@@ -107,40 +149,55 @@ class PensionerController extends Controller
             $pensioner = Pensioner::create([
                 'employee_id' => $employee->employee_id,
                 'full_name' => $employee->full_name,
-                'surname' => $employee->surname,
-                'first_name' => $employee->first_name,
+                'surname' => $request->surname ?? $employee->surname,
+                'first_name' => $request->first_name ?? $employee->first_name,
                 'middle_name' => $employee->middle_name,
                 'email' => $employee->email,
                 'phone_number' => $employee->phone,
                 'date_of_birth' => $employee->date_of_birth,
                 'place_of_birth' => $employee->place_of_birth,
                 'date_of_first_appointment' => $employee->date_of_first_appointment,
-                'date_of_retirement' => $retirement->retirement_date,
-                'retirement_reason' => $retirement->retire_reason,
+                'date_of_retirement' => $retirement ? $retirement->retirement_date : now()->format('Y-m-d'),
+                'retirement_reason' => $retirement ? $retirement->retire_reason : 'Retirement',
                 'retirement_type' => 'RB', // Default to Regular Benefits
                 'department_id' => $employee->department_id,
                 'rank_id' => $employee->rank_id,
                 'step_id' => $employee->step_id,
                 'grade_level_id' => $employee->grade_level_id,
-                'salary_scale_id' => $employee->salary_scale_id,
+                'salary_scale_id' => $employee->gradeLevel->salary_scale_id ?? null,
                 'local_gov_area_id' => $employee->lga_id,
-                'bank_id' => $validated['bank_id'] ?? $employee->bank_id,
-                'account_number' => $validated['account_number'] ?? $employee->account_number,
-                'account_name' => $validated['account_name'] ?? $employee->account_name,
-                'pension_amount' => $validated['pension_amount'],
-                'gratuity_amount' => $validated['gratuity_amount'],
-                'total_death_gratuity' => $validated['gratuity_amount'], // Default to gratuity amount
-                'years_of_service' => $retirement->years_of_service ?? $this->calculateYearsOfService($employee->date_of_first_appointment, $retirement->retirement_date),
+                'bank_id' => (function() use ($request, $employee) {
+                    $providedId = $request->bank_id;
+                    // If provided and valid in bank_list, use it
+                    if ($providedId && DB::table('bank_list')->where('id', $providedId)->exists()) {
+                        return $providedId;
+                    }
+                    // Else try to match employee's bank info to bank_list
+                    $employeeBank = $employee->bank;
+                    if ($employeeBank) {
+                        $match = DB::table('bank_list')
+                            ->where('bank_name', 'like', '%' . $employeeBank->bank_name . '%')
+                            ->orWhere('bank_code', ltrim($employeeBank->bank_code, '0'))
+                            ->orWhere('bank_code', '0' . ltrim($employeeBank->bank_code, '0'))
+                            ->first();
+                        return $match ? $match->id : null;
+                    }
+                    return null;
+                })(),
+                'account_number' => $request->account_number ?? ($employee->bank->account_no ?? null),
+                'account_name' => $request->account_name ?? ($employee->bank->account_name ?? null),
+                'pension_amount' => $request->pension_amount,
+                'gratuity_amount' => $request->gratuity_amount,
+                'total_death_gratuity' => $request->gratuity_amount, // Default to gratuity amount
+                'years_of_service' => $retirement ? ($retirement->years_of_service ?? $this->calculateYearsOfService($employee->date_of_first_appointment, $retirement->retirement_date)) : $this->calculateYearsOfService($employee->date_of_first_appointment, now()),
                 'pension_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_pension : 0,
                 'gratuity_percentage' => $beneficiaryComputation ? $beneficiaryComputation->pct_gratuity : 0,
                 'address' => $employee->address,
                 'next_of_kin_name' => $employee->next_of_kin_name,
                 'next_of_kin_phone' => $employee->next_of_kin_phone,
                 'next_of_kin_address' => $employee->next_of_kin_address,
-                'status' => ($retirement->retire_reason === 'Death in Service') ? 'Deceased' : 
-                            (($validated['gratuity_amount'] == 0 && $validated['pension_amount'] == 0) ? 'Not Eligible' : 
-                            ($validated['status'] ?? 'Active')),
-                'retirement_id' => $validated['retirement_id'],
+                'status' => $request->status ?? 'Active',
+                'retirement_id' => $retirement ? $request->retirement_id : null,
                 'beneficiary_computation_id' => $beneficiaryComputation ? $beneficiaryComputation->id : null,
                 'created_by' => auth()->id(),
             ]);
@@ -226,6 +283,8 @@ class PensionerController extends Controller
             $pensioner = Pensioner::findOrFail($id);
 
             $validated = $request->validate([
+                'staff_no' => 'required|string|max:255',
+                'unlink_employee' => 'nullable|boolean',
                 'pension_amount' => 'required|numeric|min:0',
                 'gratuity_amount' => 'required|numeric|min:0',
                 'bank_id' => 'nullable|exists:bank_list,id',
@@ -238,6 +297,7 @@ class PensionerController extends Controller
 
             // Create a pending change record instead of updating directly
             $previousData = [
+                'staff_no' => $pensioner->staff_no,
                 'pension_amount' => $pensioner->pension_amount,
                 'gratuity_amount' => $pensioner->gratuity_amount,
                 'bank_id' => $pensioner->bank_id,
@@ -267,19 +327,29 @@ class PensionerController extends Controller
     }
 
     /**
-     * Remove the specified pensioner from storage.
+     * Remove the specified pensioner from storage. This will create a pending change that requires approval.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             $pensioner = Pensioner::findOrFail($id);
-            $pensioner->delete();
 
-            return redirect()->route('pensioners.index')->with('success', 'Pensioner deleted successfully.');
+            // Create a pending change record for deletion
+            PendingPensionerChange::create([
+                'pensioner_id' => $pensioner->id,
+                'requested_by' => auth()->id(),
+                'change_type' => 'delete',
+                'data' => [], // No new data for deletion
+                'previous_data' => $pensioner->toArray(),
+                'reason' => $request->reason ?? 'Requested for removal from pensioners list',
+                'status' => 'pending',
+            ]);
+
+            return redirect()->route('pensioners.index')->with('success', 'Pensioner deletion request submitted successfully. Awaiting approval.');
         } catch (\Exception $e) {
-            \Log::error('Error deleting pensioner: ' . $e->getMessage());
+            \Log::error('Error creating pending pensioner deletion: ' . $e->getMessage());
             
-            return redirect()->back()->with('error', 'An error occurred while deleting the pensioner: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred while submitting the deletion request: ' . $e->getMessage());
         }
     }
 
@@ -472,7 +542,12 @@ class PensionerController extends Controller
 
             // Apply the changes to the pensioner
             $pensioner = $pendingChange->pensioner;
-            $pensioner->update($pendingChange->data);
+            
+            if ($pendingChange->change_type === 'delete') {
+                $pensioner->delete();
+            } else {
+                $pensioner->update($pendingChange->data);
+            }
 
             // Add audit trail
             \App\Models\AuditTrail::create([

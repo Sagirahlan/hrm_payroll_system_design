@@ -147,6 +147,16 @@
                                 <button type="button" class="btn btn-secondary" onclick="window.print()">
                                     <i class="fas fa-print"></i> Print
                                 </button>
+
+                                @can('delete_payroll')
+                                <form action="{{ route('payroll.destroy', $payroll->payroll_id) }}" method="POST" class="d-inline ms-auto">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this payroll record? This action cannot be undone.')">
+                                        <i class="fas fa-trash-alt"></i> Delete Record
+                                    </button>
+                                </form>
+                                @endcan
                             </div>
                         </div>
                     </div>

@@ -19,7 +19,7 @@
                                 <label for="search" class="form-label">Search</label>
                                 <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Search by employee name, ID, or staff no">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="status" class="form-label">Status</label>
                                 <select class="form-select" id="status" name="status">
                                     <option value="">All Statuses</option>
@@ -28,7 +28,7 @@
                                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label for="change_type" class="form-label">Change Type</label>
                                 <select class="form-select" id="change_type" name="change_type">
                                     <option value="">All Types</option>
@@ -36,6 +36,14 @@
                                     <option value="update" {{ request('change_type') == 'update' ? 'selected' : '' }}>Update</option>
                                     <option value="delete" {{ request('change_type') == 'delete' ? 'selected' : '' }}>Delete</option>
                                 </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="from_date" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ request('from_date') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="to_date" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="to_date" name="to_date" value="{{ request('to_date') }}">
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <div>

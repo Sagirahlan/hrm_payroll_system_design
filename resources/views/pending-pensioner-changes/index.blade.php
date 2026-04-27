@@ -11,30 +11,37 @@
                     <h4 class="card-title">Pending Pensioner Changes</h4>
                     
                     <!-- Filters -->
-                    <div class="row mt-3">
-                        <div class="col-md-4">
-                            <select class="form-control" onchange="window.location='?status='+this.value+'&change_type='+getParam('change_type')+'&search='+getParam('search')">
+                    <form method="GET" action="{{ route('pending-pensioner-changes.index') }}" class="row mt-3 g-3">
+                        <div class="col-md-2">
+                            <select name="status" class="form-control">
                                 <option value="">All Status</option>
                                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <select class="form-control" onchange="window.location='?status='+getParam('status')+'&change_type='+this.value+'&search='+getParam('search')">
+                        <div class="col-md-2">
+                            <select name="change_type" class="form-control">
                                 <option value="">All Types</option>
                                 <option value="create" {{ request('change_type') == 'create' ? 'selected' : '' }}>Create</option>
                                 <option value="update" {{ request('change_type') == 'update' ? 'selected' : '' }}>Update</option>
                                 <option value="delete" {{ request('change_type') == 'delete' ? 'selected' : '' }}>Delete</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <form method="GET" class="d-flex">
-                                <input type="text" class="form-control me-2" name="search" placeholder="Search pensioners..." value="{{ request('search') }}">
-                                <button class="btn btn-outline-primary" type="submit">Search</button>
-                            </form>
+                        <div class="col-md-2">
+                            <input type="date" name="from_date" class="form-control" placeholder="From Date" value="{{ request('from_date') }}">
                         </div>
-                    </div>
+                        <div class="col-md-2">
+                            <input type="date" name="to_date" class="form-control" placeholder="To Date" value="{{ request('to_date') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" class="form-control" name="search" placeholder="Search..." value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-2 d-flex">
+                            <button class="btn btn-primary me-2" type="submit">Filter</button>
+                            <a href="{{ route('pending-pensioner-changes.index') }}" class="btn btn-secondary">Clear</a>
+                        </div>
+                    </form>
                 </div>
                 <div class="card-body">
                     @if(session('success'))
@@ -108,10 +115,4 @@
     </div>
 </div>
 
-<script>
-function getParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param) || '';
-}
-</script>
 @endsection

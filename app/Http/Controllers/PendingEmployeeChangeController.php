@@ -44,6 +44,14 @@ class PendingEmployeeChangeController extends Controller
             $query->where('change_type', $request->change_type);
         }
 
+        // Filter by date range
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
         // Search by employee name
         if ($request->filled('search')) {
             $searchTerm = $request->search;

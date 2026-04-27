@@ -14,6 +14,7 @@ class Pensioner extends Model
 
     protected $fillable = [
         'employee_id',
+        'staff_no',
         'full_name',
         'surname',
         'first_name',

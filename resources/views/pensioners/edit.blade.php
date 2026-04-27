@@ -19,6 +19,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label for="staff_no" class="form-label">Staff ID (Staff No)</label>
+                                    <input type="text" class="form-control" id="staff_no" name="staff_no" value="{{ old('staff_no', $pensioner->staff_no) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 mt-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="unlink_employee" id="unlink_employee" value="1">
+                                        <label class="form-check-label" for="unlink_employee">
+                                            Unlink from Current Employee (Create new record)
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Check this if the pensioner and linked employee are different people.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="pension_amount" class="form-label">Pension Amount</label>
                                     <input type="number" step="0.01" class="form-control" id="pension_amount" name="pension_amount" value="{{ old('pension_amount', $pensioner->pension_amount) }}" required>
                                 </div>
